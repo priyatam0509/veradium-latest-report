@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Debug - Queue Matrix</title>
+    <style>
+        body { font-family: monospace; padding: 20px; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        .success { color: green; }
+        .error { color: red; }
+        pre { background: #f5f5f5; padding: 10px; overflow-x: auto; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>🔍 API Debug - Queue Matrix Data</h1>
+    
+    <div class="section">
+        <h2>API Configuration</h2>
+        <div id="config"></div>
+    </div>
+    
+    <div class="section">
+        <h2>Test API Call</h2>
+        <button onclick="testAPI()">Test distribution_distbyqueue</button>
+        <button onclick="testDID()">Test distribution_distbydid</button>
+        <button onclick="testHour()">Test distribution_distbyhour</button>
+        <div id="result"></div>
+    </div>
+
+    <script type="module">
+        // Import the API client
+        const API_CONFIG = {
+            baseURL: 'https://isn3miewi8.execute-api.us-east-1.amazonaws.com/prod',
+            instanceId: 'c6338b37-410e-46b2-90e1-6471228865fd'
+        }
+
+        // Date helper
+        function formatDate(date, isEndDate = false) {
+            const year = date.getFullYear()
+            const month = String(date.getMonth() + 1).padStart(2, '0')
+            const day = String(date.getDate()).padStart(2, '0')
+            
+            if (isEndDate) {
+                return `${year}-${month}-${day} 23:59:59.99999`
+            }
+            return `${year}-${month}-${day} 00:00:00.00000`
+        }
+
+        function getLastNDays(days) {
+            const end = new Date()
+            const start = new Date()
+            start.setDate(start.getDate() - days)
+            
+            return {
+                start: formatDate(start),
+                end: formatDate(end, true)
+            }
+        }
+
+        // Display config
+        document.getElementById('config').innerHTML = `
+            <pre>${JSON.stringify(API_CONFIG, null, 2)}</pre>
+        `
+
+        // Test function
+        window.testAPI = async function() {
+            const resultDiv = document.getElementById('result')
+            resultDiv.innerHTML = '<p>Testing API call...</p>'
+            
+            try {
+                const dateRange = getLastNDays(30)
+                
+                console.log('Making API call with:', {
+                    queryName: 'distribution_distbyqueue',
+                    dateRange
+                })
+                
+                const response = await fetch(`${API_CONFIG.baseURL}/query`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        queryName: 'distribution_distbyqueue',
+                        parameters: {
+                            instance_id: API_CONFIG.instanceId,
+                            start_datetime: dateRange.start,
+                            end_datetime: dateRange.end
+                        },
+                        waitForResults: true,
+                        maxWaitTime: 60
+                    })
+                })
+
+                console.log('Response status:', response.status)
+                console.log('Response headers:', response.headers)
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+                }
+
+                const data = await response.json()
+                console.log('Response data:', data)
+
+                resultDiv.innerHTML = `
+                    <p class="success">✅ API Call Successful!</p>
+                    <h3>Response Details:</h3>
+                    <ul>
+                        <li>Status: ${data.status}</li>
+                        <li>Execution Time: ${data.executionTime}ms</li>
+                        <li>Row Count: ${data.rowCount}</li>
+                        <li>Columns: ${data.columns?.length || 0}</li>
+                        <li>Data Records: ${data.data?.length || 0}</li>
+                    </ul>
+                    <h3>Columns:</h3>
+                    <pre>${JSON.stringify(data.columns, null, 2)}</pre>
+                    <h3>Sample Data (First Record):</h3>
+                    <pre>${JSON.stringify(data.data?.[0], null, 2)}</pre>
+                    <h3>Full Response:</h3>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `
+            } catch (error) {
+                console.error('API Error:', error)
+                resultDiv.innerHTML = `
+                    <p class="error">❌ API Call Failed!</p>
+                    <p>Error: ${error.message}</p>
+                    <pre>${error.stack}</pre>
+                `
+            }
+        }
+
+        window.testDID = async function() {
+            const resultDiv = document.getElementById('result')
+            resultDiv.innerHTML = '<p>Testing DID API call...</p>'
+            
+            try {
+                const dateRange = getLastNDays(30)
+                
+                const response = await fetch(`${API_CONFIG.baseURL}/query`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        queryName: 'distribution_distbydid',
+                        parameters: {
+                            instance_id: API_CONFIG.instanceId,
+                            start_datetime: dateRange.start,
+                            end_datetime: dateRange.end
+                        },
+                        waitForResults: true,
+                        maxWaitTime: 60
+                    })
+                })
+
+                const data = await response.json()
+                console.log('DID Response:', data)
+
+                resultDiv.innerHTML = `
+                    <p class="success">✅ DID API Call Successful!</p>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p class="error">❌ Error: ${error.message}</p>
+                `
+            }
+        }
+
+        window.testHour = async function() {
+            const resultDiv = document.getElementById('result')
+            resultDiv.innerHTML = '<p>Testing Hour API call...</p>'
+            
+            try {
+                const today = new Date()
+                const dateRange = {
+                    start: formatDate(today),
+                    end: formatDate(today, true)
+                }
+                
+                const response = await fetch(`${API_CONFIG.baseURL}/query`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        queryName: 'distribution_distbyhour',
+                        parameters: {
+                            instance_id: API_CONFIG.instanceId,
+                            start_datetime: dateRange.start,
+                            end_datetime: dateRange.end
+                        },
+                        waitForResults: true,
+                        maxWaitTime: 60
+                    })
+                })
+
+                const data = await response.json()
+                console.log('Hour Response:', data)
+
+                resultDiv.innerHTML = `
+                    <p class="success">✅ Hour API Call Successful!</p>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p class="error">❌ Error: ${error.message}</p>
+                `
+            }
+        }
+    </script>
+</body>
+</html>

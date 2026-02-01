@@ -1,0 +1,93 @@
+{
+  "users": [
+    {
+      "id": "admin-1",
+      "email": "piyush@veradium.com",
+      "password": "Admin@123",
+      "role": "ADMIN",
+      "isEnabled": true
+    }
+  ],
+  "roles": [
+    {
+      "roleId": "ADMIN",
+      "description": "Full system access including user and permission management",
+      "color": "bg-red-500/10 text-red-500 border-red-500/20"
+    },
+    {
+      "roleId": "SUPERVISOR",
+      "description": "Access to reporting, analytics, and team oversight",
+      "color": "bg-blue-500/10 text-blue-500 border-blue-500/20"
+    },
+    {
+      "roleId": "ANALYST",
+      "description": "Read-only access to metrics and historical reports",
+      "color": "bg-green-500/10 text-green-500 border-green-500/20"
+    }
+  ],
+  "routes": [
+    {
+      "id": "1",
+      "route": "/dashboard",
+      "label": "Dashboard",
+      "allowedRoles": ["ADMIN", "SUPERVISOR", "ANALYST"],
+      "isEnabled": true
+    },
+    {
+      "id": "2",
+      "route": "/metrics/real-time",
+      "label": "Real-Time Metrics",
+      "allowedRoles": ["ADMIN", "SUPERVISOR"],
+      "isEnabled": true
+    },
+    {
+      "id": "3",
+      "route": "/metrics/historical",
+      "label": "Historical Metrics",
+      "allowedRoles": ["ADMIN", "SUPERVISOR", "ANALYST"],
+      "isEnabled": true
+    },
+    {
+      "id": "4",
+      "route": "/analytics",
+      "label": "Contact Lens",
+      "allowedRoles": ["ADMIN", "SUPERVISOR"],
+      "isEnabled": true
+    },
+    {
+      "id": "5",
+      "route": "/search",
+      "label": "Contact Search",
+      "allowedRoles": ["ADMIN", "SUPERVISOR"],
+      "isEnabled": true
+    },
+    {
+      "id": "6",
+      "route": "/evaluations",
+      "label": "Evaluations",
+      "allowedRoles": ["ADMIN"],
+      "isEnabled": true
+    },
+    {
+      "id": "7",
+      "route": "/admin/users",
+      "label": "User Management",
+      "allowedRoles": ["ADMIN"],
+      "isEnabled": true
+    },
+    {
+      "id": "8",
+      "route": "/admin/rbac",
+      "label": "RBAC Settings",
+      "allowedRoles": ["ADMIN"],
+      "isEnabled": true
+    },
+    {
+      "id": "9",
+      "route": "/settings",
+      "label": "Settings",
+      "allowedRoles": ["ADMIN", "SUPERVISOR", "ANALYST"],
+      "isEnabled": true
+    }
+  ]
+}
