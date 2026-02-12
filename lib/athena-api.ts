@@ -4,8 +4,8 @@
  */
 
 const API_CONFIG = {
-  baseURL: 'https://isn3miewi8.execute-api.us-east-1.amazonaws.com/prod',
-  instanceId: 'c6338b37-410e-46b2-90e1-6471228865fd'
+  baseURL: 'https://bgpha7vb46.execute-api.us-east-1.amazonaws.com/prod',
+  instanceId: '117626d6-5827-4e7c-951b-ebb53cc7797a'
 }
 
 interface QueryParameters {
