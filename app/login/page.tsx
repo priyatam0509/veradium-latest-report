@@ -33,7 +33,7 @@ export default function LoginPage() {
         <CardHeader className="space-y-2 flex flex-col items-center text-center">
           <div className="mb-2">
             <Image
-              src="/veradium-image.jpg"
+              src="https://res.cloudinary.com/dnijbboek/image/upload/v1770896884/veradium_xqy6gh.png"
               alt="Veradium Logo"
               width={64}
               height={40}
