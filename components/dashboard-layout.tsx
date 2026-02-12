@@ -37,7 +37,6 @@ import {
 /* -------------------------------------------------------------------------- */
 
 const routeIcons: Record<string, React.ElementType> = {
-  "/dashboard": LayoutDashboard,
   "/dashboard/overview": Home,
   "/queues/matrix": Activity,
   "/agents/performance": Headphones,
@@ -59,7 +58,6 @@ const routeDisplayNames: Record<string, string> = {
 }
 
 const routeOrder = [
-  "/dashboard",
   "/dashboard/overview",
   "/queues/matrix",
   "/agents/performance",
@@ -103,7 +101,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         
       <div className="flex items-center gap-3 px-6 h-16 border-b">
   <Image
-    src="/veradium-image.jpg"
+    src="https://res.cloudinary.com/dnijbboek/image/upload/v1770896884/veradium_xqy6gh.png"
     alt="Veradium Logo"
     width={42}
     height={28}

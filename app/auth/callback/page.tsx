@@ -46,7 +46,7 @@ export default function CallbackPage() {
         // Clear hash and redirect to dashboard
         window.history.replaceState({}, document.title, window.location.pathname)
         setTimeout(() => {
-          router.push('/dashboard')
+          router.push('/dashboard/overview')
         }, 1000)
         
       } catch (error) {
