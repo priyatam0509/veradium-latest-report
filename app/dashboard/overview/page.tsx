@@ -67,6 +67,7 @@ export default function DashboardOverview() {
   })
   const { toast } = useToast()
   const { user } = useAuth()
+  const [appliedRegion, setAppliedRegion] = useState<string[] | null>(null)
 
   useEffect(() => {
     loadDashboardData()
@@ -101,15 +102,16 @@ export default function DashboardOverview() {
       // Get today's data for real-time metrics
       const today = DateHelper.getToday()
       
-      // Parallel data fetching
+      // Parallel data fetching with region filtering
       const [queueResult, hourlyResult, todayQueueResult] = await Promise.all([
-        athenaAPI.getDistributionByQueue(DateHelper.getLastNDays(30).start, DateHelper.getLastNDays(30).end),
-        athenaAPI.getDistributionByHour(today.start, today.end),
-        athenaAPI.getDistributionByQueue(today.start, today.end) // Today's queue data for real-time metrics
+        athenaAPI.getDistributionByQueue(DateHelper.getLastNDays(30).start, DateHelper.getLastNDays(30).end, null, user?.email),
+        athenaAPI.getDistributionByHour(today.start, today.end, null, user?.email),
+        athenaAPI.getDistributionByQueue(today.start, today.end, null, user?.email) // Today's queue data for real-time metrics
       ])
       
       if (queueResult.status === 'SUCCEEDED') {
         setQueueStats(queueResult.data)
+        setAppliedRegion(queueResult.appliedRegion || null)
         
         // Calculate 30-day KPIs
         const totalReceived = queueResult.data.reduce((sum, q) => sum + parseInt(q.received || '0'), 0)
@@ -208,9 +210,15 @@ export default function DashboardOverview() {
                   <Activity className="h-3 w-3 mr-1" />
                   Live
                 </Badge>
+                {appliedRegion && (
+                  <Badge variant="outline" className="bg-blue-500/10 text-blue-500 border-blue-500/20">
+                    <Target className="h-3 w-3 mr-1" />
+                    Region: {appliedRegion.join(', ')}
+                  </Badge>
+                )}
               </div>
               <p className="text-muted-foreground mt-1">
-                Real-time contact center performance
+                Real-time contact center performance {appliedRegion ? `(${appliedRegion.join(', ')} region)` : '(all regions)'}
               </p>
             </div>
             
@@ -260,7 +268,7 @@ export default function DashboardOverview() {
           </div>
 
           {/* Real-time Metrics */}
-          <div>
+          {/* <div>
             <h2 className="text-xl font-semibold mb-4">Real-time Status</h2>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
               <Card>
@@ -334,7 +342,7 @@ export default function DashboardOverview() {
                 </CardContent>
               </Card>
             </div>
-          </div>
+          </div> */}
 
           {/* Historical KPI Cards (Last 30 Days) */}
           <div>
