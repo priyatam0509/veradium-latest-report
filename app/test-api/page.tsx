@@ -4,12 +4,14 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { athenaAPI } from "@/lib/athena-api"
+import { useAuth } from "@/hooks/use-auth"
 import { DateHelper } from "@/lib/date-helper"
 
 export default function TestAPIPage() {
   const [result, setResult] = useState<any>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const { user } = useAuth()
 
   const testAPI = async () => {
     setLoading(true)
@@ -21,7 +23,7 @@ export default function TestAPIPage() {
       const dateRange = DateHelper.getLastNDays(30)
       console.log("📅 Date range:", dateRange)
 
-      const data = await athenaAPI.getDistributionByQueue(dateRange.start, dateRange.end)
+  const data = await athenaAPI.getDistributionByQueue(dateRange.start, dateRange.end, null, user?.email)
       
       console.log("✅ API Response:", data)
       setResult(data)

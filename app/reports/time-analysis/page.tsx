@@ -14,6 +14,7 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar"
 import { format, subDays } from "date-fns"
 import { cn } from "@/lib/utils"
 import { athenaAPI } from "@/lib/athena-api"
+import { useAuth } from "@/hooks/use-auth"
 import { DateHelper } from "@/lib/date-helper"
 import { channel } from "diagnostics_channel"
 
@@ -37,6 +38,7 @@ interface ReportData {
 export default function TimeAnalysisReportsPage() {
   const [reportData, setReportData] = useState<ReportData[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const { user } = useAuth()
   const [reportType, setReportType] = useState<"daily" | "weekly" | "monthly">("daily")
   const { toast } = useToast()
 
@@ -56,13 +58,13 @@ export default function TimeAnalysisReportsPage() {
       let result
       switch (reportType) {
         case 'daily':
-          result = await athenaAPI.getDistributionByDay(dateRange.start, dateRange.end)
+          result = await athenaAPI.getDistributionByDay(dateRange.start, dateRange.end, null, user?.email)
           break
         case 'weekly':
-          result = await athenaAPI.getDistributionByWeek(dateRange.start, dateRange.end)
+          result = await athenaAPI.getDistributionByWeek(dateRange.start, dateRange.end, null, user?.email)
           break
         case 'monthly':
-          result = await athenaAPI.getDistributionByMonth(dateRange.start, dateRange.end)
+          result = await athenaAPI.getDistributionByMonth(dateRange.start, dateRange.end, null, user?.email)
           break
       }
 

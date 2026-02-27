@@ -15,6 +15,7 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar"
 import { format, subDays } from "date-fns"
 import { cn } from "@/lib/utils"
 import { athenaAPI } from "@/lib/athena-api"
+import { useAuth } from "@/hooks/use-auth"
 import { DateHelper } from "@/lib/date-helper"
 
 interface UnansweredQueueData {
@@ -60,6 +61,7 @@ export default function MissedCallsPage() {
   const [queueData, setQueueData] = useState<UnansweredQueueData[]>([])
   const [didData, setDidData] = useState<UnansweredDIDData[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const { user } = useAuth()
   const [activeTab, setActiveTab] = useState("queue")
   const [loadingItemId, setLoadingItemId] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
@@ -92,7 +94,7 @@ export default function MissedCallsPage() {
         end: DateHelper.formatDateFromDate(endDate, true)
       }
 
-      const result = await athenaAPI.getUnansweredByQueue(dateRange.start, dateRange.end)
+  const result = await athenaAPI.getUnansweredByQueue(dateRange.start, dateRange.end, null, user?.email)
       
       if (result.status === 'SUCCEEDED') {
         setQueueData(result.data)
@@ -123,7 +125,7 @@ export default function MissedCallsPage() {
         end: DateHelper.formatDateFromDate(endDate, true)
       }
 
-      const result = await athenaAPI.getUnansweredByDID(dateRange.start, dateRange.end)
+  const result = await athenaAPI.getUnansweredByDID(dateRange.start, dateRange.end, null, user?.email)
       
       if (result.status === 'SUCCEEDED') {
         setDidData(result.data)
@@ -161,7 +163,9 @@ export default function MissedCallsPage() {
       const result = await athenaAPI.getUnansweredDrilldown(
         dateRange.start,
         dateRange.end,
-        filters
+        filters,
+        null,        // region
+        user?.email  // username
       )
       
       if (result.status === 'SUCCEEDED') {

@@ -15,6 +15,7 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar"
 import { format, subDays } from "date-fns"
 import { cn } from "@/lib/utils"
 import { athenaAPI } from "@/lib/athena-api"
+import { useAuth } from "@/hooks/use-auth"
 import { DateHelper } from "@/lib/date-helper"
 
 interface AgentData {
@@ -55,6 +56,7 @@ interface DrilldownData {
 export default function AgentPerformancePage() {
   const [agentData, setAgentData] = useState<AgentData[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const { user } = useAuth()
   const [loadingAgentId, setLoadingAgentId] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedQueue, setSelectedQueue] = useState<string>("ALL")
@@ -81,7 +83,9 @@ export default function AgentPerformancePage() {
       const result = await athenaAPI.getAnsweredByAgent(
         dateRange.start,
         dateRange.end,
-        queueFilter === "ALL" ? ["ALL"] : [queueFilter]
+        queueFilter === "ALL" ? ["ALL"] : [queueFilter],
+        null,        // region
+        user?.email  // username
       )
       
       if (result.status === 'SUCCEEDED') {
@@ -116,7 +120,9 @@ export default function AgentPerformancePage() {
       const result = await athenaAPI.getAnsweredDrilldown(
         dateRange.start,
         dateRange.end,
-        { agentId: [agentId] }
+        { agentId: [agentId] },
+        null,        // region
+        user?.email  // username
       )
       
       if (result.status === 'SUCCEEDED') {

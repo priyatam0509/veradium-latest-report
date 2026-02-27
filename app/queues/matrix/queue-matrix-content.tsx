@@ -29,6 +29,7 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar"
 import { format, subDays } from "date-fns"
 import { cn } from "@/lib/utils"
 import { athenaAPI } from "@/lib/athena-api"
+import { useAuth } from "@/hooks/use-auth"
 import { DateHelper } from "@/lib/date-helper"
 
 interface QueueData {
@@ -105,6 +106,7 @@ export default function QueueMatrixContent() {
   const [didData, setDidData] = useState<DIDData[]>([])
   const [hourData, setHourData] = useState<HourData[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const { user } = useAuth()
   const [searchTerm, setSearchTerm] = useState("")
   const [activeTab, setActiveTab] = useState("queue")
   const [loadingItemId, setLoadingItemId] = useState<string | null>(null)
@@ -129,7 +131,7 @@ export default function QueueMatrixContent() {
       console.log("📅 Date range:", dateRange)
       console.log("🌐 Calling API: distribution_distbyqueue")
 
-      const result = await athenaAPI.getDistributionByQueue(dateRange.start, dateRange.end)
+  const result = await athenaAPI.getDistributionByQueue(dateRange.start, dateRange.end, null, user?.email)
       
       console.log("📦 API Result:", {
         status: result.status,
@@ -172,7 +174,7 @@ export default function QueueMatrixContent() {
         end: DateHelper.formatDateFromDate(endDate, true)
       }
 
-      const result = await athenaAPI.getDistributionByDID(dateRange.start, dateRange.end)
+  const result = await athenaAPI.getDistributionByDID(dateRange.start, dateRange.end, null, user?.email)
       
       if (result.status === 'SUCCEEDED') {
         setDidData(result.data)
@@ -208,7 +210,7 @@ export default function QueueMatrixContent() {
       console.log("📅 Hourly date range:", dateRange)
       console.log("🌐 Calling API: distribution_distbyhour")
 
-      const result = await athenaAPI.getDistributionByHour(dateRange.start, dateRange.end)
+  const result = await athenaAPI.getDistributionByHour(dateRange.start, dateRange.end, null, user?.email)
       
       console.log("📦 Hourly API Result:", {
         status: result.status,
@@ -258,7 +260,9 @@ export default function QueueMatrixContent() {
       const result = await athenaAPI.getDistributionDrilldown(
         dateRange.start,
         dateRange.end,
-        filters
+        filters,
+        null,        // region
+        user?.email  // username
       )
       
       if (result.status === 'SUCCEEDED') {
