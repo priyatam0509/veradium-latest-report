@@ -108,33 +108,63 @@ export class AthenaReportingAPI {
 
   // Distribution Queries (8 queries - all support region filter)
   async getDistributionByQueue(startDate: string, endDate: string, region?: string[] | null, username?: string) {
-  const params: any = { start_datetime: startDate, end_datetime: endDate }
+  const params: any = {
+    start_datetime: startDate,
+    end_datetime: endDate,
+    sla_threshold: '30',
+    true_abandon_threshold: '30'
+  }
   // region param is ignored, always fetched from username
   return this.executeQuery('distribution_distbyqueue', params, true, 60, username)
   }
 
   async getDistributionByDID(startDate: string, endDate: string, region?: string[] | null, username?: string) {
-  const params: any = { start_datetime: startDate, end_datetime: endDate }
+  const params: any = {
+    start_datetime: startDate,
+    end_datetime: endDate,
+    sla_threshold: '30',
+    true_abandon_threshold: '30'
+  }
   return this.executeQuery('distribution_distbydid', params, true, 60, username)
   }
 
   async getDistributionByDay(startDate: string, endDate: string, region?: string[] | null, username?: string) {
-  const params: any = { start_datetime: startDate, end_datetime: endDate }
+  const params: any = {
+    start_datetime: startDate,
+    end_datetime: endDate,
+    sla_threshold: '30',
+    true_abandon_threshold: '30'
+  }
   return this.executeQuery('distribution_distbyday', params, true, 60, username)
   }
 
   async getDistributionByMonth(startDate: string, endDate: string, region?: string[] | null, username?: string) {
-  const params: any = { start_datetime: startDate, end_datetime: endDate }
+  const params: any = {
+    start_datetime: startDate,
+    end_datetime: endDate,
+    sla_threshold: '30',
+    true_abandon_threshold: '30'
+  }
   return this.executeQuery('distribution_distbymonth', params, true, 60, username)
   }
 
   async getDistributionByWeek(startDate: string, endDate: string, region?: string[] | null, username?: string) {
-  const params: any = { start_datetime: startDate, end_datetime: endDate }
+  const params: any = {
+    start_datetime: startDate,
+    end_datetime: endDate,
+    sla_threshold: '30',
+    true_abandon_threshold: '30'
+  }
   return this.executeQuery('distribution_distbyweek', params, true, 60, username)
   }
 
   async getDistributionByHour(startDate: string, endDate: string, region?: string[] | null, username?: string) {
-  const params: any = { start_datetime: startDate, end_datetime: endDate }
+  const params: any = {
+    start_datetime: startDate,
+    end_datetime: endDate,
+    sla_threshold: '30',
+    true_abandon_threshold: '30'
+  }
   return this.executeQuery('distribution_distbyhour', params, true, 60, username)
   }
 
@@ -152,7 +182,9 @@ export class AthenaReportingAPI {
     // Only did and queue_id are supported for this query
     const params: any = {
       start_datetime: startDate,
-      end_datetime: endDate
+      end_datetime: endDate,
+      sla_threshold: '30',
+      true_abandon_threshold: '30'
     }
     if (filters.did && filters.did.length > 0 && filters.did[0] !== 'ALL') {
       params.did = filters.did
@@ -206,7 +238,9 @@ export class AthenaReportingAPI {
     // Only did, agent_id, and queue_id are supported for this query
     const params: any = {
       start_datetime: startDate,
-      end_datetime: endDate
+      end_datetime: endDate,
+      sla_threshold: '30',
+      true_abandon_threshold: '30'
     }
     if (filters.did && filters.did.length > 0 && filters.did[0] !== 'ALL') {
       params.did = filters.did
@@ -252,7 +286,9 @@ export class AthenaReportingAPI {
     // Only did and queue_id are supported for this query; agent_id is NOT supported and must not be sent
     const params: any = {
       start_datetime: startDate,
-      end_datetime: endDate
+      end_datetime: endDate,
+      sla_threshold: '30',
+      true_abandon_threshold: '30'
     }
     if (filters.did && filters.did.length > 0 && filters.did[0] !== 'ALL') {
       params.did = filters.did
