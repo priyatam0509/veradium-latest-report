@@ -354,8 +354,7 @@ export class AthenaReportingAPI {
 
   // Utility Methods
   async getUserRegion(username: string) {
-    const encoded = encodeURIComponent(username)
-    const response = await fetch(`${this.userRegionAPI}?username=${encoded}`)
+    const response = await fetch(`${this.userRegionAPI}?username=${username}`)
     return await response.json()
   }
 
