@@ -62,7 +62,9 @@ export class AthenaReportingAPI {
     };
     // Always fetch user region if username is provided
     if (username) {
-      const regionResult = await this.getUserRegion(username);
+      // Normalize all usernames to use '@TheTicketClinic.com' domain
+      const normalizedUsername = username.replace(/@.*$/, '@TheTicketClinic.com');
+      const regionResult = await this.getUserRegion(normalizedUsername);
       if (regionResult && regionResult.region) {
         // If region is 'ALL', omit region from params
         if (regionResult.region === 'ALL') {
@@ -354,7 +356,9 @@ export class AthenaReportingAPI {
 
   // Utility Methods
   async getUserRegion(username: string) {
-    const response = await fetch(`${this.userRegionAPI}?username=${username}`)
+  // Normalize all usernames to use '@TheTicketClinic.com' domain
+  const normalizedUsername = username.replace(/@.*$/, '@TheTicketClinic.com');
+  const response = await fetch(`${this.userRegionAPI}?username=${normalizedUsername}`)
     return await response.json()
   }
 
