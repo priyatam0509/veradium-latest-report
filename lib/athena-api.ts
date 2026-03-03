@@ -64,9 +64,21 @@ export class AthenaReportingAPI {
     if (username) {
       const regionResult = await this.getUserRegion(username);
       if (regionResult && regionResult.region) {
-        params.region = [regionResult.region];
+        // If region is 'ALL', omit region from params
+        if (regionResult.region === 'ALL') {
+          delete params.region;
+        } else {
+          params.region = [regionResult.region];
+        }
       }
     }
+    // Remove any array parameter with value ['ALL']
+    const paramsObj = params as Record<string, any>;
+    Object.keys(paramsObj).forEach(key => {
+      if (Array.isArray(paramsObj[key]) && paramsObj[key].length === 1 && paramsObj[key][0] === 'ALL') {
+        delete paramsObj[key];
+      }
+    });
     const payload: any = {
       queryName,
       parameters: params,
