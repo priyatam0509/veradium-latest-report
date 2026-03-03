@@ -480,7 +480,7 @@ export default function DashboardOverview() {
           </Card>
 
           {/* Hourly Traffic Chart */}
-          <Card>
+          {/* <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
@@ -536,7 +536,7 @@ export default function DashboardOverview() {
                 <p className="text-center text-muted-foreground py-8">No hourly data available for today</p>
               )}
             </CardContent>
-          </Card>
+          </Card> */}
         </div>
       </DashboardLayout>
     </AuthGuard>

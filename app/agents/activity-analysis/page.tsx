@@ -255,7 +255,7 @@ export default function AgentActivityAnalysis() {
                       <TableRow>
                         <TableHead>User ID</TableHead>
                         <TableHead>Agent Name</TableHead>
-                        <TableHead className="text-right">Custom Status</TableHead>
+                        <TableHead className="text-right">on custom status</TableHead>
                         <TableHead className="text-right">Number of Holds</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -264,14 +264,9 @@ export default function AgentActivityAnalysis() {
                         <TableRow key={index}>
                           <TableCell className="font-mono">{agent.user_id}</TableCell>
                           <TableCell className="font-medium">{agent.name}</TableCell>
-                          <TableCell className="text-right">
-                            <Badge 
-                              variant={agent.on_custom_status === 'true' ? "default" : "secondary"}
-                              className="font-mono"
-                            >
-                              {agent.on_custom_status === 'true' ? 'Custom' : 'Standard'}
-                            </Badge>
-                          </TableCell>
+                            <TableCell className="text-right font-mono">
+                              {agent.on_custom_status}
+                            </TableCell>
                           <TableCell className="text-right font-mono">{agent.number_of_holds}</TableCell>
                         </TableRow>
                       ))}
