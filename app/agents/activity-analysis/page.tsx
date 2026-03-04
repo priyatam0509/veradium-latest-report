@@ -65,7 +65,10 @@ export default function AgentActivityAnalysis() {
 
   const totalAgents = agentData.length
   const totalHolds = agentData.reduce((sum, a) => sum + parseInt(a.number_of_holds || '0'), 0)
-  const customStatusAgents = agentData.filter(a => a.on_custom_status === 'true').length
+  const customStatusAgents = agentData.filter(a => {
+    const val = a.on_custom_status
+    return val === 'true' || val === 'True' || val === '1' || (val as any) === true
+  }).length
   const avgHoldsPerAgent = totalAgents > 0 ? (totalHolds / totalAgents).toFixed(1) : '0'
   const mostActiveAgent = agentData.length > 0 
     ? agentData.reduce((max, a) => parseInt(a.number_of_holds) > parseInt(max.number_of_holds) ? a : max)
@@ -290,37 +293,56 @@ export default function AgentActivityAnalysis() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                <div className="flex items-center gap-3 p-4 border rounded-lg">
-                  <Coffee className="h-8 w-8 text-orange-500" />
-                  <div>
-                    <p className="font-medium">Hold Patterns</p>
-                    <p className="text-sm text-muted-foreground">
-                      {totalHolds > 0 ? `${avgHoldsPerAgent} holds per agent` : 'No data'}
-                    </p>
+              {isLoading ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin" />
+                </div>
+              ) : agentData.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">No data available to generate insights</p>
+              ) : (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  <div className="flex items-center gap-3 p-4 border rounded-lg">
+                    <Coffee className="h-8 w-8 text-orange-500" />
+                    <div>
+                      <p className="font-medium">Hold Patterns</p>
+                      <p className="text-sm text-muted-foreground">
+                        Avg <span className="font-semibold text-foreground">{avgHoldsPerAgent}</span> holds/agent
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {totalHolds.toLocaleString()} total holds across {totalAgents} agents
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 p-4 border rounded-lg">
+                    <TrendingUp className="h-8 w-8 text-green-500" />
+                    <div>
+                      <p className="font-medium">Most Active Agent</p>
+                      <p className="text-sm font-semibold text-foreground">
+                        {mostActiveAgent ? mostActiveAgent.name : 'N/A'}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {mostActiveAgent ? `${parseInt(mostActiveAgent.number_of_holds).toLocaleString()} holds` : '—'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 p-4 border rounded-lg">
+                    <Activity className="h-8 w-8 text-blue-500" />
+                    <div>
+                      <p className="font-medium">Custom Status Usage</p>
+                      <p className="text-sm text-muted-foreground">
+                        <span className="font-semibold text-foreground">{customStatusAgents}</span> of {totalAgents} agents
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {totalAgents > 0
+                          ? `${((customStatusAgents / totalAgents) * 100).toFixed(1)}% on custom status`
+                          : '—'}
+                      </p>
+                    </div>
                   </div>
                 </div>
-                
-                <div className="flex items-center gap-3 p-4 border rounded-lg">
-                  <TrendingUp className="h-8 w-8 text-green-500" />
-                  <div>
-                    <p className="font-medium">Most Active Agent</p>
-                    <p className="text-sm text-muted-foreground">
-                      {mostActiveAgent ? mostActiveAgent.name : 'N/A'}
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-3 p-4 border rounded-lg">
-                  <Activity className="h-8 w-8 text-blue-500" />
-                  <div>
-                    <p className="font-medium">Team Status</p>
-                    <p className="text-sm text-muted-foreground">
-                      {customStatusAgents > 0 ? `${customStatusAgents} on custom status` : 'All standard status'}
-                    </p>
-                  </div>
-                </div>
-              </div>
+              )}
             </CardContent>
           </Card>
         </div>
