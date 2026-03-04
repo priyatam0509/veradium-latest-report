@@ -49,7 +49,7 @@ interface DrilldownData {
   customer_number: string
   channel: string
   initiation_method: string
-  interation_status: string
+  interaction_status: string
   agent_connection_attempts: string
   event: string
   ring_time: string
@@ -367,7 +367,7 @@ export default function MissedCallsPage() {
               <td class="font-mono">${contact.did || '-'}</td>
               <td>${contact.channel || '-'}</td>
               <td>${contact.initiation_method || '-'}</td>
-              <td class="status-abandoned">${contact.interation_status || '-'}</td>
+              <td class="status-abandoned">${contact.interaction_status || '-'}</td>
               <td>${contact.event || '-'}</td>
               <td>${contact.agent_connection_attempts || '-'}</td>
               <td>${contact.ring_time || '-'}</td>
