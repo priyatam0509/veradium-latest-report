@@ -65,10 +65,7 @@ export default function AgentActivityAnalysis() {
 
   const totalAgents = agentData.length
   const totalHolds = agentData.reduce((sum, a) => sum + parseInt(a.number_of_holds || '0'), 0)
-  const customStatusAgents = agentData.filter(a => {
-    const val = a.on_custom_status
-    return val === 'true' || val === 'True' || val === '1' || (val as any) === true
-  }).length
+  const totalCustomStatus = agentData.reduce((sum, a) => sum + parseInt(a.on_custom_status || '0'), 0)
   const avgHoldsPerAgent = totalAgents > 0 ? (totalHolds / totalAgents).toFixed(1) : '0'
   const mostActiveAgent = agentData.length > 0 
     ? agentData.reduce((max, a) => parseInt(a.number_of_holds) > parseInt(max.number_of_holds) ? a : max)
@@ -212,9 +209,9 @@ export default function AgentActivityAnalysis() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-purple-600">
-                    {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : customStatusAgents}
+                    {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : totalCustomStatus.toLocaleString()}
                   </div>
-                  <p className="text-xs text-muted-foreground">Agents on custom status</p>
+                  <p className="text-xs text-muted-foreground">Total custom status events</p>
                 </CardContent>
               </Card>
 
@@ -330,13 +327,13 @@ export default function AgentActivityAnalysis() {
                   <div className="flex items-center gap-3 p-4 border rounded-lg">
                     <Activity className="h-8 w-8 text-blue-500" />
                     <div>
-                      <p className="font-medium">Custom Status Usage</p>
+                      <p className="font-medium">Custom Status Events</p>
                       <p className="text-sm text-muted-foreground">
-                        <span className="font-semibold text-foreground">{customStatusAgents}</span> of {totalAgents} agents
+                        <span className="font-semibold text-foreground">{totalCustomStatus.toLocaleString()}</span> total events
                       </p>
                       <p className="text-xs text-muted-foreground mt-0.5">
                         {totalAgents > 0
-                          ? `${((customStatusAgents / totalAgents) * 100).toFixed(1)}% on custom status`
+                          ? `Avg ${(totalCustomStatus / totalAgents).toFixed(1)} per agent`
                           : '—'}
                       </p>
                     </div>
