@@ -261,7 +261,7 @@ export default function TimeAnalysisReportsPage() {
                           <TableCell className="text-right text-blue-600">{row.transferred || '0'}</TableCell>
                           <TableCell className="text-right">{row.avg_wait || '-'}</TableCell>
                           <TableCell className="text-right">{row.avg_talk || '-'}</TableCell>
-                          <TableCell className="text-right">{row.sla}%</TableCell>
+                          <TableCell className="text-right">{row.sla}</TableCell>
                         </TableRow>
                       ))}
                       {reportData.length === 0 && (
