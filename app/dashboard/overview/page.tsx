@@ -70,8 +70,10 @@ export default function DashboardOverview() {
   const [appliedRegion, setAppliedRegion] = useState<string[] | null>(null)
 
   useEffect(() => {
+    if (!user?.email) return
+
     loadDashboardData()
-    
+
     // Auto-refresh every 30 seconds for real-time data
     const refreshInterval = setInterval(() => {
       loadDashboardData(true)
@@ -89,7 +91,7 @@ export default function DashboardOverview() {
       clearInterval(refreshInterval)
       clearInterval(countdownInterval)
     }
-  }, [])
+  }, [user?.email])
 
   const loadDashboardData = async (isAutoRefresh = false) => {
     if (!isAutoRefresh) {
