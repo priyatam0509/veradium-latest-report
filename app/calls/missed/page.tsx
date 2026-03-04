@@ -43,7 +43,6 @@ interface DrilldownData {
   row_no: string
   did: string
   contact_id: string
-  agent_name: string
   date: string
   queue_name: string
   customer_number: string
@@ -54,7 +53,6 @@ interface DrilldownData {
   event: string
   ring_time: string
   wait_time: string
-  talk_time: string
 }
 
 export default function MissedCallsPage() {
@@ -354,7 +352,6 @@ export default function MissedCallsPage() {
             <th>Agent Conn. Attempts</th>
             <th>Ring Time</th>
             <th>Wait Time</th>
-            <th>Talk Time</th>
           </tr>
         </thead>
         <tbody>
@@ -372,11 +369,10 @@ export default function MissedCallsPage() {
               <td>${contact.agent_connection_attempts || '-'}</td>
               <td>${contact.ring_time || '-'}</td>
               <td>${contact.wait_time || '-'}</td>
-              <td>${contact.talk_time || '-'}</td>
             </tr>
           `).join('') : `
             <tr>
-              <td colspan="13" class="empty">No unanswered calls found.</td>
+              <td colspan="12" class="empty">No unanswered calls found.</td>
             </tr>
           `}
         </tbody>
