@@ -58,7 +58,6 @@ export default function DashboardOverview() {
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date())
-  const [nextRefreshIn, setNextRefreshIn] = useState(300) // 5 minutes in seconds
   const [kpis, setKpis] = useState({
     totalCalls: 0,
     answeredCalls: 0,
@@ -73,32 +72,10 @@ export default function DashboardOverview() {
     if (!user?.email) return
 
     loadDashboardData()
-
-    // Auto-refresh every 30 seconds for real-time data
-    const refreshInterval = setInterval(() => {
-      loadDashboardData(true)
-    }, 30 * 1000)
-
-    // Countdown timer
-    const countdownInterval = setInterval(() => {
-      setNextRefreshIn((prev) => {
-        if (prev <= 1) return 30
-        return prev - 1
-      })
-    }, 1000)
-
-    return () => {
-      clearInterval(refreshInterval)
-      clearInterval(countdownInterval)
-    }
   }, [user?.email])
 
-  const loadDashboardData = async (isAutoRefresh = false) => {
-    if (!isAutoRefresh) {
-      setIsLoading(true)
-    } else {
-      setIsRefreshing(true)
-    }
+  const loadDashboardData = async () => {
+    setIsLoading(true)
 
     try {
       // Get today's data for real-time metrics
@@ -157,14 +134,6 @@ export default function DashboardOverview() {
       }
 
       setLastRefresh(new Date())
-      setNextRefreshIn(30)
-
-      if (isAutoRefresh) {
-        toast({
-          title: "Dashboard updated",
-          description: "Latest data loaded successfully",
-        })
-      }
 
     } catch (error) {
       console.error("Dashboard data error:", error)
@@ -180,7 +149,7 @@ export default function DashboardOverview() {
   }
 
   const handleManualRefresh = () => {
-    loadDashboardData(false)
+    loadDashboardData()
   }
 
   const formatRefreshTime = (date: Date) => {
@@ -220,7 +189,7 @@ export default function DashboardOverview() {
                 )}
               </div>
               <p className="text-muted-foreground mt-1">
-                Real-time contact center performance {appliedRegion ? `(${appliedRegion.join(', ')} region)` : '(all regions)'}
+                Contact center performance {appliedRegion ? `(${appliedRegion.join(', ')} region)` : '(all regions)'}
               </p>
             </div>
             
@@ -234,9 +203,6 @@ export default function DashboardOverview() {
                     </div>
                     <div className="space-y-0.5">
                       <p className="text-sm font-medium leading-none">{user?.email}</p>
-                      <p className="text-xs text-muted-foreground">
-                        Role: {user?.role || 'Analyst'}
-                      </p>
                     </div>
                   </div>
                 </CardContent>
@@ -258,9 +224,6 @@ export default function DashboardOverview() {
                     <div className="space-y-0.5">
                       <p className="text-sm font-medium leading-none">
                         {isRefreshing ? 'Refreshing...' : formatRefreshTime(lastRefresh)}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Next update in {nextRefreshIn}s
                       </p>
                     </div>
                   </div>

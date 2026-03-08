@@ -98,7 +98,8 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
   const enabledRoutes = accessibleRoutes.filter(route => route.isEnabled)
 
-  const navItems = enabledRoutes.sort((a, b) => {
+  const hiddenRoutes = ["/analytics/missed-calls", "/admin/rbac", "/admin/users"]
+  const navItems = enabledRoutes.filter(route => !hiddenRoutes.includes(route.route)).sort((a, b) => {
     const indexA = routeOrder.indexOf(a.route)
     const indexB = routeOrder.indexOf(b.route)
     return (indexA === -1 ? 999 : indexA) - (indexB === -1 ? 999 : indexB)
@@ -171,9 +172,6 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               <span className="text-sm font-medium truncate">
                 {user?.email}
               </span>
-              <span className="text-xs text-muted-foreground">
-                {user?.role}
-              </span>
             </div>
           </div>
 
@@ -205,9 +203,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             {pathname.split("/").filter(Boolean).pop() || "Dashboard"}
           </h1>
 
-          <span className="text-xs text-muted-foreground hidden sm:inline-block">
-            Auto-refreshing in 15s
-          </span>
+
         </header>
 
         <main className="flex-1 p-4 md:p-8 overflow-y-auto">

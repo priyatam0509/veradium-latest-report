@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useToast } from "@/hooks/use-toast"
 import { Loader2, Search, Calendar, RefreshCw, Download } from "lucide-react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar as CalendarComponent } from "@/components/ui/calendar"
@@ -60,7 +59,6 @@ export default function AgentPerformancePage() {
   const [loadingAgentId, setLoadingAgentId] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedQueue, setSelectedQueue] = useState<string>("ALL")
-  const { toast } = useToast()
 
   const [startDate, setStartDate] = useState<Date | undefined>(subDays(new Date(), 30))
   const [endDate, setEndDate] = useState<Date | undefined>(new Date())
@@ -90,20 +88,11 @@ export default function AgentPerformancePage() {
       
       if (result.status === 'SUCCEEDED') {
         setAgentData(result.data)
-        toast({
-          title: "Data loaded successfully",
-          description: `Showing ${result.rowCount} agent${result.rowCount !== 1 ? 's' : ''}`,
-        })
       } else {
         throw new Error(result.error || 'Query failed')
       }
     } catch (error) {
       console.error("Agent data fetch error:", error)
-      toast({
-        variant: "destructive",
-        title: "Failed to load agent data",
-        description: error instanceof Error ? error.message : "Unknown error",
-      })
     } finally {
       setIsLoading(false)
     }
@@ -134,20 +123,11 @@ export default function AgentPerformancePage() {
           newWindow.document.close()
         }
         
-        toast({
-          title: "Agent calls loaded",
-          description: `Found ${result.rowCount} call${result.rowCount !== 1 ? 's' : ''}`,
-        })
       } else {
         throw new Error(result.error || 'Query failed')
       }
     } catch (error) {
       console.error("Drilldown fetch error:", error)
-      toast({
-        variant: "destructive",
-        title: "Failed to load agent details",
-        description: error instanceof Error ? error.message : "Unknown error",
-      })
     } finally {
       setLoadingAgentId(null)
     }

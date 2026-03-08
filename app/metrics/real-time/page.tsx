@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { AuthGuard } from "@/components/auth-guard"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -28,13 +28,6 @@ const agentData = [
 export default function RealTimeMetricsPage() {
   const [refreshKey, setRefreshKey] = useState(0)
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setRefreshKey((k) => k + 1)
-    }, 15000)
-    return () => clearInterval(timer)
-  }, [])
-
   return (
     <AuthGuard>
       <DashboardLayout>
@@ -42,7 +35,7 @@ export default function RealTimeMetricsPage() {
           <div className="flex justify-between items-center">
             <div>
               <h2 className="text-2xl font-bold tracking-tight">Real-Time Metrics</h2>
-              <p className="text-muted-foreground">Live data from your contact center. Refreshes every 15s.</p>
+              <p className="text-muted-foreground">Live data from your contact center.</p>
             </div>
             <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground bg-card border rounded-full px-3 py-1">
               <span className="relative flex h-2 w-2">

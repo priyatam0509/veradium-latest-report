@@ -22,7 +22,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useToast } from "@/hooks/use-toast"
 import { Loader2, Search, Calendar, RefreshCw, Download } from "lucide-react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar as CalendarComponent } from "@/components/ui/calendar"
@@ -110,7 +109,6 @@ export default function QueueMatrixContent() {
   const [searchTerm, setSearchTerm] = useState("")
   const [activeTab, setActiveTab] = useState("queue")
   const [loadingItemId, setLoadingItemId] = useState<string | null>(null)
-  const { toast } = useToast()
 
   // Date filter state
   const [startDate, setStartDate] = useState<Date | undefined>(subDays(new Date(), 30))
@@ -144,21 +142,12 @@ export default function QueueMatrixContent() {
       if (result.status === 'SUCCEEDED') {
         console.log("✅ Setting queue data:", result.data)
         setQueueData(result.data)
-        toast({
-          title: "Data loaded successfully",
-          description: `Showing ${result.rowCount} queue${result.rowCount !== 1 ? 's' : ''}`,
-        })
       } else {
         console.error("❌ Query status not SUCCEEDED:", result.status)
         throw new Error(result.error || 'Query failed')
       }
     } catch (error) {
       console.error("❌ Queue data fetch error:", error)
-      toast({
-        variant: "destructive",
-        title: "Failed to load queue data",
-        description: error instanceof Error ? error.message : "Unknown error",
-      })
     } finally {
       setIsLoading(false)
       console.log("🔵 fetchQueueData completed")
@@ -178,20 +167,11 @@ export default function QueueMatrixContent() {
       
       if (result.status === 'SUCCEEDED') {
         setDidData(result.data)
-        toast({
-          title: "DID data loaded successfully",
-          description: `Showing ${result.rowCount} phone number${result.rowCount !== 1 ? 's' : ''}`,
-        })
       } else {
         throw new Error(result.error || 'Query failed')
       }
     } catch (error) {
       console.error("DID data fetch error:", error)
-      toast({
-        variant: "destructive",
-        title: "Failed to load DID data",
-        description: error instanceof Error ? error.message : "Unknown error",
-      })
     } finally {
       setIsLoading(false)
     }
@@ -223,21 +203,12 @@ export default function QueueMatrixContent() {
       if (result.status === 'SUCCEEDED') {
         console.log("✅ Setting hourly data:", result.data)
         setHourData(result.data)
-        toast({
-          title: "Hourly data loaded successfully",
-          description: `Showing ${result.rowCount} hour${result.rowCount !== 1 ? 's' : ''}`,
-        })
       } else {
         console.error("❌ Query status not SUCCEEDED:", result.status)
         throw new Error(result.error || 'Query failed')
       }
     } catch (error) {
       console.error("❌ Hour data fetch error:", error)
-      toast({
-        variant: "destructive",
-        title: "Failed to load hourly data",
-        description: error instanceof Error ? error.message : "Unknown error",
-      })
     } finally {
       setIsLoading(false)
       console.log("🔵 fetchHourData completed")
@@ -273,20 +244,11 @@ export default function QueueMatrixContent() {
           newWindow.document.close()
         }
         
-        toast({
-          title: "Contact details loaded",
-          description: `Found ${result.rowCount} contact${result.rowCount !== 1 ? 's' : ''}`,
-        })
       } else {
         throw new Error(result.error || 'Query failed')
       }
     } catch (error) {
       console.error("Drilldown data fetch error:", error)
-      toast({
-        variant: "destructive",
-        title: "Failed to load contact details",
-        description: error instanceof Error ? error.message : "Unknown error",
-      })
     } finally {
       setLoadingItemId(null)
     }
