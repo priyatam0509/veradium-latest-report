@@ -84,7 +84,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
   const enabledRoutes = accessibleRoutes.filter(route => route.isEnabled)
 
-  const hiddenRoutes = ["/admin/rbac", "/admin/users"]
+  const hiddenRoutes = ["/admin/rbac", "/admin/users", "/analytics/missed-calls", "/metrics/real-time", "/metrics/historical", "/analytics", "/evaluations"]
   const navItems = enabledRoutes.filter(route => !hiddenRoutes.includes(route.route)).sort((a, b) => {
     const indexA = routeOrder.indexOf(a.route)
     const indexB = routeOrder.indexOf(b.route)
