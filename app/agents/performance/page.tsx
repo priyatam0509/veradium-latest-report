@@ -20,6 +20,7 @@ import { DateHelper } from "@/lib/date-helper"
 interface AgentData {
   agent_id: string
   agent_name: string
+  region: string
   channel: string
   initiation_method: string
   received: string
@@ -55,7 +56,7 @@ interface DrilldownData {
 export default function AgentPerformancePage() {
   const [agentData, setAgentData] = useState<AgentData[]>([])
   const [isLoading, setIsLoading] = useState(false)
-  const { user } = useAuth()
+  const { user, isLoading: authLoading } = useAuth()
   const [loadingAgentId, setLoadingAgentId] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedQueue, setSelectedQueue] = useState<string>("ALL")
@@ -66,9 +67,11 @@ export default function AgentPerformancePage() {
   const [isEndDateOpen, setIsEndDateOpen] = useState(false)
 
   useEffect(() => {
-    fetchAgentData()
+    if (!authLoading) {
+      fetchAgentData()
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [authLoading, user?.email])
 
   const fetchAgentData = async (queueFilter: string = "ALL") => {
     setIsLoading(true)
@@ -499,6 +502,7 @@ export default function AgentPerformancePage() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Agent Name</TableHead>
+                        <TableHead className="text-right">Region</TableHead>
                         <TableHead className="text-right">Channel</TableHead>
                         <TableHead className="text-right">Initiation Method</TableHead>
                         <TableHead className="text-right">Received</TableHead>
@@ -519,6 +523,7 @@ export default function AgentPerformancePage() {
                       {filteredAgents.map((agent, index) => (
                         <TableRow key={index}>
                           <TableCell className="font-medium">{agent.agent_name}</TableCell>
+                          <TableCell className="text-right">{agent.region || '—'}</TableCell>
                           <TableCell className="text-right">{agent.channel}</TableCell>
                           <TableCell className="text-right">{agent.initiation_method}</TableCell>
                           <TableCell className="text-right">{agent.received}</TableCell>
@@ -553,7 +558,7 @@ export default function AgentPerformancePage() {
                       ))}
                       {filteredAgents.length === 0 && (
                         <TableRow>
-                          <TableCell colSpan={15} className="text-center text-muted-foreground">
+                          <TableCell colSpan={16} className="text-center text-muted-foreground">
                             No agent data available
                           </TableCell>
                         </TableRow>

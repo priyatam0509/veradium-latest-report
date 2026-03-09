@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/hooks/use-auth"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, TrendingUp, Clock, User, Calendar, RefreshCw, Activity, Pause, Play, Coffee, AlertTriangle } from "lucide-react"
+import { Loader2, TrendingUp, Clock, User, RefreshCw, Activity, Pause, Coffee } from "lucide-react"
 import { athenaAPI } from "@/lib/athena-api"
 import { DateHelper } from "@/lib/date-helper"
 import { Button } from "@/components/ui/button"
@@ -16,6 +16,8 @@ import { Button } from "@/components/ui/button"
 interface AgentPauseDetail {
   user_id: string
   name: string
+  agent_username: string
+  region: string
   on_custom_status: string
   number_of_holds: string
 }
@@ -27,18 +29,21 @@ export default function AgentActivityAnalysis() {
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date())
   const [dateRange, setDateRange] = useState(DateHelper.getLastNDays(30))
   const { toast } = useToast()
-  const { user } = useAuth()
+  const { user, isLoading: authLoading } = useAuth()
 
   useEffect(() => {
-    loadAgentActivityData()
-  }, [dateRange])
+    if (!authLoading) {
+      loadAgentActivityData()
+    }
+  }, [authLoading, user?.email, dateRange])
 
   const loadAgentActivityData = async () => {
     setIsLoading(true)
     try {
       const result = await athenaAPI.getAgentPauseDetail(
         dateRange.start,
-        dateRange.end
+        dateRange.end,
+        user?.email
       )
       
       if (result.status === 'SUCCEEDED') {
@@ -109,10 +114,6 @@ export default function AgentActivityAnalysis() {
                 <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20 animate-pulse">
                   <Activity className="h-3 w-3 mr-1" />
                   Live
-                </Badge>
-                <Badge variant="outline" className="bg-orange-500/10 text-orange-500 border-orange-500/20">
-                  <AlertTriangle className="h-3 w-3 mr-1" />
-                  Region Filter: Not Available
                 </Badge>
               </div>
               <p className="text-muted-foreground mt-1">
@@ -253,20 +254,22 @@ export default function AgentActivityAnalysis() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>User ID</TableHead>
                         <TableHead>Agent Name</TableHead>
-                        <TableHead className="text-right">on custom status</TableHead>
+                        <TableHead>Username</TableHead>
+                        <TableHead>Region</TableHead>
+                        <TableHead className="text-right">Custom Status Events</TableHead>
                         <TableHead className="text-right">Number of Holds</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {agentData.map((agent, index) => (
                         <TableRow key={index}>
-                          <TableCell className="font-mono">{agent.user_id}</TableCell>
                           <TableCell className="font-medium">{agent.name}</TableCell>
-                            <TableCell className="text-right font-mono">
-                              {agent.on_custom_status}
-                            </TableCell>
+                          <TableCell className="font-mono text-gray-600">{agent.agent_username || '—'}</TableCell>
+                          <TableCell>{agent.region || '—'}</TableCell>
+                          <TableCell className="text-right font-mono">
+                            {agent.on_custom_status}
+                          </TableCell>
                           <TableCell className="text-right font-mono">{agent.number_of_holds}</TableCell>
                         </TableRow>
                       ))}

@@ -38,7 +38,7 @@ interface ReportData {
 export default function TimeAnalysisReportsPage() {
   const [reportData, setReportData] = useState<ReportData[]>([])
   const [isLoading, setIsLoading] = useState(false)
-  const { user } = useAuth()
+  const { user, isLoading: authLoading } = useAuth()
   const [reportType, setReportType] = useState<"daily" | "weekly" | "monthly">("daily")
   const { toast } = useToast()
 
@@ -108,8 +108,10 @@ export default function TimeAnalysisReportsPage() {
   }
 
   useEffect(() => {
-    generateReport()
-  }, [reportType])
+    if (!authLoading) {
+      generateReport()
+    }
+  }, [authLoading, user?.email, reportType])
 
   const exportToCSV = () => {
     if (reportData.length === 0) return

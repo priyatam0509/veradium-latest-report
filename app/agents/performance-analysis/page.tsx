@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/hooks/use-auth"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, TrendingUp, Phone, User, Calendar, RefreshCw, Activity, Clock, CheckCircle, XCircle, AlertTriangle } from "lucide-react"
+import { Loader2, TrendingUp, Phone, User, RefreshCw, Activity, CheckCircle } from "lucide-react"
 import { athenaAPI } from "@/lib/athena-api"
 import { DateHelper } from "@/lib/date-helper"
 import { Button } from "@/components/ui/button"
@@ -17,12 +17,12 @@ interface AgentCallDisposition {
   user_id: string
   agent_name: string
   username: string
+  region: string
   completed_by_caller: string
   completed_by_agent: string
   transferred_out: string
   failed: string
   missed_rejected: string
-  failed_out: string
 }
 
 interface AgentPauseDetail {
@@ -39,18 +39,21 @@ export default function AgentPerformanceAnalysis() {
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date())
   const [dateRange, setDateRange] = useState(DateHelper.getLastNDays(30))
   const { toast } = useToast()
-  const { user } = useAuth()
+  const { user, isLoading: authLoading } = useAuth()
 
   useEffect(() => {
-    loadAgentPerformanceData()
-  }, [dateRange])
+    if (!authLoading) {
+      loadAgentPerformanceData()
+    }
+  }, [authLoading, user?.email, dateRange])
 
   const loadAgentPerformanceData = async () => {
     setIsLoading(true)
     try {
       const result = await athenaAPI.getAgentCallDisposition(
         dateRange.start,
-        dateRange.end
+        dateRange.end,
+        user?.email
       )
       
       if (result.status === 'SUCCEEDED') {
@@ -96,10 +99,6 @@ export default function AgentPerformanceAnalysis() {
                 <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20 animate-pulse">
                   <Activity className="h-3 w-3 mr-1" />
                   Live
-                </Badge>
-                <Badge variant="outline" className="bg-orange-500/10 text-orange-500 border-orange-500/20">
-                  <AlertTriangle className="h-3 w-3 mr-1" />
-                  Region Filter: Not Available
                 </Badge>
               </div>
               <p className="text-muted-foreground mt-1">
@@ -252,11 +251,11 @@ export default function AgentPerformanceAnalysis() {
                       <TableRow>
                         <TableHead>Agent Name</TableHead>
                         <TableHead className="text-right">Username</TableHead>
+                        <TableHead className="text-right">Region</TableHead>
                         <TableHead className="text-right">Completed</TableHead>
                         <TableHead className="text-right">Caller Completed</TableHead>
                         <TableHead className="text-right">Transferred</TableHead>
                         <TableHead className="text-right">Failed</TableHead>
-                        <TableHead className="text-right">Failed Out</TableHead>
                         <TableHead className="text-right">Completion Rate</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -272,11 +271,11 @@ export default function AgentPerformanceAnalysis() {
                           <TableRow key={index}>
                             <TableCell className="font-medium">{agent.agent_name}</TableCell>
                             <TableCell className="text-right font-mono text-gray-600">{agent.username}</TableCell>
+                            <TableCell className="text-right">{agent.region || '—'}</TableCell>
                             <TableCell className="text-right font-mono text-green-600">{agent.completed_by_agent}</TableCell>
                             <TableCell className="text-right font-mono text-blue-600">{agent.completed_by_caller}</TableCell>
                             <TableCell className="text-right font-mono text-blue-600">{agent.transferred_out}</TableCell>
                             <TableCell className="text-right font-mono text-red-600">{agent.failed}</TableCell>
-                            <TableCell className="text-right font-mono text-orange-600">{agent.failed_out}</TableCell>
                             <TableCell className="text-right">
                               <Badge 
                                 variant={parseFloat(completionRate) >= 90 ? "default" : parseFloat(completionRate) >= 70 ? "secondary" : "destructive"}

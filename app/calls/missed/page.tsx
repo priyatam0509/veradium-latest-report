@@ -58,7 +58,7 @@ export default function MissedCallsPage() {
   const [queueData, setQueueData] = useState<UnansweredQueueData[]>([])
   const [didData, setDidData] = useState<UnansweredDIDData[]>([])
   const [isLoading, setIsLoading] = useState(false)
-  const { user } = useAuth()
+  const { user, isLoading: authLoading } = useAuth()
   const [activeTab, setActiveTab] = useState("queue")
   const [loadingItemId, setLoadingItemId] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
@@ -69,15 +69,19 @@ export default function MissedCallsPage() {
   const [isEndDateOpen, setIsEndDateOpen] = useState(false)
 
   useEffect(() => {
-    fetchQueueData()
+    if (!authLoading) {
+      fetchQueueData()
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [authLoading, user?.email])
 
   useEffect(() => {
-    if (activeTab === 'queue' && queueData.length === 0) {
-      fetchQueueData()
-    } else if (activeTab === 'did' && didData.length === 0) {
-      fetchDIDData()
+    if (!authLoading) {
+      if (activeTab === 'queue' && queueData.length === 0) {
+        fetchQueueData()
+      } else if (activeTab === 'did' && didData.length === 0) {
+        fetchDIDData()
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab])

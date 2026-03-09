@@ -29,11 +29,13 @@ export default function TransferAnalysis() {
   const [dateRange, setDateRange] = useState(DateHelper.getLastNDays(30))
   const [appliedRegion, setAppliedRegion] = useState<string[] | null>(null)
   const { toast } = useToast()
-  const { user } = useAuth()
+  const { user, isLoading: authLoading } = useAuth()
 
   useEffect(() => {
-    loadTransferData()
-  }, [dateRange])
+    if (!authLoading) {
+      loadTransferData()
+    }
+  }, [authLoading, user?.email, dateRange])
 
   const loadTransferData = async () => {
     setIsLoading(true)
