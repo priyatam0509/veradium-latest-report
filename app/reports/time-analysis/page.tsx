@@ -19,6 +19,7 @@ import { DateHelper } from "@/lib/date-helper"
 
 interface ReportData {
   period: string
+  region: string
   channel: string
   initiation_method: string
   received: string
@@ -28,9 +29,8 @@ interface ReportData {
   transferred: string
   avg_wait: string
   avg_talk: string
-  max_callers: string
-  _answered: string
-  _unanswered: string
+  '%_answered': string
+  '%_unanswered': string
   sla: string
 }
 
@@ -70,7 +70,8 @@ export default function TimeAnalysisReportsPage() {
       if (result.status === 'SUCCEEDED') {
         // Map data to consistent format
         const mappedData = result.data.map((row: any) => ({
-          period: row.interval_day || row.interval_weeknum || row.interval_month || row.hour || 'N/A',
+          period: row.interval_day || row.interval_weeknum || row.interval_month || 'N/A',
+          region: row.region || '',
           channel: row.channel || 'Voice',
           initiation_method: row.initiation_method || 'N/A',
           received: row.received || '0',
@@ -80,9 +81,8 @@ export default function TimeAnalysisReportsPage() {
           transferred: row.transferred || '0',
           avg_wait: row.avg_wait || '0',
           avg_talk: row.avg_talk || '0',
-          max_callers: row.max_callers || '0',
-          _answered: row._answered || '0',
-          _unanswered: row._unanswered || '0',
+          '%_answered': row['%_answered'] || '0',
+          '%_unanswered': row['%_unanswered'] || '0',
           sla: row.sla || '0'
         }))
         
@@ -237,6 +237,7 @@ export default function TimeAnalysisReportsPage() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>{getPeriodLabel()}</TableHead>
+                        <TableHead>Region</TableHead>
                         <TableHead className="text-right">Channel</TableHead>
                         <TableHead className="text-right">Initiation Method</TableHead>
                         <TableHead className="text-right">Received</TableHead>
@@ -246,6 +247,8 @@ export default function TimeAnalysisReportsPage() {
                         <TableHead className="text-right">Transferred</TableHead>
                         <TableHead className="text-right">Avg Wait</TableHead>
                         <TableHead className="text-right">Avg Talk</TableHead>
+                        <TableHead className="text-right">% Answered</TableHead>
+                        <TableHead className="text-right">% Unanswered</TableHead>
                         <TableHead className="text-right">SLA %</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -253,6 +256,7 @@ export default function TimeAnalysisReportsPage() {
                       {reportData.map((row, index) => (
                         <TableRow key={index}>
                           <TableCell className="font-medium">{row.period}</TableCell>
+                          <TableCell>{row.region || '—'}</TableCell>
                           <TableCell className="text-right">{row.channel}</TableCell>
                           <TableCell className="text-right">{row.initiation_method}</TableCell>
                           <TableCell className="text-right">{row.received}</TableCell>
@@ -262,12 +266,14 @@ export default function TimeAnalysisReportsPage() {
                           <TableCell className="text-right text-blue-600">{row.transferred || '0'}</TableCell>
                           <TableCell className="text-right">{row.avg_wait || '-'}</TableCell>
                           <TableCell className="text-right">{row.avg_talk || '-'}</TableCell>
+                          <TableCell className="text-right">{row['%_answered'] || '-'}</TableCell>
+                          <TableCell className="text-right">{row['%_unanswered'] || '-'}</TableCell>
                           <TableCell className="text-right">{row.sla}</TableCell>
                         </TableRow>
                       ))}
                       {reportData.length === 0 && (
                         <TableRow>
-                          <TableCell colSpan={9} className="text-center text-muted-foreground">
+                          <TableCell colSpan={14} className="text-center text-muted-foreground">
                             No data available for the selected period
                           </TableCell>
                         </TableRow>

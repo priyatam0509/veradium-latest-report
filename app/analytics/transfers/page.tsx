@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button"
 interface TransferData {
   agent_id: string
   agent_name: string
+  region: string
   type: string
   destination: string
   total: string
@@ -247,6 +248,7 @@ export default function TransferAnalysis() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Agent Name</TableHead>
+                        <TableHead>Region</TableHead>
                         <TableHead className="text-right">Transfer Type</TableHead>
                         <TableHead className="text-right">Destination</TableHead>
                         <TableHead className="text-right">Total Transfers</TableHead>

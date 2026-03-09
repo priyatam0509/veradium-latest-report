@@ -29,6 +29,12 @@ import {
   Headphones,
   Home,
   Phone,
+  UserCheck,
+  List,
+  PhoneCall,
+  PhoneIncoming,
+  PhoneMissed,
+  WifiOff,
 } from "lucide-react"
 
 /* -------------------------------------------------------------------------- */
@@ -41,8 +47,14 @@ const routeIcons: Record<string, React.ElementType> = {
   "/agents/performance": Headphones,
   "/agents/performance-analysis": TrendingUp,
   "/agents/activity-analysis": Clock,
+  "/agents/availability": UserCheck,
+  "/agents/drilldown": List,
+  "/answered/by-queue": PhoneCall,
+  "/answered/by-did": PhoneIncoming,
   "/reports/time-analysis": FileText,
   "/calls/missed": PhoneOff,
+  "/calls/by-did": PhoneMissed,
+  "/calls/disconnection": WifiOff,
   "/analytics/transfers": Phone,
   "/admin/users": Users,
   "/admin/rbac": Shield,
@@ -50,13 +62,19 @@ const routeIcons: Record<string, React.ElementType> = {
 }
 
 const routeDisplayNames: Record<string, string> = {
-  "/calls/missed": "Unanswered Call Analysis",
+  "/calls/missed": "Unanswered by Queue",
+  "/calls/by-did": "Unanswered by DID",
+  "/calls/disconnection": "Disconnection Cause",
   "/admin/rbac": "RBAC",
   "/admin/users": "User Management",
   "/analytics/transfers": "Transfer Analysis",
   "/agents/performance": "Agent Matrix",
   "/agents/performance-analysis": "Agent Performance",
   "/agents/activity-analysis": "Agent Activity",
+  "/agents/availability": "Agent Availability",
+  "/agents/drilldown": "Agent State Log",
+  "/answered/by-queue": "Answered by Queue",
+  "/answered/by-did": "Answered by DID",
 }
 
 const routeOrder = [
@@ -65,8 +83,14 @@ const routeOrder = [
   "/agents/performance",
   "/agents/performance-analysis",
   "/agents/activity-analysis",
+  "/agents/availability",
+  "/agents/drilldown",
+  "/answered/by-queue",
+  "/answered/by-did",
   "/reports/time-analysis",
   "/calls/missed",
+  "/calls/by-did",
+  "/calls/disconnection",
   "/analytics/transfers",
   "/admin/rbac",
   "/admin/users",

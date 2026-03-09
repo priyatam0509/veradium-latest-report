@@ -23,7 +23,7 @@ interface UnansweredQueueData {
   channel: string
   initiation_method: string
   region: string
-  received: string
+  total: string
   unanswered: string
   abandoned: string
   '%_calls': string
@@ -33,6 +33,7 @@ interface UnansweredDIDData {
   did: string
   channel: string
   initiation_method: string
+  region: string
   received: string
   unanswered: string
   abandoned: string
@@ -547,7 +548,7 @@ export default function MissedCallsPage() {
                             <TableHead className="text-right">Region</TableHead>
                             <TableHead className="text-right">Channel</TableHead>
                             <TableHead className="text-right">Initiation Method</TableHead>
-                            <TableHead className="text-right">Received</TableHead>
+                            <TableHead className="text-right">Total</TableHead>
                             <TableHead className="text-right">Unanswered</TableHead>
                             <TableHead className="text-right">Abandoned</TableHead>
                             <TableHead className="text-right">% of Calls</TableHead>
@@ -561,7 +562,7 @@ export default function MissedCallsPage() {
                               <TableCell className="text-right">{queue.region || '—'}</TableCell>
                               <TableCell className="text-right">{queue.channel || '-'}</TableCell>
                               <TableCell className="text-right">{queue.initiation_method || '-'}</TableCell>
-                              <TableCell className="text-right">{queue.received}</TableCell>
+                              <TableCell className="text-right">{queue.total}</TableCell>
                               <TableCell className="text-right text-orange-600">{queue.unanswered}</TableCell>
                               <TableCell className="text-right text-red-600">{queue.abandoned}</TableCell>
                               <TableCell className="text-right font-medium">{queue['%_calls']}</TableCell>
@@ -618,6 +619,7 @@ export default function MissedCallsPage() {
                         <TableHeader>
                           <TableRow>
                             <TableHead>Phone Number (DID)</TableHead>
+                            <TableHead className="text-right">Region</TableHead>
                             <TableHead className="text-right">Channel</TableHead>
                             <TableHead className="text-right">Initiation Method</TableHead>
                             <TableHead className="text-right">Received</TableHead>
@@ -631,6 +633,7 @@ export default function MissedCallsPage() {
                           {filteredDIDs.map((did, index) => (
                             <TableRow key={index}>
                               <TableCell className="font-medium font-mono">{did.did}</TableCell>
+                              <TableCell className="text-right">{did.region || '—'}</TableCell>
                               <TableCell className="text-right">{did.channel || '-'}</TableCell>
                               <TableCell className="text-right">{did.initiation_method || '-'}</TableCell>
                               <TableCell className="text-right">{did.received}</TableCell>
@@ -658,7 +661,7 @@ export default function MissedCallsPage() {
                           ))}
                           {filteredDIDs.length === 0 && (
                             <TableRow>
-                              <TableCell colSpan={8} className="text-center text-muted-foreground">
+                              <TableCell colSpan={9} className="text-center text-muted-foreground">
                                 No DID data available
                               </TableCell>
                             </TableRow>

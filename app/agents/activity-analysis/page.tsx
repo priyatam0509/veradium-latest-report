@@ -17,6 +17,8 @@ interface AgentPauseDetail {
   user_id: string
   agent_name: string
   agent_region: string
+  max_interval_start_time: string
+  max_interval_end_time: string
   on_custom_status: string
   number_of_holds: string
 }
@@ -75,30 +77,13 @@ export default function AgentActivityAnalysis() {
     ? agentData.reduce((max, a) => parseInt(a.number_of_holds || '0') > parseInt(max.number_of_holds || '0') ? a : max)
     : null
 
-  const formatTime = (minutes: string) => {
-    const mins = parseFloat(minutes)
-    if (mins >= 60) {
-      const hours = Math.floor(mins / 60)
-      const remainingMins = Math.round(mins % 60)
-      return `${hours}h ${remainingMins}m`
-    }
-    return `${Math.round(mins)}m`
-  }
-
-  const getProductivityColor = (score: string) => {
-    const s = parseFloat(score)
-    if (s >= 90) return 'text-green-600'
-    if (s >= 75) return 'text-blue-600'
-    if (s >= 60) return 'text-orange-600'
-    return 'text-red-600'
-  }
-
-  const getProductivityVariant = (score: string) => {
-    const s = parseFloat(score)
-    if (s >= 90) return 'default'
-    if (s >= 75) return 'secondary'
-    if (s >= 60) return 'outline'
-    return 'destructive'
+  const formatTimestamp = (ts: string) => {
+    if (!ts) return '—'
+    // "2026-03-05 20:33:57.660000 UTC" → "Mar 5, 2026 20:33"
+    const clean = ts.replace(' UTC', '')
+    const d = new Date(clean)
+    if (isNaN(d.getTime())) return ts
+    return d.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })
   }
 
   return (
@@ -255,6 +240,8 @@ export default function AgentActivityAnalysis() {
                       <TableRow>
                         <TableHead>Agent Name</TableHead>
                         <TableHead>Region</TableHead>
+                        <TableHead>Interval Start</TableHead>
+                        <TableHead>Interval End</TableHead>
                         <TableHead className="text-right">Custom Status Events</TableHead>
                         <TableHead className="text-right">Number of Holds</TableHead>
                       </TableRow>
@@ -264,8 +251,10 @@ export default function AgentActivityAnalysis() {
                         <TableRow key={index}>
                           <TableCell className="font-medium">{agent.agent_name}</TableCell>
                           <TableCell>{agent.agent_region || '—'}</TableCell>
+                          <TableCell className="text-sm">{formatTimestamp(agent.max_interval_start_time)}</TableCell>
+                          <TableCell className="text-sm">{formatTimestamp(agent.max_interval_end_time)}</TableCell>
                           <TableCell className="text-right font-mono">
-                            {agent.on_custom_status}
+                            {agent.on_custom_status || '0'}
                           </TableCell>
                           <TableCell className="text-right font-mono">{agent.number_of_holds || '0'}</TableCell>
                         </TableRow>
