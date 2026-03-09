@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/hooks/use-auth"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, TrendingUp, Clock, RefreshCw, Activity, Pause, Coffee } from "lucide-react"
+import { Loader2, TrendingUp, Clock, RefreshCw, Activity, Pause, Coffee, User } from "lucide-react"
 import { athenaAPI } from "@/lib/athena-api"
 import { DateHelper } from "@/lib/date-helper"
 import { Button } from "@/components/ui/button"
