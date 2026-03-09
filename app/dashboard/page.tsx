@@ -11,21 +11,15 @@ import { Phone, TrendingUp, PhoneMissed, PhoneCall, Loader2 } from "lucide-react
 import { athenaAPI } from "@/lib/athena-api"
 import { DateHelper } from "@/lib/date-helper"
 
-// Safe column accessors — try multiple common naming conventions from the API
-const getCallCount = (row: any): number =>
-  Number(row.calls_offered ?? row.total_calls ?? row.offered ?? row.inbound_calls ?? 0)
+const getCallCount = (row: any): number => Number(row.received ?? 0)
 
-const getAnsweredCount = (row: any): number =>
-  Number(row.answered ?? row.calls_answered ?? row.answered_calls ?? 0)
+const getAnsweredCount = (row: any): number => Number(row.answered ?? 0)
 
-const getServiceLevel = (row: any): number =>
-  Number(row.service_level_pct ?? row.service_level ?? row.sl_pct ?? 0)
+const getServiceLevel = (row: any): number => Number(row.sla ?? 0)
 
-const getQueueName = (row: any): string =>
-  String(row.queue_name ?? row.queue ?? row.name ?? "Unknown Queue")
+const getQueueName = (row: any): string => String(row.queue_name ?? "Unknown Queue")
 
-const getHour = (row: any): number =>
-  Number(row.hour ?? row.hour_of_day ?? row.call_hour ?? 0)
+const getHour = (row: any): number => Number(row.hour ?? 0)
 
 export default function DashboardPage() {
   const { user } = useAuth()
@@ -66,7 +60,7 @@ export default function DashboardPage() {
 
   const totalCalls = queueData.reduce((sum, row) => sum + getCallCount(row), 0)
   const totalAnswered = queueData.reduce((sum, row) => sum + getAnsweredCount(row), 0)
-  const totalAbandoned = totalCalls - totalAnswered
+  const totalAbandoned = queueData.reduce((sum, row) => sum + Number(row.abandoned ?? 0), 0)
   const avgServiceLevel =
     queueData.length > 0
       ? Math.round(

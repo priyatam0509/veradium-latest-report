@@ -16,7 +16,6 @@ import { cn } from "@/lib/utils"
 import { athenaAPI } from "@/lib/athena-api"
 import { useAuth } from "@/hooks/use-auth"
 import { DateHelper } from "@/lib/date-helper"
-import { channel } from "diagnostics_channel"
 
 interface ReportData {
   period: string

@@ -13,9 +13,13 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar as CalendarComponent } from "@/components/ui/calendar"
 import { format, subDays, parse } from "date-fns"
 import { cn } from "@/lib/utils"
+import { athenaAPI } from "@/lib/athena-api"
+import { useAuth } from "@/hooks/use-auth"
+import { DateHelper } from "@/lib/date-helper"
 
 interface QueueData {
   queue_id: string
+  queue_name: string
   channel: string
   initiation_method: string
   received: string
@@ -23,7 +27,7 @@ interface QueueData {
   unanswered: string
   abandoned: string
   transferred: string
-  avg_wait_s: string
+  avg_wait: string
   avg_talk: string
   max_callers: string
   "%_answered": string
@@ -31,39 +35,32 @@ interface QueueData {
   sla: string
 }
 
-interface QueueDetailData {
-  row_no: string
+interface DrilldownData {
+  did: string
   contact_id: string
-  agent: string
+  agent_name: string
   date: string
-  queue: string
-  number: string
+  queue_name: string
+  customer_number: string
+  channel: string
+  initiation_method: string
+  interation_status: string
+  agent_connection_attempts: string
   event: string
   ring_time: string
   wait_time: string
   talk_time: string
-  DID: string
 }
-
-interface APIResponse<T> {
-  queryExecutionId: string
-  status: string
-  executionTime: number
-  data: T[]
-  columns: string[]
-  rowCount: number
-}
-
-const API_ENDPOINT = "https://i2831zjef8.execute-api.us-east-1.amazonaws.com/prod/query"
 
 export default function QueueDetailsPage() {
   const params = useParams()
   const router = useRouter()
   const searchParams = useSearchParams()
   const queueId = params?.queueId as string
-  
+  const { user, isLoading: authLoading } = useAuth()
+
   const [queueData, setQueueData] = useState<QueueData | null>(null)
-  const [detailData, setDetailData] = useState<QueueDetailData[]>([])
+  const [detailData, setDetailData] = useState<DrilldownData[]>([])
   const [isLoadingQueue, setIsLoadingQueue] = useState(false)
   const [isLoadingDetails, setIsLoadingDetails] = useState(false)
   const { toast } = useToast()
@@ -96,36 +93,19 @@ export default function QueueDetailsPage() {
 
     setIsLoadingQueue(true)
     try {
-      const requestBody: any = {
-        preparedStatement: "prep_distbyqueue",
-        waitForResults: true,
-        maxWaitTime: 60,
-      }
+      const start = DateHelper.formatDateFromDate(startDate)
+      const end = DateHelper.formatDateFromDate(endDate, true)
 
-      if (startDate) {
-        requestBody.startDate = format(startDate, "yyyy-MM-dd")
-      }
-      if (endDate) {
-        requestBody.endDate = format(endDate, "yyyy-MM-dd")
-      }
+      const result = await athenaAPI.getDistributionByQueue(start, end, null, user?.email)
 
-      const response = await fetch(API_ENDPOINT, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(requestBody),
-      })
-
-      if (!response.ok) {
-        throw new Error(`API error: ${response.statusText}`)
+      if (result.status === 'SUCCEEDED') {
+        const foundQueue = result.data.find((q: QueueData) => q.queue_id === queueId)
+        setQueueData(foundQueue || null)
+      } else {
+        throw new Error(result.error || 'Query failed')
       }
-
-      const result: APIResponse<QueueData> = await response.json()
-      const foundQueue = result.data.find(q => q.queue_id === queueId)
-      setQueueData(foundQueue || null)
     } catch (error) {
-      console.error("[v0] Queue data fetch error:", error)
+      console.error("Queue data fetch error:", error)
       toast({
         variant: "destructive",
         title: "Failed to load queue data",
@@ -136,47 +116,34 @@ export default function QueueDetailsPage() {
     }
   }
 
-  // Load detailed queue data
+  // Load detailed drilldown data for the specific queue
   const fetchDetailData = async () => {
     if (!queueId) return
 
     setIsLoadingDetails(true)
     try {
-      const requestBody: any = {
-        preparedStatement: "prep_distbyqueue_dd",
-        queueId: queueId,
-        waitForResults: true,
-        maxWaitTime: 60,
-      }
+      const start = DateHelper.formatDateFromDate(startDate)
+      const end = DateHelper.formatDateFromDate(endDate, true)
 
-      if (startDate) {
-        requestBody.startDate = format(startDate, "yyyy-MM-dd")
-      }
-      if (endDate) {
-        requestBody.endDate = format(endDate, "yyyy-MM-dd")
-      }
+      const result = await athenaAPI.getDistributionDrilldown(
+        start,
+        end,
+        { queueId: [queueId] },
+        null,
+        user?.email
+      )
 
-      const response = await fetch(API_ENDPOINT, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(requestBody),
-      })
-
-      if (!response.ok) {
-        throw new Error(`API error: ${response.statusText}`)
+      if (result.status === 'SUCCEEDED') {
+        setDetailData(result.data)
+        toast({
+          title: "Details loaded successfully",
+          description: `Showing ${result.rowCount} call record${result.rowCount !== 1 ? 's' : ''}`,
+        })
+      } else {
+        throw new Error(result.error || 'Query failed')
       }
-
-      const result: APIResponse<QueueDetailData> = await response.json()
-      setDetailData(result.data)
-      
-      toast({
-        title: "Details loaded successfully",
-        description: `Showing ${result.rowCount} call record${result.rowCount !== 1 ? 's' : ''}`,
-      })
     } catch (error) {
-      console.error("[v0] Queue detail fetch error:", error)
+      console.error("Queue detail fetch error:", error)
       toast({
         variant: "destructive",
         title: "Failed to load queue details",
@@ -187,11 +154,14 @@ export default function QueueDetailsPage() {
     }
   }
 
-  // Initial load
+  // Initial load — wait for auth
   useEffect(() => {
-    fetchQueueData()
-    fetchDetailData()
-  }, [])
+    if (!authLoading) {
+      fetchQueueData()
+      fetchDetailData()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, user?.email])
 
   const handleApplyFilter = () => {
     fetchQueueData()
@@ -394,7 +364,7 @@ export default function QueueDetailsPage() {
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">Avg Wait</p>
-                    <p className="text-2xl font-bold">{queueData.avg_wait_s}s</p>
+                    <p className="text-2xl font-bold">{queueData.avg_wait || '-'}</p>
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">% Answered</p>
@@ -439,28 +409,28 @@ export default function QueueDetailsPage() {
                         <TableHead>Contact ID</TableHead>
                         <TableHead>Agent</TableHead>
                         <TableHead>Date</TableHead>
-                        <TableHead>Number</TableHead>
+                        <TableHead>Customer</TableHead>
+                        <TableHead>DID</TableHead>
                         <TableHead>Event</TableHead>
                         <TableHead>Ring Time</TableHead>
                         <TableHead>Wait Time</TableHead>
                         <TableHead>Talk Time</TableHead>
-                        <TableHead>DID</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {detailData.map((record) => (
-                        <TableRow key={record.contact_id}>
-                          <TableCell className="font-mono">{record.contact_id}</TableCell>
-                          <TableCell>{record.agent || "-"}</TableCell>
+                      {detailData.map((record, index) => (
+                        <TableRow key={record.contact_id + index}>
+                          <TableCell className="font-mono text-xs">{record.contact_id}</TableCell>
+                          <TableCell>{record.agent_name || "-"}</TableCell>
                           <TableCell>{record.date}</TableCell>
-                          <TableCell>{record.number}</TableCell>
+                          <TableCell className="font-mono">{record.customer_number || "-"}</TableCell>
+                          <TableCell className="font-mono">{record.did || "-"}</TableCell>
                           <TableCell>
                             <span className="inline-block px-2 py-1 rounded text-sm bg-muted">{record.event}</span>
                           </TableCell>
                           <TableCell>{record.ring_time || "-"}</TableCell>
                           <TableCell>{record.wait_time || "-"}</TableCell>
                           <TableCell>{record.talk_time || "-"}</TableCell>
-                          <TableCell>{record.DID}</TableCell>
                         </TableRow>
                       ))}
                       {detailData.length === 0 && (

@@ -22,6 +22,7 @@ interface UnansweredQueueData {
   queue_name: string
   channel: string
   initiation_method: string
+  region: string
   received: string
   unanswered: string
   abandoned: string
@@ -543,6 +544,7 @@ export default function MissedCallsPage() {
                         <TableHeader>
                           <TableRow>
                             <TableHead>Queue Name</TableHead>
+                            <TableHead className="text-right">Region</TableHead>
                             <TableHead className="text-right">Channel</TableHead>
                             <TableHead className="text-right">Initiation Method</TableHead>
                             <TableHead className="text-right">Received</TableHead>
@@ -556,6 +558,7 @@ export default function MissedCallsPage() {
                           {filteredQueues.map((queue, index) => (
                             <TableRow key={index}>
                               <TableCell className="font-medium">{queue.queue_name || queue.queue_id}</TableCell>
+                              <TableCell className="text-right">{queue.region || '—'}</TableCell>
                               <TableCell className="text-right">{queue.channel || '-'}</TableCell>
                               <TableCell className="text-right">{queue.initiation_method || '-'}</TableCell>
                               <TableCell className="text-right">{queue.received}</TableCell>
@@ -583,7 +586,7 @@ export default function MissedCallsPage() {
                           ))}
                           {filteredQueues.length === 0 && (
                             <TableRow>
-                              <TableCell colSpan={8} className="text-center text-muted-foreground">
+                              <TableCell colSpan={9} className="text-center text-muted-foreground">
                                 No unanswered calls data available
                               </TableCell>
                             </TableRow>

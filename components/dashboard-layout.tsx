@@ -14,10 +14,8 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 
 import {
   BarChart3,
-  LayoutDashboard,
   Users,
   Clock,
-  History,
   Settings,
   ShieldCheck,
   TrendingUp,
@@ -31,7 +29,6 @@ import {
   Headphones,
   Home,
   Phone,
-  AlertTriangle,
 } from "lucide-react"
 
 /* -------------------------------------------------------------------------- */
@@ -46,12 +43,7 @@ const routeIcons: Record<string, React.ElementType> = {
   "/agents/activity-analysis": Clock,
   "/reports/time-analysis": FileText,
   "/calls/missed": PhoneOff,
-  "/metrics/real-time": Clock,
-  "/metrics/historical": History,
-  "/analytics": TrendingUp,
   "/analytics/transfers": Phone,
-  "/analytics/missed-calls": AlertTriangle,
-  "/evaluations": ShieldCheck,
   "/admin/users": Users,
   "/admin/rbac": Shield,
   "/settings": Settings,
@@ -62,7 +54,6 @@ const routeDisplayNames: Record<string, string> = {
   "/admin/rbac": "RBAC",
   "/admin/users": "User Management",
   "/analytics/transfers": "Transfer Analysis",
-  "/analytics/missed-calls": "Missed Calls Analysis",
   "/agents/performance": "Agent Matrix",
   "/agents/performance-analysis": "Agent Performance",
   "/agents/activity-analysis": "Agent Activity",
@@ -75,13 +66,8 @@ const routeOrder = [
   "/agents/performance-analysis",
   "/agents/activity-analysis",
   "/reports/time-analysis",
-  "/metrics/real-time",
-  "/metrics/historical",
-  "/analytics",
-  "/analytics/transfers",
-  "/analytics/missed-calls",
-  "/evaluations",
   "/calls/missed",
+  "/analytics/transfers",
   "/admin/rbac",
   "/admin/users",
   "/settings",
@@ -98,7 +84,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
   const enabledRoutes = accessibleRoutes.filter(route => route.isEnabled)
 
-  const hiddenRoutes = ["/analytics/missed-calls", "/admin/rbac", "/admin/users"]
+  const hiddenRoutes = ["/admin/rbac", "/admin/users"]
   const navItems = enabledRoutes.filter(route => !hiddenRoutes.includes(route.route)).sort((a, b) => {
     const indexA = routeOrder.indexOf(a.route)
     const indexB = routeOrder.indexOf(b.route)

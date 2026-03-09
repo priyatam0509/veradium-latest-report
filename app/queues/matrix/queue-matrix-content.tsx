@@ -105,7 +105,7 @@ export default function QueueMatrixContent() {
   const [didData, setDidData] = useState<DIDData[]>([])
   const [hourData, setHourData] = useState<HourData[]>([])
   const [isLoading, setIsLoading] = useState(false)
-  const { user } = useAuth()
+  const { user, isLoading: authLoading } = useAuth()
   const [searchTerm, setSearchTerm] = useState("")
   const [activeTab, setActiveTab] = useState("queue")
   const [loadingItemId, setLoadingItemId] = useState<string | null>(null)
@@ -470,18 +470,22 @@ export default function QueueMatrixContent() {
 
   // Initial load
   useEffect(() => {
-    fetchQueueData()
+    if (!authLoading) {
+      fetchQueueData()
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [authLoading, user?.email])
 
   // Load data when tab changes
   useEffect(() => {
-    if (activeTab === 'queue' && queueData.length === 0) {
-      fetchQueueData()
-    } else if (activeTab === 'did' && didData.length === 0) {
-      fetchDIDData()
-    } else if (activeTab === 'hour' && hourData.length === 0) {
-      fetchHourData()
+    if (!authLoading) {
+      if (activeTab === 'queue' && queueData.length === 0) {
+        fetchQueueData()
+      } else if (activeTab === 'did' && didData.length === 0) {
+        fetchDIDData()
+      } else if (activeTab === 'hour' && hourData.length === 0) {
+        fetchHourData()
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab])
