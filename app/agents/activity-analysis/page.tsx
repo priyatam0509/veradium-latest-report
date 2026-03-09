@@ -8,16 +8,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/hooks/use-auth"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, TrendingUp, Clock, User, RefreshCw, Activity, Pause, Coffee } from "lucide-react"
+import { Loader2, TrendingUp, Clock, RefreshCw, Activity, Pause, Coffee } from "lucide-react"
 import { athenaAPI } from "@/lib/athena-api"
 import { DateHelper } from "@/lib/date-helper"
 import { Button } from "@/components/ui/button"
 
 interface AgentPauseDetail {
   user_id: string
-  name: string
-  agent_username: string
-  region: string
+  agent_name: string
+  agent_region: string
   on_custom_status: string
   number_of_holds: string
 }
@@ -72,8 +71,8 @@ export default function AgentActivityAnalysis() {
   const totalHolds = agentData.reduce((sum, a) => sum + parseInt(a.number_of_holds || '0'), 0)
   const totalCustomStatus = agentData.reduce((sum, a) => sum + parseInt(a.on_custom_status || '0'), 0)
   const avgHoldsPerAgent = totalAgents > 0 ? (totalHolds / totalAgents).toFixed(1) : '0'
-  const mostActiveAgent = agentData.length > 0 
-    ? agentData.reduce((max, a) => parseInt(a.number_of_holds) > parseInt(max.number_of_holds) ? a : max)
+  const mostActiveAgent = agentData.length > 0
+    ? agentData.reduce((max, a) => parseInt(a.number_of_holds || '0') > parseInt(max.number_of_holds || '0') ? a : max)
     : null
 
   const formatTime = (minutes: string) => {
@@ -255,7 +254,6 @@ export default function AgentActivityAnalysis() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Agent Name</TableHead>
-                        <TableHead>Username</TableHead>
                         <TableHead>Region</TableHead>
                         <TableHead className="text-right">Custom Status Events</TableHead>
                         <TableHead className="text-right">Number of Holds</TableHead>
@@ -264,13 +262,12 @@ export default function AgentActivityAnalysis() {
                     <TableBody>
                       {agentData.map((agent, index) => (
                         <TableRow key={index}>
-                          <TableCell className="font-medium">{agent.name}</TableCell>
-                          <TableCell className="font-mono text-gray-600">{agent.agent_username || '—'}</TableCell>
-                          <TableCell>{agent.region || '—'}</TableCell>
+                          <TableCell className="font-medium">{agent.agent_name}</TableCell>
+                          <TableCell>{agent.agent_region || '—'}</TableCell>
                           <TableCell className="text-right font-mono">
                             {agent.on_custom_status}
                           </TableCell>
-                          <TableCell className="text-right font-mono">{agent.number_of_holds}</TableCell>
+                          <TableCell className="text-right font-mono">{agent.number_of_holds || '0'}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -319,7 +316,7 @@ export default function AgentActivityAnalysis() {
                     <div>
                       <p className="font-medium">Most Active Agent</p>
                       <p className="text-sm font-semibold text-foreground">
-                        {mostActiveAgent ? mostActiveAgent.name : 'N/A'}
+                        {mostActiveAgent ? mostActiveAgent.agent_name : 'N/A'}
                       </p>
                       <p className="text-xs text-muted-foreground mt-0.5">
                         {mostActiveAgent ? `${parseInt(mostActiveAgent.number_of_holds).toLocaleString()} holds` : '—'}
