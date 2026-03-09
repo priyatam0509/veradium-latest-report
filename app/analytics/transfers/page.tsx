@@ -264,6 +264,7 @@ export default function TransferAnalysis() {
                         return (
                           <TableRow key={index}>
                             <TableCell className="font-medium">{transfer.agent_name}</TableCell>
+                            <TableCell>{transfer.region || '—'}</TableCell>
                             <TableCell className="text-right">
                               <Badge 
                                 variant={transfer.type === 'WARM' ? "default" : "secondary"}

@@ -18,6 +18,7 @@ interface AgentCallDisposition {
   agent_name: string
   username: string
   region: string
+  received: string
   completed_by_caller: string
   completed_by_agent: string
   transferred_out: string
@@ -79,12 +80,13 @@ export default function AgentPerformanceAnalysis() {
   }
 
   const totalAgents = agentData.length
+  const totalReceived = agentData.reduce((sum, a) => sum + parseInt(a.received || '0'), 0)
   const totalCompleted = agentData.reduce((sum, a) => sum + parseInt(a.completed_by_agent || '0'), 0)
   const totalTransferred = agentData.reduce((sum, a) => sum + parseInt(a.transferred_out || '0'), 0)
   const totalFailed = agentData.reduce((sum, a) => sum + parseInt(a.failed || '0'), 0)
-  const avgCompletionRate = totalCompleted > 0 ? ((totalCompleted / (totalCompleted + totalFailed)) * 100).toFixed(1) : '0'
-  const topAgent = agentData.length > 0 
-    ? agentData.reduce((max, a) => parseInt(a.completed_by_agent) > parseInt(max.completed_by_agent) ? a : max)
+  const avgCompletionRate = totalReceived > 0 ? ((totalCompleted / totalReceived) * 100).toFixed(1) : '0'
+  const topAgent = agentData.length > 0
+    ? agentData.reduce((max, a) => parseInt(a.completed_by_agent || '0') > parseInt(max.completed_by_agent || '0') ? a : max)
     : null
 
   return (
@@ -252,10 +254,12 @@ export default function AgentPerformanceAnalysis() {
                         <TableHead>Agent Name</TableHead>
                         <TableHead className="text-right">Username</TableHead>
                         <TableHead className="text-right">Region</TableHead>
+                        <TableHead className="text-right">Received</TableHead>
                         <TableHead className="text-right">Completed</TableHead>
                         <TableHead className="text-right">Caller Completed</TableHead>
                         <TableHead className="text-right">Transferred</TableHead>
                         <TableHead className="text-right">Failed</TableHead>
+                        <TableHead className="text-right">Missed/Rejected</TableHead>
                         <TableHead className="text-right">Completion Rate</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -272,10 +276,12 @@ export default function AgentPerformanceAnalysis() {
                             <TableCell className="font-medium">{agent.agent_name}</TableCell>
                             <TableCell className="text-right font-mono text-gray-600">{agent.username}</TableCell>
                             <TableCell className="text-right">{agent.region || '—'}</TableCell>
+                            <TableCell className="text-right font-mono">{agent.received}</TableCell>
                             <TableCell className="text-right font-mono text-green-600">{agent.completed_by_agent}</TableCell>
                             <TableCell className="text-right font-mono text-blue-600">{agent.completed_by_caller}</TableCell>
                             <TableCell className="text-right font-mono text-blue-600">{agent.transferred_out}</TableCell>
                             <TableCell className="text-right font-mono text-red-600">{agent.failed}</TableCell>
+                            <TableCell className="text-right font-mono text-orange-600">{agent.missed_rejected}</TableCell>
                             <TableCell className="text-right">
                               <Badge 
                                 variant={parseFloat(completionRate) >= 90 ? "default" : parseFloat(completionRate) >= 70 ? "secondary" : "destructive"}

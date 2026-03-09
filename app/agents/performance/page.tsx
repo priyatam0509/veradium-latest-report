@@ -28,12 +28,6 @@ interface AgentData {
   transferred: string
   '%_calls': string
   talk_time: string
-  '%_talk_time': string
-  avg_talk: string
-  ring_time: string
-  wait_time: string
-  avg_wait: string
-  max_wait_time: string
 }
 
 interface DrilldownData {
@@ -510,12 +504,6 @@ export default function AgentPerformancePage() {
                         <TableHead className="text-right">Transferred</TableHead>
                         <TableHead className="text-right">% Calls</TableHead>
                         <TableHead className="text-right">Talk Time</TableHead>
-                        <TableHead className="text-right">% Talk Time</TableHead>
-                        <TableHead className="text-right">Avg Talk</TableHead>
-                        <TableHead className="text-right">Ring Time</TableHead>
-                        <TableHead className="text-right">Wait Time</TableHead>
-                        <TableHead className="text-right">Avg Wait</TableHead>
-                        <TableHead className="text-right">Max Wait Time</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -531,12 +519,6 @@ export default function AgentPerformancePage() {
                           <TableCell className="text-right">{agent.transferred}</TableCell>
                           <TableCell className="text-right">{agent['%_calls']}</TableCell>
                           <TableCell className="text-right">{agent.talk_time}</TableCell>
-                          <TableCell className="text-right">{agent['%_talk_time']}</TableCell>
-                          <TableCell className="text-right">{agent.avg_talk}</TableCell>
-                          <TableCell className="text-right">{agent.ring_time}</TableCell>
-                          <TableCell className="text-right">{agent.wait_time}</TableCell>
-                          <TableCell className="text-right">{agent.avg_wait}</TableCell>
-                          <TableCell className="text-right">{agent.max_wait_time}</TableCell>
                           <TableCell className="text-right">
                             <Button 
                               variant="ghost" 
@@ -558,7 +540,7 @@ export default function AgentPerformancePage() {
                       ))}
                       {filteredAgents.length === 0 && (
                         <TableRow>
-                          <TableCell colSpan={16} className="text-center text-muted-foreground">
+                          <TableCell colSpan={10} className="text-center text-muted-foreground">
                             No agent data available
                           </TableCell>
                         </TableRow>
