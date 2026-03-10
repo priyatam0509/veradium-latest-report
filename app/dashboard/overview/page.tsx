@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/hooks/use-auth"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, TrendingUp, Phone, PhoneOff, Target, User, Calendar, RefreshCw, Activity } from "lucide-react"
+import { Loader2, TrendingUp, Phone, PhoneOff, Target, User, Calendar, RefreshCw } from "lucide-react"
 import { athenaAPI } from "@/lib/athena-api"
 import { DateHelper } from "@/lib/date-helper"
 import { Button } from "@/components/ui/button"
@@ -177,10 +177,6 @@ export default function DashboardOverview() {
                 <h1 className="text-3xl font-bold tracking-tight">
                   Welcome, {user?.email?.split('@')[0] || 'User'}
                 </h1>
-                <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20 animate-pulse">
-                  <Activity className="h-3 w-3 mr-1" />
-                  Live
-                </Badge>
                 {appliedRegion && (
                   <Badge variant="outline" className="bg-blue-500/10 text-blue-500 border-blue-500/20">
                     <Target className="h-3 w-3 mr-1" />

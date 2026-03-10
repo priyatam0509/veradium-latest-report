@@ -39,7 +39,7 @@ interface DrilldownData {
   customer_number: string;
   channel: string;
   initiation_method: string;
-  interation_status: string;
+  interaction_status: string;
   agent_connection_attempts: string;
   event: string;
   ring_time: string;
@@ -300,7 +300,7 @@ export default function AgentPerformancePage() {
               <td class="font-mono">${contact.customer_number || '-'}</td>
               <td>${contact.channel || '-'}</td>
               <td>${contact.initiation_method || '-'}</td>
-              <td>${contact.interation_status || '-'}</td>
+              <td>${contact.interaction_status || '-'}</td>
               <td>${contact.agent_connection_attempts || '-'}</td>
               <td>${contact.event || '-'}</td>
               <td>${contact.ring_time || '-'}</td>
@@ -454,13 +454,16 @@ export default function AgentPerformancePage() {
                   </Select>
                 </div> */}
 
-                <div className="space-y-2 flex items-end gap-2">
-                  <Button onClick={handleApplyFilter} className="flex-1" disabled={isLoading}>
-                    Apply Filter
-                  </Button>
-                  <Button onClick={handleResetFilter} variant="outline" disabled={isLoading}>
-                    Reset
-                  </Button>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">&nbsp;</label>
+                  <div className="flex gap-2">
+                    <Button onClick={handleApplyFilter} className="flex-1" disabled={isLoading}>
+                      Apply Filter
+                    </Button>
+                    <Button onClick={handleResetFilter} variant="outline" disabled={isLoading}>
+                      Reset
+                    </Button>
+                  </div>
                 </div>
               </div>
             </CardContent>
@@ -510,7 +513,12 @@ export default function AgentPerformancePage() {
                     <TableBody>
                       {filteredAgents.map((agent, index) => (
                         <TableRow key={index}>
-                          <TableCell className="font-medium">{agent.agent_name}</TableCell>
+                          <TableCell
+                            className="font-medium cursor-pointer text-primary hover:underline"
+                            onClick={() => handleViewAgentDetails(agent)}
+                          >
+                            {agent.agent_name}
+                          </TableCell>
                           <TableCell className="text-right">{agent.region || '—'}</TableCell>
                           <TableCell className="text-right">{agent.channel}</TableCell>
                           <TableCell className="text-right">{agent.initiation_method}</TableCell>

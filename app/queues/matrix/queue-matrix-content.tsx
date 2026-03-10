@@ -92,7 +92,7 @@ interface DrilldownData {
   customer_number: string;
   channel: string;
   initiation_method: string;
-  interation_status: string;
+  interaction_status: string;
   agent_connection_attempts: string;
   event: string;
   ring_time: string;
@@ -424,7 +424,7 @@ export default function QueueMatrixContent() {
               <td class="font-mono">${contact.customer_number || '-'}</td>
               <td>${contact.channel || '-'}</td>
               <td>${contact.initiation_method || '-'}</td>
-              <td>${contact.interation_status || '-'}</td>
+              <td>${contact.interaction_status || '-'}</td>
               <td>${contact.agent_connection_attempts || '-'}</td>
               <td>${contact.event || '-'}</td>
               <td>${contact.ring_time || '-'}</td>
@@ -535,7 +535,11 @@ export default function QueueMatrixContent() {
   return (
     <AuthGuard>
       <DashboardLayout>
-        {/* Main content starts here */}
+        <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Queue Performance Matrix</h1>
+          <p className="text-muted-foreground">Queue, DID, and hourly call distribution data</p>
+        </div>
         <Card>
           <CardHeader>
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -891,6 +895,7 @@ export default function QueueMatrixContent() {
               </Tabs>
             </CardContent>
           </Card>
+        </div>
       </DashboardLayout>
     </AuthGuard>
   )

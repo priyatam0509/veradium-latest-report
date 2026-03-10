@@ -558,7 +558,12 @@ export default function MissedCallsPage() {
                         <TableBody>
                           {filteredQueues.map((queue, index) => (
                             <TableRow key={index}>
-                              <TableCell className="font-medium">{queue.queue_name || queue.queue_id}</TableCell>
+                              <TableCell
+                                className="font-medium cursor-pointer text-primary hover:underline"
+                                onClick={() => handleViewQueueDetails(queue)}
+                              >
+                                {queue.queue_name || queue.queue_id}
+                              </TableCell>
                               <TableCell className="text-right">{queue.region || '—'}</TableCell>
                               <TableCell className="text-right">{queue.channel || '-'}</TableCell>
                               <TableCell className="text-right">{queue.initiation_method || '-'}</TableCell>

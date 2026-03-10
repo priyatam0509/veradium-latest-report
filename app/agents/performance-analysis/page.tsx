@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/hooks/use-auth"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, TrendingUp, Phone, User, RefreshCw, Activity, CheckCircle } from "lucide-react"
+import { Loader2, TrendingUp, Phone, User, RefreshCw, CheckCircle } from "lucide-react"
 import { athenaAPI } from "@/lib/athena-api"
 import { DateHelper } from "@/lib/date-helper"
 import { Button } from "@/components/ui/button"
@@ -98,10 +98,6 @@ export default function AgentPerformanceAnalysis() {
             <div>
               <div className="flex items-center gap-3">
                 <h1 className="text-3xl font-bold tracking-tight">Agent Performance Analysis</h1>
-                <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20 animate-pulse">
-                  <Activity className="h-3 w-3 mr-1" />
-                  Live
-                </Badge>
               </div>
               <p className="text-muted-foreground mt-1">
                 Agent call disposition and performance metrics

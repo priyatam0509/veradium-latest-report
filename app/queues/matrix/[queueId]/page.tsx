@@ -44,7 +44,7 @@ interface DrilldownData {
   customer_number: string
   channel: string
   initiation_method: string
-  interation_status: string
+  interaction_status: string
   agent_connection_attempts: string
   event: string
   ring_time: string
@@ -411,6 +411,7 @@ export default function QueueDetailsPage() {
                         <TableHead>Date</TableHead>
                         <TableHead>Customer</TableHead>
                         <TableHead>DID</TableHead>
+                        <TableHead>Status</TableHead>
                         <TableHead>Event</TableHead>
                         <TableHead>Ring Time</TableHead>
                         <TableHead>Wait Time</TableHead>
@@ -425,6 +426,7 @@ export default function QueueDetailsPage() {
                           <TableCell>{record.date}</TableCell>
                           <TableCell className="font-mono">{record.customer_number || "-"}</TableCell>
                           <TableCell className="font-mono">{record.did || "-"}</TableCell>
+                          <TableCell>{record.interaction_status || "-"}</TableCell>
                           <TableCell>
                             <span className="inline-block px-2 py-1 rounded text-sm bg-muted">{record.event}</span>
                           </TableCell>
@@ -435,7 +437,7 @@ export default function QueueDetailsPage() {
                       ))}
                       {detailData.length === 0 && (
                         <TableRow>
-                          <TableCell colSpan={9} className="h-24 text-center text-muted-foreground">
+                          <TableCell colSpan={10} className="h-24 text-center text-muted-foreground">
                             No call records found for the selected date range.
                           </TableCell>
                         </TableRow>

@@ -95,10 +95,6 @@ export default function AgentActivityAnalysis() {
             <div>
               <div className="flex items-center gap-3">
                 <h1 className="text-3xl font-bold tracking-tight">Agent Activity Analysis</h1>
-                <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20 animate-pulse">
-                  <Activity className="h-3 w-3 mr-1" />
-                  Live
-                </Badge>
               </div>
               <p className="text-muted-foreground mt-1">
                 Agent pause patterns, break times, and productivity metrics
