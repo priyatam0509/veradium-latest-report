@@ -36,11 +36,13 @@ interface QueueData {
 }
 
 interface DrilldownData {
+  row_no: string
   did: string
   contact_id: string
   agent_name: string
   date: string
   queue_name: string
+  region: string
   customer_number: string
   channel: string
   initiation_method: string

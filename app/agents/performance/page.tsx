@@ -31,11 +31,13 @@ interface AgentData {
 }
 
 interface DrilldownData {
+  row_no: string;
   did: string;
   contact_id: string;
   agent_name: string;
   date: string;
   queue_name: string;
+  region: string;
   customer_number: string;
   channel: string;
   initiation_method: string;
@@ -278,6 +280,7 @@ export default function AgentPerformancePage() {
             <th>Agent Name</th>
             <th>Date</th>
             <th>Queue</th>
+            <th>Region</th>
             <th>Customer</th>
             <th>Channel</th>
             <th>Initiation Method</th>
@@ -297,6 +300,7 @@ export default function AgentPerformancePage() {
               <td>${contact.agent_name || '-'}</td>
               <td>${contact.date || '-'}</td>
               <td>${contact.queue_name || '-'}</td>
+              <td>${contact.region || '-'}</td>
               <td class="font-mono">${contact.customer_number || '-'}</td>
               <td>${contact.channel || '-'}</td>
               <td>${contact.initiation_method || '-'}</td>
@@ -309,7 +313,7 @@ export default function AgentPerformancePage() {
             </tr>
           `).join('') : `
             <tr>
-              <td colspan="14" class="empty">No calls found.</td>
+              <td colspan="15" class="empty">No calls found.</td>
             </tr>
           `}
         </tbody>

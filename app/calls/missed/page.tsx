@@ -23,7 +23,7 @@ interface UnansweredQueueData {
   channel: string
   initiation_method: string
   region: string
-  total: string
+  received: string
   unanswered: string
   abandoned: string
   '%_calls': string
@@ -46,6 +46,7 @@ interface DrilldownData {
   contact_id: string
   date: string
   queue_name: string
+  region: string
   customer_number: string
   channel: string
   initiation_method: string
@@ -320,6 +321,7 @@ export default function MissedCallsPage() {
             <th>Contact ID</th>
             <th>Date</th>
             <th>Queue</th>
+            <th>Region</th>
             <th>Customer</th>
             <th>DID</th>
             <th>Channel</th>
@@ -337,6 +339,7 @@ export default function MissedCallsPage() {
               <td class="font-mono" style="font-size: 12px;">${contact.contact_id || '-'}</td>
               <td>${contact.date || '-'}</td>
               <td>${contact.queue_name || '-'}</td>
+              <td>${contact.region || '-'}</td>
               <td class="font-mono">${contact.customer_number || '-'}</td>
               <td class="font-mono">${contact.did || '-'}</td>
               <td>${contact.channel || '-'}</td>
@@ -349,7 +352,7 @@ export default function MissedCallsPage() {
             </tr>
           `).join('') : `
             <tr>
-              <td colspan="12" class="empty">No unanswered calls found.</td>
+              <td colspan="13" class="empty">No unanswered calls found.</td>
             </tr>
           `}
         </tbody>
@@ -548,7 +551,7 @@ export default function MissedCallsPage() {
                             <TableHead className="text-right">Region</TableHead>
                             <TableHead className="text-right">Channel</TableHead>
                             <TableHead className="text-right">Initiation Method</TableHead>
-                            <TableHead className="text-right">Total</TableHead>
+                            <TableHead className="text-right">Received</TableHead>
                             <TableHead className="text-right">Unanswered</TableHead>
                             <TableHead className="text-right">Abandoned</TableHead>
                             <TableHead className="text-right">% of Calls</TableHead>
@@ -567,7 +570,7 @@ export default function MissedCallsPage() {
                               <TableCell className="text-right">{queue.region || '—'}</TableCell>
                               <TableCell className="text-right">{queue.channel || '-'}</TableCell>
                               <TableCell className="text-right">{queue.initiation_method || '-'}</TableCell>
-                              <TableCell className="text-right">{queue.total}</TableCell>
+                              <TableCell className="text-right">{queue.received}</TableCell>
                               <TableCell className="text-right text-orange-600">{queue.unanswered}</TableCell>
                               <TableCell className="text-right text-red-600">{queue.abandoned}</TableCell>
                               <TableCell className="text-right font-medium">{queue['%_calls']}</TableCell>

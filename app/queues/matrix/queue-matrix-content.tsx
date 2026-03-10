@@ -67,9 +67,11 @@ interface DIDData {
 }
 
 interface HourData {
+  interval_date: string
   interval_hour: string
   channel: string
   initiation_method: string
+  region: string
   received: string
   answered: string
   unanswered: string
@@ -84,11 +86,13 @@ interface HourData {
 }
 
 interface DrilldownData {
+  row_no: string;
   did: string;
   contact_id: string;
   agent_name: string;
   date: string;
   queue_name: string;
+  region: string;
   customer_number: string;
   channel: string;
   initiation_method: string;
@@ -115,6 +119,10 @@ export default function QueueMatrixContent() {
   const [endDate, setEndDate] = useState<Date | undefined>(new Date())
   const [isStartDateOpen, setIsStartDateOpen] = useState(false)
   const [isEndDateOpen, setIsEndDateOpen] = useState(false)
+
+  // By Hour tab filters
+  const [hourDateFilter, setHourDateFilter] = useState("")
+  const [hourTimeFilter, setHourTimeFilter] = useState("")
 
   // Load queue summary data
   const fetchQueueData = async () => {
@@ -184,7 +192,7 @@ export default function QueueMatrixContent() {
     try {
       const dateRange = {
         start: DateHelper.formatDateFromDate(startDate || new Date()),
-        end: DateHelper.formatDateFromDate(startDate || new Date(), true)
+        end: DateHelper.formatDateFromDate(endDate || new Date(), true)
       }
 
       console.log("📅 Hourly date range:", dateRange)
@@ -402,6 +410,7 @@ export default function QueueMatrixContent() {
             <th>Agent Name</th>
             <th>Date</th>
             <th>Queue</th>
+            <th>Region</th>
             <th>Customer</th>
             <th>Channel</th>
             <th>Initiation Method</th>
@@ -421,6 +430,7 @@ export default function QueueMatrixContent() {
               <td>${contact.agent_name || '-'}</td>
               <td>${contact.date || '-'}</td>
               <td>${contact.queue_name || '-'}</td>
+              <td>${contact.region || '-'}</td>
               <td class="font-mono">${contact.customer_number || '-'}</td>
               <td>${contact.channel || '-'}</td>
               <td>${contact.initiation_method || '-'}</td>
@@ -433,7 +443,7 @@ export default function QueueMatrixContent() {
             </tr>
           `).join('') : `
             <tr>
-              <td colspan="14" class="empty">No contacts found.</td>
+              <td colspan="15" class="empty">No contacts found.</td>
             </tr>
           `}
         </tbody>
@@ -499,11 +509,18 @@ export default function QueueMatrixContent() {
     did.did?.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
-  const filteredHours = hourData.filter((hour) => 
-    hour.interval_hour?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    hour.channel?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    hour.initiation_method?.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const filteredHours = hourData.filter((hour) => {
+    const matchesSearch = !searchTerm ||
+      hour.interval_hour?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      hour.interval_date?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      hour.channel?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      hour.initiation_method?.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesDate = !hourDateFilter ||
+      hour.interval_date?.toLowerCase().includes(hourDateFilter.toLowerCase())
+    const matchesTime = !hourTimeFilter ||
+      hour.interval_hour?.toLowerCase().includes(hourTimeFilter.toLowerCase())
+    return matchesSearch && matchesDate && matchesTime
+  })
 
   const handleViewQueueDetails = (queue: QueueData) => {
     const title = `Contact Details - ${queue.queue_name || queue.queue_id}`
@@ -529,7 +546,8 @@ export default function QueueMatrixContent() {
     setStartDate(subDays(new Date(), 30))
     setEndDate(new Date())
     setSearchTerm("")
-    // Optionally reset other filters if present
+    setHourDateFilter("")
+    setHourTimeFilter("")
   }
 
   return (
@@ -830,8 +848,45 @@ export default function QueueMatrixContent() {
 
                 {/* Hour Tab */}
                 <TabsContent value="hour" className="mt-4">
-                  <div className="mb-4 p-3 bg-muted rounded-md text-sm text-muted-foreground">
-                    Note: Hourly breakdown shows data for the selected start date only.
+                  <div className="flex flex-wrap gap-4 mb-4 p-4 border rounded-lg bg-muted/30 items-end">
+                    <div className="flex flex-col gap-2">
+                      <label className="text-sm font-medium">Filter by Date</label>
+                      <div className="relative">
+                        <Calendar className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          placeholder="e.g. 2026-02-10"
+                          className="pl-8 w-[200px]"
+                          value={hourDateFilter}
+                          onChange={(e) => setHourDateFilter(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <label className="text-sm font-medium">Filter by Hour</label>
+                      <div className="relative">
+                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          placeholder="e.g. 13:00"
+                          className="pl-8 w-[200px]"
+                          value={hourTimeFilter}
+                          onChange={(e) => setHourTimeFilter(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    {(hourDateFilter || hourTimeFilter) && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => { setHourDateFilter(""); setHourTimeFilter("") }}
+                      >
+                        Clear Filters
+                      </Button>
+                    )}
+                    {(hourDateFilter || hourTimeFilter) && (
+                      <p className="text-xs text-muted-foreground self-end pb-2">
+                        Showing {filteredHours.length} of {hourData.length} rows
+                      </p>
+                    )}
                   </div>
                   {isLoading ? (
                     <div className="flex items-center justify-center h-32">
@@ -845,9 +900,11 @@ export default function QueueMatrixContent() {
                       <Table>
                         <TableHeader>
                           <TableRow>
+                            <TableHead>Date</TableHead>
                             <TableHead>Time Interval</TableHead>
                             <TableHead>Channel</TableHead>
                             <TableHead>Method</TableHead>
+                            <TableHead>Region</TableHead>
                             <TableHead>Received</TableHead>
                             <TableHead>Answered</TableHead>
                             <TableHead>Unanswered</TableHead>
@@ -863,10 +920,12 @@ export default function QueueMatrixContent() {
                         </TableHeader>
                         <TableBody>
                           {filteredHours.map((hour, index) => (
-                            <TableRow key={hour.interval_hour + index}>
+                            <TableRow key={hour.interval_date + hour.interval_hour + index}>
+                              <TableCell className="text-sm whitespace-nowrap">{hour.interval_date || "-"}</TableCell>
                               <TableCell className="font-medium text-sm whitespace-nowrap">{hour.interval_hour}</TableCell>
                               <TableCell>{hour.channel}</TableCell>
                               <TableCell>{hour.initiation_method}</TableCell>
+                              <TableCell>{hour.region || "-"}</TableCell>
                               <TableCell>{hour.received}</TableCell>
                               <TableCell>{hour.answered}</TableCell>
                               <TableCell>{hour.unanswered}</TableCell>
@@ -882,7 +941,7 @@ export default function QueueMatrixContent() {
                           ))}
                           {filteredHours.length === 0 && (
                             <TableRow>
-                              <TableCell colSpan={14} className="h-24 text-center text-muted-foreground">
+                              <TableCell colSpan={16} className="h-24 text-center text-muted-foreground">
                                 No hourly data found.
                               </TableCell>
                             </TableRow>
