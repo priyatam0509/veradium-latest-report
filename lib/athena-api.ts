@@ -303,8 +303,7 @@ export class AthenaReportingAPI {
       params.queue_id = filters.queueId
     }
     // agent_id is not supported for unanswered drilldown, do not send
-    // Uses distribution_distby_drilldown which supports queue_id/did filters and includes all statuses
-    return this.executeQuery('distribution_distby_drilldown', params, true, 60, username)
+    return this.executeQuery('unanswered_unansweredby_drilldown', params, true, 60, username)
   }
 
   /**
