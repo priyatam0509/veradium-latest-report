@@ -70,7 +70,7 @@ export default function DashboardOverview() {
         // Calculate yesterday's KPIs
         const totalReceived = queueResult.data.reduce((sum, q) => sum + parseInt(q.received || '0'), 0)
         const totalAnswered = queueResult.data.reduce((sum, q) => sum + parseInt(q.answered || '0'), 0)
-        const totalUnanswered = queueResult.data.reduce((sum, q) => sum + parseInt(q.unanswered || '0'), 0)
+        const totalAbandoned = queueResult.data.reduce((sum, q) => sum + parseInt(q.abandoned || '0'), 0)
         const avgSLA = queueResult.data.length > 0
           ? queueResult.data.reduce((sum, q) => sum + parseFloat(q.sla || '0'), 0) / queueResult.data.length
           : 0
@@ -78,7 +78,7 @@ export default function DashboardOverview() {
         setKpis({
           totalCalls: totalReceived,
           answeredCalls: totalAnswered,
-          missedCalls: totalUnanswered,
+          missedCalls: totalAbandoned,
           avgSLA: Math.round(avgSLA)
         })
       }
@@ -279,7 +279,7 @@ export default function DashboardOverview() {
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Missed Calls</CardTitle>
+                  <CardTitle className="text-sm font-medium">Abandoned Calls</CardTitle>
                   <PhoneOff className="h-4 w-4 text-red-600" />
                 </CardHeader>
                 <CardContent>
