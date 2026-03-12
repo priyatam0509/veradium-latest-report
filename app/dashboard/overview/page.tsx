@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useAuth } from "@/hooks/use-auth"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, TrendingUp, Phone, PhoneOff, Target, User, Calendar, RefreshCw } from "lucide-react"
+import { Loader2, TrendingUp, Phone, PhoneOff, Target, User, RefreshCw } from "lucide-react"
 import { athenaAPI } from "@/lib/athena-api"
 import { DateHelper } from "@/lib/date-helper"
 import { Button } from "@/components/ui/button"
@@ -30,30 +30,9 @@ interface QueueData {
   sla: string
 }
 
-interface HourData {
-  hour: string
-  received: string
-  answered: string
-}
-
-interface RealtimeMetrics {
-  activeCalls: number
-  waitingCalls: number
-  agentsOnline: number
-  agentsBusy: number
-  longestWaitTime: number
-}
 
 export default function DashboardOverview() {
   const [queueStats, setQueueStats] = useState<QueueData[]>([])
-  const [hourlyData, setHourlyData] = useState<HourData[]>([])
-  const [realtimeMetrics, setRealtimeMetrics] = useState<RealtimeMetrics>({
-    activeCalls: 0,
-    waitingCalls: 0,
-    agentsOnline: 0,
-    agentsBusy: 0,
-    longestWaitTime: 0
-  })
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date())
@@ -76,21 +55,19 @@ export default function DashboardOverview() {
     setIsLoading(true)
 
     try {
-      // Get today's data for real-time metrics
-      const today = DateHelper.getToday()
-      
-      // Parallel data fetching with region filtering
-      const [queueResult, hourlyResult, todayQueueResult] = await Promise.all([
-        athenaAPI.getDistributionByQueue(DateHelper.getLastNDays(30).start, DateHelper.getLastNDays(30).end, null, user?.email),
-        athenaAPI.getDistributionByHour(today.start, today.end, null, user?.email),
-        athenaAPI.getDistributionByQueue(today.start, today.end, null, user?.email) // Today's queue data for real-time metrics
+      // Get yesterday's date range
+      const yesterday = DateHelper.getYesterday()
+
+      // Fetch yesterday's queue data
+      const [queueResult] = await Promise.all([
+        athenaAPI.getDistributionByQueue(yesterday.start, yesterday.end, null, user?.email),
       ])
       
       if (queueResult.status === 'SUCCEEDED') {
         setQueueStats(queueResult.data)
         setAppliedRegion(queueResult.appliedRegion || null)
         
-        // Calculate 30-day KPIs
+        // Calculate yesterday's KPIs
         const totalReceived = queueResult.data.reduce((sum, q) => sum + parseInt(q.received || '0'), 0)
         const totalAnswered = queueResult.data.reduce((sum, q) => sum + parseInt(q.answered || '0'), 0)
         const totalUnanswered = queueResult.data.reduce((sum, q) => sum + parseInt(q.unanswered || '0'), 0)
@@ -103,31 +80,6 @@ export default function DashboardOverview() {
           answeredCalls: totalAnswered,
           missedCalls: totalUnanswered,
           avgSLA: Math.round(avgSLA)
-        })
-      }
-
-      if (hourlyResult.status === 'SUCCEEDED') {
-        setHourlyData(hourlyResult.data)
-      }
-
-      // Calculate real-time metrics from today's data
-      if (todayQueueResult.status === 'SUCCEEDED') {
-        const todayData = todayQueueResult.data
-        
-        // Simulated real-time metrics (in production, get from Amazon Connect real-time API)
-        const currentHour = new Date().getHours()
-        const recentHourlyData = hourlyResult.data?.filter(h => 
-          parseInt(h.hour.split(':')[0]) >= currentHour - 1
-        ) || []
-
-        const recentCalls = recentHourlyData.reduce((sum, h) => sum + parseInt(h.received || '0'), 0)
-        
-        setRealtimeMetrics({
-          activeCalls: Math.floor(recentCalls * 0.15), // ~15% of recent calls are active
-          waitingCalls: Math.floor(recentCalls * 0.05), // ~5% waiting
-          agentsOnline: todayData.length * 3, // Estimate based on queues
-          agentsBusy: Math.floor(todayData.length * 2.1), // ~70% of agents busy
-          longestWaitTime: Math.floor(Math.random() * 180) + 30 // Random between 30-210 seconds
         })
       }
 
@@ -153,11 +105,6 @@ export default function DashboardOverview() {
     })
   }
 
-  const formatWaitTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60)
-    const secs = seconds % 60
-    return `${mins}:${secs.toString().padStart(2, '0')}`
-  }
 
   return (
     <AuthGuard>
@@ -300,7 +247,7 @@ export default function DashboardOverview() {
 
           {/* Historical KPI Cards (Last 30 Days) */}
           <div>
-            <h2 className="text-xl font-semibold mb-4">30-Day Performance</h2>
+            <h2 className="text-xl font-semibold mb-4">Yesterday's Performance</h2>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -311,7 +258,7 @@ export default function DashboardOverview() {
                   <div className="text-2xl font-bold">
                     {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : kpis.totalCalls.toLocaleString()}
                   </div>
-                  <p className="text-xs text-muted-foreground">Last 30 days</p>
+                  <p className="text-xs text-muted-foreground">Yesterday</p>
                 </CardContent>
               </Card>
 
@@ -366,7 +313,7 @@ export default function DashboardOverview() {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle>Queue Performance (Top 10)</CardTitle>
-                  <CardDescription>Summary metrics for all queues - Last 30 days</CardDescription>
+                  <CardDescription>Summary metrics for all queues - Yesterday</CardDescription>
                 </div>
                 {isRefreshing && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
               </div>
