@@ -7,7 +7,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useToast } from "@/hooks/use-toast"
 import { Loader2, Calendar, Download } from "lucide-react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar as CalendarComponent } from "@/components/ui/calendar"
@@ -39,7 +38,6 @@ export default function TimeAnalysisReportsPage() {
   const [isLoading, setIsLoading] = useState(false)
   const { user, isLoading: authLoading } = useAuth()
   const [reportType, setReportType] = useState<"daily" | "weekly" | "monthly">("daily")
-  const { toast } = useToast()
 
   const [startDate, setStartDate] = useState<Date | undefined>(subDays(new Date(), 30))
   const [endDate, setEndDate] = useState<Date | undefined>(new Date())
@@ -87,20 +85,11 @@ export default function TimeAnalysisReportsPage() {
         }))
         
         setReportData(mappedData)
-        toast({
-          title: "Report generated successfully",
-          description: `${result.rowCount} ${reportType} period${result.rowCount !== 1 ? 's' : ''} loaded`,
-        })
       } else {
         throw new Error(result.error || 'Query failed')
       }
     } catch (error) {
       console.error("Report generation error:", error)
-      toast({
-        variant: "destructive",
-        title: "Failed to generate report",
-        description: error instanceof Error ? error.message : "Unknown error",
-      })
     } finally {
       setIsLoading(false)
     }

@@ -6,7 +6,6 @@ import { AuthGuard } from "@/components/auth-guard"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { useToast } from "@/hooks/use-toast"
 import { Loader2, RefreshCw, List, Calendar } from "lucide-react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar as CalendarComponent } from "@/components/ui/calendar"
@@ -45,7 +44,6 @@ export default function AgentDrilldownPage() {
   const [endDate, setEndDate] = useState<Date | undefined>(new Date())
   const [isStartOpen, setIsStartOpen] = useState(false)
   const [isEndOpen, setIsEndOpen] = useState(false)
-  const { toast } = useToast()
 
   const loadData = async () => {
     setIsLoading(true)
@@ -56,20 +54,12 @@ export default function AgentDrilldownPage() {
       )
       if (result.status === 'SUCCEEDED') {
         setRows(result.data)
-        toast({
-          title: "Data loaded",
-          description: `${result.rowCount} event${result.rowCount !== 1 ? 's' : ''} found`,
-        })
       } else {
         throw new Error(result.error || 'Query failed')
       }
       setLastRefresh(new Date())
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Failed to load agent state log",
-        description: error instanceof Error ? error.message : "Unknown error",
-      })
+      console.error("Failed to load agent state log:", error)
     } finally {
       setIsLoading(false)
     }

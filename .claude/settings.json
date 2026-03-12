@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -n \"toast\\(\" /Users/priyatampiyush/Desktop/ticketclinicprod/veradium-latest-report/app/queues/matrix/[queueId]/page.tsx)"
+    ]
+  }
+}

@@ -5,7 +5,6 @@ import { DashboardLayout } from "@/components/dashboard-layout"
 import { AuthGuard } from "@/components/auth-guard"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/hooks/use-auth"
 import { Badge } from "@/components/ui/badge"
 import { Loader2, TrendingUp, Phone, PhoneOff, Target, User, Calendar, RefreshCw } from "lucide-react"
@@ -64,7 +63,6 @@ export default function DashboardOverview() {
     missedCalls: 0,
     avgSLA: 0
   })
-  const { toast } = useToast()
   const { user } = useAuth()
   const [appliedRegion, setAppliedRegion] = useState<string[] | null>(null)
 
@@ -137,11 +135,6 @@ export default function DashboardOverview() {
 
     } catch (error) {
       console.error("Dashboard data error:", error)
-      toast({
-        variant: "destructive",
-        title: "Failed to load dashboard data",
-        description: error instanceof Error ? error.message : "Unknown error",
-      })
     } finally {
       setIsLoading(false)
       setIsRefreshing(false)

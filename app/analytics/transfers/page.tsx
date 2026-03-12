@@ -5,7 +5,6 @@ import { DashboardLayout } from "@/components/dashboard-layout"
 import { AuthGuard } from "@/components/auth-guard"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/hooks/use-auth"
 import { Badge } from "@/components/ui/badge"
 import { Loader2, TrendingUp, Phone, User, Calendar, RefreshCw } from "lucide-react"
@@ -29,7 +28,6 @@ export default function TransferAnalysis() {
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date())
   const [dateRange, setDateRange] = useState(DateHelper.getLastNDays(30))
   const [appliedRegion, setAppliedRegion] = useState<string[] | null>(null)
-  const { toast } = useToast()
   const { user, isLoading: authLoading } = useAuth()
 
   useEffect(() => {
@@ -56,11 +54,6 @@ export default function TransferAnalysis() {
       setLastRefresh(new Date())
     } catch (error) {
       console.error("Transfer data error:", error)
-      toast({
-        variant: "destructive",
-        title: "Failed to load transfer data",
-        description: error instanceof Error ? error.message : "Unknown error",
-      })
     } finally {
       setIsLoading(false)
     }

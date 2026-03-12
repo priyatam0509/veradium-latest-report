@@ -5,7 +5,6 @@ import { DashboardLayout } from "@/components/dashboard-layout"
 import { AuthGuard } from "@/components/auth-guard"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/hooks/use-auth"
 import { Badge } from "@/components/ui/badge"
 import { Loader2, RefreshCw, Activity, UserCheck, Users, Phone, Clock } from "lucide-react"
@@ -32,7 +31,6 @@ export default function AgentAvailabilityPage() {
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date())
   const [dateRange, setDateRange] = useState(DateHelper.getLastNDays(30))
-  const { toast } = useToast()
   const { user, isLoading: authLoading } = useAuth()
 
   useEffect(() => {
@@ -54,11 +52,7 @@ export default function AgentAvailabilityPage() {
       }
       setLastRefresh(new Date())
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Failed to load agent availability",
-        description: error instanceof Error ? error.message : "Unknown error",
-      })
+      console.error("Failed to load agent availability:", error)
     } finally {
       setIsLoading(false)
     }
