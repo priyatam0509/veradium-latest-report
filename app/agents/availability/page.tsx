@@ -6,8 +6,11 @@ import { AuthGuard } from "@/components/auth-guard"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useAuth } from "@/hooks/use-auth"
-import { Badge } from "@/components/ui/badge"
-import { Loader2, RefreshCw, Activity, UserCheck, Users, Phone, Clock } from "lucide-react"
+import { Loader2, RefreshCw, Users, Phone, Clock, Calendar } from "lucide-react"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Calendar as CalendarComponent } from "@/components/ui/calendar"
+import { format, subDays } from "date-fns"
+import { cn } from "@/lib/utils"
 import { athenaAPI } from "@/lib/athena-api"
 import { DateHelper } from "@/lib/date-helper"
 import { Button } from "@/components/ui/button"
@@ -23,6 +26,11 @@ interface AgentAvailData {
   pauses: string
   talk_time: string
   wrap_up_time: string
+  hold_time: string
+  idle_time: string
+  aht: string
+  '%_pauses': string
+  missed_rejected: string
 }
 
 export default function AgentAvailabilityPage() {
@@ -30,21 +38,24 @@ export default function AgentAvailabilityPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date())
-  const [dateRange, setDateRange] = useState(DateHelper.getLastNDays(30))
+  const [startDate, setStartDate] = useState<Date | undefined>(subDays(new Date(), 1))
+  const [endDate, setEndDate] = useState<Date | undefined>(subDays(new Date(), 1))
+  const [isStartDateOpen, setIsStartDateOpen] = useState(false)
+  const [isEndDateOpen, setIsEndDateOpen] = useState(false)
   const { user, isLoading: authLoading } = useAuth()
 
   useEffect(() => {
     if (!authLoading) {
       loadData()
     }
-  }, [authLoading, user?.email, dateRange])
+  }, [authLoading, user?.email])
 
   const loadData = async () => {
     setIsLoading(true)
     try {
       const result = await athenaAPI.getAgentAvailability(
-        dateRange.start,
-        dateRange.end,
+        DateHelper.formatDateFromDate(startDate),
+        DateHelper.formatDateFromDate(endDate, true),
         user?.email
       )
       if (result.status === 'SUCCEEDED') {
@@ -73,41 +84,13 @@ export default function AgentAvailabilityPage() {
       <DashboardLayout>
         <div className="space-y-6">
           {/* Header */}
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex items-center justify-between">
             <div>
-              <div className="flex items-center gap-3">
-                <h1 className="text-3xl font-bold tracking-tight">Agent Availability</h1>
-                <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20 animate-pulse">
-                  <Activity className="h-3 w-3 mr-1" />
-                  Live
-                </Badge>
-              </div>
-              <p className="text-muted-foreground mt-1">
-                Agent online time, pause time, talk time, and call metrics
-              </p>
+              <h1 className="text-3xl font-bold tracking-tight">Agent Availability</h1>
+              <p className="text-muted-foreground mt-1">Agent online time, pause time, talk time, and call metrics</p>
             </div>
-
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Card className="w-full sm:w-auto">
-                <CardContent className="p-4">
-                  <select
-                    defaultValue="getLastNDays"
-                    onChange={(e) => {
-                      const method = e.target.value
-                      if (method === 'getLastNDays') setDateRange(DateHelper.getLastNDays(30))
-                      else if (method === 'getToday') setDateRange(DateHelper.getToday())
-                      else if (method === 'getThisMonth') setDateRange(DateHelper.getThisMonth())
-                    }}
-                    className="w-full p-2 border rounded"
-                  >
-                    <option value="getToday">Today</option>
-                    <option value="getLastNDays">Last 30 Days</option>
-                    <option value="getThisMonth">This Month</option>
-                  </select>
-                </CardContent>
-              </Card>
-
-              <Card className="w-full sm:w-auto">
+            <div className="flex items-center gap-3">
+              <Card className="w-auto">
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
                     <Button variant="ghost" size="icon" onClick={handleRefresh} disabled={isRefreshing} className="h-10 w-10">
@@ -124,6 +107,48 @@ export default function AgentAvailabilityPage() {
               </Card>
             </div>
           </div>
+
+          {/* Date Filter */}
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex flex-wrap gap-4 items-end">
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium">Start Date</label>
+                  <Popover open={isStartDateOpen} onOpenChange={setIsStartDateOpen}>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className={cn("w-[200px] justify-start text-left font-normal", !startDate && "text-muted-foreground")}>
+                        <Calendar className="mr-2 h-4 w-4" />
+                        {startDate ? format(startDate, "PPP") : "Pick a date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <CalendarComponent mode="single" selected={startDate} onSelect={(d) => { setStartDate(d); setIsStartDateOpen(false) }} autoFocus />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium">End Date</label>
+                  <Popover open={isEndDateOpen} onOpenChange={setIsEndDateOpen}>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className={cn("w-[200px] justify-start text-left font-normal", !endDate && "text-muted-foreground")}>
+                        <Calendar className="mr-2 h-4 w-4" />
+                        {endDate ? format(endDate, "PPP") : "Pick a date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <CalendarComponent mode="single" selected={endDate} onSelect={(d) => { setEndDate(d); setIsEndDateOpen(false) }} autoFocus />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <Button onClick={loadData} disabled={isLoading}>
+                  {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Loading...</> : <>Apply Filter</>}
+                </Button>
+                <Button variant="outline" onClick={() => { setStartDate(subDays(new Date(), 1)); setEndDate(subDays(new Date(), 1)) }}>
+                  Reset
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* KPI Cards */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -205,11 +230,16 @@ export default function AgentAvailabilityPage() {
                         <TableHead>Region</TableHead>
                         <TableHead className="text-right">Answered</TableHead>
                         <TableHead className="text-right">Failed</TableHead>
+                        <TableHead className="text-right">Missed/Rejected</TableHead>
                         <TableHead className="text-right">Online Time</TableHead>
                         <TableHead className="text-right">Pause Time</TableHead>
+                        <TableHead className="text-right">% Pauses</TableHead>
                         <TableHead className="text-right">Pauses</TableHead>
                         <TableHead className="text-right">Talk Time</TableHead>
+                        <TableHead className="text-right">Hold Time</TableHead>
                         <TableHead className="text-right">Wrap-up Time</TableHead>
+                        <TableHead className="text-right">Idle Time</TableHead>
+                        <TableHead className="text-right">AHT</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -219,11 +249,16 @@ export default function AgentAvailabilityPage() {
                           <TableCell>{agent.agent_region || '—'}</TableCell>
                           <TableCell className="text-right text-green-600 font-mono">{agent.answered || '0'}</TableCell>
                           <TableCell className="text-right text-red-600 font-mono">{agent.failed || '0'}</TableCell>
+                          <TableCell className="text-right text-orange-600 font-mono">{agent.missed_rejected || '0'}</TableCell>
                           <TableCell className="text-right font-mono">{agent.online_time || '—'}</TableCell>
                           <TableCell className="text-right font-mono">{agent.pause_time || '—'}</TableCell>
+                          <TableCell className="text-right font-mono">{agent['%_pauses'] || '—'}</TableCell>
                           <TableCell className="text-right font-mono">{agent.pauses || '0'}</TableCell>
                           <TableCell className="text-right font-mono">{agent.talk_time || '—'}</TableCell>
+                          <TableCell className="text-right font-mono">{agent.hold_time || '—'}</TableCell>
                           <TableCell className="text-right font-mono">{agent.wrap_up_time || '—'}</TableCell>
+                          <TableCell className="text-right font-mono">{agent.idle_time || '—'}</TableCell>
+                          <TableCell className="text-right font-mono">{agent.aht || '—'}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
