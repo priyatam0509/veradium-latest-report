@@ -343,11 +343,13 @@ export class AthenaReportingAPI {
   }
 
   // Agent drilldown - no region filter support
-  async getAgentDrilldown(startDate: string, endDate: string) {
-    return this.executeQuery('agent_agent_drilldown', {
+  async getAgentDrilldown(startDate: string, endDate: string, agentId?: string) {
+    const params: any = {
       start_datetime: startDate,
       end_datetime: endDate
-    })
+    }
+    if (agentId) params.agent_id = [agentId]
+    return this.executeQuery('agent_agent_drilldown', params)
   }
 
   // RBAC Query (1 query - NO region filter support)
