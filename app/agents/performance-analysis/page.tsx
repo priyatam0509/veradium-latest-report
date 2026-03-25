@@ -1,16 +1,22 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { AuthGuard } from "@/components/auth-guard"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useAuth } from "@/hooks/use-auth"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, TrendingUp, Phone, User, RefreshCw, CheckCircle } from "lucide-react"
+import { Loader2, TrendingUp, Phone, User, RefreshCw, CheckCircle, Calendar, Search } from "lucide-react"
 import { athenaAPI } from "@/lib/athena-api"
 import { DateHelper } from "@/lib/date-helper"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Calendar as CalendarComponent } from "@/components/ui/calendar"
+import { Checkbox } from "@/components/ui/checkbox"
+import { format, subDays } from "date-fns"
+import { cn } from "@/lib/utils"
 
 interface AgentCallDisposition {
   user_id: string
@@ -25,36 +31,40 @@ interface AgentCallDisposition {
   missed_rejected: string
 }
 
-interface AgentPauseDetail {
-  user_id: string
-  name: string
-  on_custom_status: string
-  number_of_holds: string
-}
-
 export default function AgentPerformanceAnalysis() {
   const [agentData, setAgentData] = useState<AgentCallDisposition[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date())
-  const [dateRange, setDateRange] = useState(DateHelper.getLastNDays(30))
   const { user, isLoading: authLoading } = useAuth()
+
+  // Task 27: start/end date pickers
+  const [startDate, setStartDate] = useState<Date | undefined>(subDays(new Date(), 30))
+  const [endDate, setEndDate] = useState<Date | undefined>(new Date())
+  const [isStartOpen, setIsStartOpen] = useState(false)
+  const [isEndOpen, setIsEndOpen] = useState(false)
+
+  // Task 26: agent multi-select filter
+  const [selectedAgents, setSelectedAgents] = useState<string[]>([])
+  const [agentFilterOpen, setAgentFilterOpen] = useState(false)
+  const [searchTerm, setSearchTerm] = useState("")
 
   useEffect(() => {
     if (!authLoading) {
       loadAgentPerformanceData()
     }
-  }, [authLoading, user?.email, dateRange])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, user?.email])
 
   const loadAgentPerformanceData = async () => {
     setIsLoading(true)
     try {
       const result = await athenaAPI.getAgentCallDisposition(
-        dateRange.start,
-        dateRange.end,
+        DateHelper.formatDateFromDate(startDate),
+        DateHelper.formatDateFromDate(endDate, true),
         user?.email
       )
-      
+
       if (result.status === 'SUCCEEDED') {
         setAgentData(result.data)
       }
@@ -72,82 +82,141 @@ export default function AgentPerformanceAnalysis() {
     loadAgentPerformanceData().finally(() => setIsRefreshing(false))
   }
 
-  const totalAgents = agentData.length
-  const totalReceived = agentData.reduce((sum, a) => sum + parseInt(a.received || '0'), 0)
-  const totalCompleted = agentData.reduce((sum, a) => sum + parseInt(a.completed_by_agent || '0'), 0)
-  const totalTransferred = agentData.reduce((sum, a) => sum + parseInt(a.transferred_out || '0'), 0)
-  const totalFailed = agentData.reduce((sum, a) => sum + parseInt(a.failed || '0'), 0)
+  const handleApplyFilter = () => {
+    setSelectedAgents([])
+    loadAgentPerformanceData()
+  }
+
+  const handleResetFilter = () => {
+    setStartDate(subDays(new Date(), 30))
+    setEndDate(new Date())
+    setSelectedAgents([])
+    setSearchTerm("")
+    setTimeout(() => loadAgentPerformanceData(), 0)
+  }
+
+  // All agent names for multi-select
+  const allAgentNames = useMemo(
+    () => Array.from(new Set(agentData.map((a) => a.agent_name))).sort(),
+    [agentData]
+  )
+
+  // Filtered by agent selection + search
+  const displayedAgents = useMemo(() => {
+    let rows = agentData
+    if (selectedAgents.length > 0) rows = rows.filter((a) => selectedAgents.includes(a.agent_name))
+    if (searchTerm) rows = rows.filter((a) => a.agent_name?.toLowerCase().includes(searchTerm.toLowerCase()))
+    return rows
+  }, [agentData, selectedAgents, searchTerm])
+
+  const totalAgents = displayedAgents.length
+  const totalReceived = displayedAgents.reduce((sum, a) => sum + parseInt(a.received || '0'), 0)
+  const totalCompleted = displayedAgents.reduce((sum, a) => sum + parseInt(a.completed_by_agent || '0'), 0)
+  const totalTransferred = displayedAgents.reduce((sum, a) => sum + parseInt(a.transferred_out || '0'), 0)
+  const totalFailed = displayedAgents.reduce((sum, a) => sum + parseInt(a.failed || '0'), 0)
   const avgCompletionRate = totalReceived > 0 ? ((totalCompleted / totalReceived) * 100).toFixed(1) : '0'
-  const topAgent = agentData.length > 0
-    ? agentData.reduce((max, a) => parseInt(a.completed_by_agent || '0') > parseInt(max.completed_by_agent || '0') ? a : max)
+  const topAgent = displayedAgents.length > 0
+    ? displayedAgents.reduce((max, a) => parseInt(a.completed_by_agent || '0') > parseInt(max.completed_by_agent || '0') ? a : max)
     : null
 
   return (
     <AuthGuard>
       <DashboardLayout>
         <div className="space-y-6">
-          {/* Header Section */}
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-3">
-                <h1 className="text-3xl font-bold tracking-tight">Agent Performance Analysis</h1>
-              </div>
-              <p className="text-muted-foreground mt-1">
-                Agent call disposition and performance metrics
-              </p>
-            </div>
-            
-            <div className="flex flex-col sm:flex-row gap-3">
-              {/* Date Range Selector */}
-              <Card className="w-full sm:w-auto">
-                <CardContent className="p-4">
-                  <select 
-                    defaultValue="getLastNDays"
-                    onChange={(e) => {
-                      const method = e.target.value as keyof typeof DateHelper
-                      if (method === 'getLastNDays') {
-                        setDateRange(DateHelper.getLastNDays(30))
-                      } else if (method === 'getToday') {
-                        setDateRange(DateHelper.getToday())
-                      } else if (method === 'getThisMonth') {
-                        setDateRange(DateHelper.getThisMonth())
-                      }
-                    }}
-                    className="w-full p-2 border rounded"
-                  >
-                    <option value="getToday">Today</option>
-                    <option value="getLastNDays">Last 30 Days</option>
-                    <option value="getThisMonth">This Month</option>
-                  </select>
-                </CardContent>
-              </Card>
-
-              {/* Refresh Info */}
-              <Card className="w-full sm:w-auto">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <Button 
-                      variant="ghost" 
-                      size="icon"
-                      onClick={handleManualRefresh}
-                      disabled={isRefreshing}
-                      className="h-10 w-10"
-                    >
-                      <RefreshCw className={`h-5 w-5 ${isRefreshing ? 'animate-spin' : ''}`} />
-                    </Button>
-                    <div className="space-y-0.5">
-                      <p className="text-sm font-medium leading-none">
-                        {isRefreshing ? 'Refreshing...' : lastRefresh.toLocaleTimeString()}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Last updated
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+          {/* Header */}
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Agent Performance</h1>
+            <p className="text-muted-foreground mt-1">Agent call disposition and performance metrics</p>
           </div>
+
+          {/* Controls — Tasks 26, 27 */}
+          <Card>
+            <CardContent className="pt-4 pb-4">
+              <div className="flex flex-wrap gap-3 items-end">
+                {/* Start Date */}
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-medium text-muted-foreground">Start Date</label>
+                  <Popover open={isStartOpen} onOpenChange={setIsStartOpen}>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className={cn("w-[180px] justify-start text-left font-normal text-sm", !startDate && "text-muted-foreground")}>
+                        <Calendar className="mr-2 h-4 w-4" />
+                        {startDate ? format(startDate, "MMM dd, yyyy") : "Pick a date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <CalendarComponent mode="single" selected={startDate} onSelect={(d) => { setStartDate(d); setIsStartOpen(false) }} initialFocus />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                {/* End Date */}
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-medium text-muted-foreground">End Date</label>
+                  <Popover open={isEndOpen} onOpenChange={setIsEndOpen}>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className={cn("w-[180px] justify-start text-left font-normal text-sm", !endDate && "text-muted-foreground")}>
+                        <Calendar className="mr-2 h-4 w-4" />
+                        {endDate ? format(endDate, "MMM dd, yyyy") : "Pick a date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <CalendarComponent mode="single" selected={endDate} onSelect={(d) => { setEndDate(d); setIsEndOpen(false) }} initialFocus />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                {/* Agent Multi-Select — Task 26 */}
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-medium text-muted-foreground">Agent Filter</label>
+                  <Popover open={agentFilterOpen} onOpenChange={setAgentFilterOpen}>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className="w-[200px] justify-start text-left font-normal text-sm">
+                        {selectedAgents.length === 0 ? "All Agents"
+                          : selectedAgents.length === 1 ? selectedAgents[0]
+                          : `${selectedAgents.length} agents selected`}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[240px] p-2" align="start">
+                      <div className="space-y-1 max-h-60 overflow-y-auto">
+                        <div className="flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer hover:bg-accent text-sm" onClick={() => setSelectedAgents([])}>
+                          <Checkbox checked={selectedAgents.length === 0} />
+                          <span>All Agents</span>
+                        </div>
+                        {allAgentNames.map((name) => (
+                          <div key={name} className="flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer hover:bg-accent text-sm"
+                            onClick={() => setSelectedAgents((prev) => prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name])}>
+                            <Checkbox checked={selectedAgents.includes(name)} />
+                            <span className="truncate">{name}</span>
+                          </div>
+                        ))}
+                        {allAgentNames.length === 0 && <p className="text-xs text-muted-foreground px-2 py-1">Load data first</p>}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                {/* Search */}
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-medium text-muted-foreground">Search</label>
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input placeholder="Search agents..." className="pl-8 w-[180px] text-sm" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-medium text-muted-foreground invisible">Actions</label>
+                  <div className="flex gap-2">
+                    <Button onClick={handleApplyFilter} disabled={isLoading} size="sm">
+                      {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+                      Apply
+                    </Button>
+                    <Button variant="outline" onClick={handleResetFilter} size="sm">Reset</Button>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* KPI Cards */}
           <div>
@@ -175,7 +244,7 @@ export default function AgentPerformanceAnalysis() {
                   <div className="text-2xl font-bold text-green-600">
                     {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : totalCompleted.toLocaleString()}
                   </div>
-                  <p className="text-xs text-muted-foreground">Last {dateRange === DateHelper.getToday() ? '24 hours' : '30 days'}</p>
+                  <p className="text-xs text-muted-foreground">Selected period</p>
                 </CardContent>
               </Card>
 
@@ -224,7 +293,7 @@ export default function AgentPerformanceAnalysis() {
                 <div>
                   <CardTitle>Agent Performance Details</CardTitle>
                   <CardDescription>
-                    Individual agent call disposition metrics - Last {dateRange === DateHelper.getToday() ? '24 hours' : '30 days'}
+                    Individual agent call disposition metrics
                   </CardDescription>
                 </div>
                 {isRefreshing && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
@@ -235,7 +304,7 @@ export default function AgentPerformanceAnalysis() {
                 <div className="flex justify-center py-8">
                   <Loader2 className="h-8 w-8 animate-spin" />
                 </div>
-              ) : agentData.length > 0 ? (
+              ) : displayedAgents.length > 0 ? (
                 <div className="rounded-md border">
                   <Table>
                     <TableHeader>
@@ -253,7 +322,7 @@ export default function AgentPerformanceAnalysis() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {agentData.map((agent, index) => {
+                      {displayedAgents.map((agent, index) => {
                         const completed = parseInt(agent.completed_by_agent || '0')
                         const failed = parseInt(agent.failed || '0')
                         const completionRate = (completed + failed) > 0 

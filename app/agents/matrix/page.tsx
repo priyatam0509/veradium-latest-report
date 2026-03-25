@@ -5,17 +5,17 @@ import { DashboardLayout } from "@/components/dashboard-layout"
 import { AuthGuard } from "@/components/auth-guard"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { BarChart3, PhoneCall, PhoneMissed, ArrowRight } from "lucide-react"
+import { Activity, TrendingUp, UserCheck, ArrowRight } from "lucide-react"
 
-export default function QueueMatrixPage() {
+export default function AgentMatrixPage() {
   return (
     <AuthGuard>
       <DashboardLayout>
         <div className="space-y-6">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Queue Matrix</h1>
+            <h1 className="text-3xl font-bold tracking-tight">Agent Matrix</h1>
             <p className="text-muted-foreground mt-1">
-              Overview of queue performance. Select a report below.
+              Overview of agent performance. Select a report below.
             </p>
           </div>
 
@@ -24,17 +24,17 @@ export default function QueueMatrixPage() {
               <CardHeader>
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-lg bg-blue-500/10">
-                    <BarChart3 className="h-5 w-5 text-blue-600" />
+                    <Activity className="h-5 w-5 text-blue-600" />
                   </div>
-                  <CardTitle className="text-lg">Queue Distribution</CardTitle>
+                  <CardTitle className="text-lg">Agent Activity</CardTitle>
                 </div>
                 <CardDescription>
-                  Detailed call distribution by queue, DID, agent, hour, day, month, and state.
+                  Agent pause, hold, and custom status activity details.
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <Button asChild className="w-full">
-                  <Link href="/queues/distribution">
+                  <Link href="/agents/activity-analysis">
                     Open Report <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>
@@ -45,17 +45,17 @@ export default function QueueMatrixPage() {
               <CardHeader>
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-lg bg-green-500/10">
-                    <PhoneCall className="h-5 w-5 text-green-600" />
+                    <TrendingUp className="h-5 w-5 text-green-600" />
                   </div>
-                  <CardTitle className="text-lg">Answered Calls</CardTitle>
+                  <CardTitle className="text-lg">Agent Performance</CardTitle>
                 </div>
                 <CardDescription>
-                  Answered call analysis by queue, DID, and agent with contact-level drilldowns.
+                  Agent call disposition: completed, transferred, failed, and missed calls.
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <Button asChild className="w-full" variant="outline">
-                  <Link href="/queues/answered">
+                  <Link href="/agents/performance-analysis">
                     Open Report <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>
@@ -65,18 +65,18 @@ export default function QueueMatrixPage() {
             <Card className="hover:shadow-md transition-shadow">
               <CardHeader>
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-red-500/10">
-                    <PhoneMissed className="h-5 w-5 text-red-600" />
+                  <div className="p-2 rounded-lg bg-purple-500/10">
+                    <UserCheck className="h-5 w-5 text-purple-600" />
                   </div>
-                  <CardTitle className="text-lg">Unanswered Calls</CardTitle>
+                  <CardTitle className="text-lg">Agent Availability</CardTitle>
                 </div>
                 <CardDescription>
-                  Unanswered and abandoned call analysis by queue and DID with drilldowns.
+                  Agent online time, pause time, talk time, and availability metrics.
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <Button asChild className="w-full" variant="outline">
-                  <Link href="/queues/unanswered">
+                  <Link href="/agents/availability">
                     Open Report <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>
@@ -87,7 +87,7 @@ export default function QueueMatrixPage() {
           <Card className="border-dashed">
             <CardContent className="p-6">
               <p className="text-sm text-muted-foreground text-center">
-                Additional metrics (Total Answered, Total Unanswered, Service Levels) will appear here once SQL is available.
+                Agent Summary and Agent Totals sections will appear here once SQL is available.
               </p>
             </CardContent>
           </Card>
