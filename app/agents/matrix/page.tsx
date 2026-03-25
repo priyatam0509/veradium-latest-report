@@ -84,13 +84,6 @@ export default function AgentMatrixPage() {
             </Card>
           </div>
 
-          <Card className="border-dashed">
-            <CardContent className="p-6">
-              <p className="text-sm text-muted-foreground text-center">
-                Agent Summary and Agent Totals sections will appear here once SQL is available.
-              </p>
-            </CardContent>
-          </Card>
         </div>
       </DashboardLayout>
     </AuthGuard>

@@ -84,13 +84,6 @@ export default function QueueMatrixPage() {
             </Card>
           </div>
 
-          <Card className="border-dashed">
-            <CardContent className="p-6">
-              <p className="text-sm text-muted-foreground text-center">
-                Additional metrics (Total Answered, Total Unanswered, Service Levels) will appear here once SQL is available.
-              </p>
-            </CardContent>
-          </Card>
         </div>
       </DashboardLayout>
     </AuthGuard>
