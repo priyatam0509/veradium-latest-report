@@ -7,9 +7,15 @@ import { usePathname } from "next/navigation"
 
 import { useAuth } from "@/hooks/use-auth"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Calendar as CalendarComponent } from "@/components/ui/calendar"
+import { Checkbox } from "@/components/ui/checkbox"
+import { format } from "date-fns"
 import Image from "next/image"
+import { GlobalFiltersProvider, useGlobalFilters } from "@/lib/global-filters-context"
 
 import {
   Home,
@@ -30,7 +36,126 @@ import {
   ChevronRight,
   LayoutGrid,
   FileText,
+  Calendar,
+  Search,
+  RefreshCw,
 } from "lucide-react"
+
+/* -------------------------------------------------------------------------- */
+/*                           Global Filters Bar                               */
+/* -------------------------------------------------------------------------- */
+
+function GlobalFiltersBar() {
+  const {
+    startDate, endDate, searchTerm, selectedQueues,
+    isStartOpen, isEndOpen, queueFilterOpen,
+    availableQueues,
+    setStartDate, setEndDate, setSearchTerm, setSelectedQueues,
+    setIsStartOpen, setIsEndOpen, setQueueFilterOpen,
+    handleApply, handleReset,
+  } = useGlobalFilters()
+
+  const toggleQueue = (q: string) => {
+    setSelectedQueues(selectedQueues.includes(q) ? selectedQueues.filter((x) => x !== q) : [...selectedQueues, q])
+  }
+
+  return (
+    <div className="border-b bg-card px-4 md:px-8 py-2 flex flex-wrap gap-2 items-end sticky top-16 z-30">
+      {/* Start Date */}
+      <div className="flex flex-col gap-0.5">
+        <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Start Date</label>
+        <Popover open={isStartOpen} onOpenChange={setIsStartOpen}>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className={cn("h-8 w-[155px] justify-start text-left font-normal text-xs", !startDate && "text-muted-foreground")}>
+              <Calendar className="mr-1.5 h-3.5 w-3.5" />
+              {startDate ? format(startDate, "MMM dd, yyyy") : "Pick a date"}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <CalendarComponent mode="single" selected={startDate} onSelect={(d) => { setStartDate(d); setIsStartOpen(false) }} initialFocus />
+          </PopoverContent>
+        </Popover>
+      </div>
+
+      {/* End Date */}
+      <div className="flex flex-col gap-0.5">
+        <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">End Date</label>
+        <Popover open={isEndOpen} onOpenChange={setIsEndOpen}>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className={cn("h-8 w-[155px] justify-start text-left font-normal text-xs", !endDate && "text-muted-foreground")}>
+              <Calendar className="mr-1.5 h-3.5 w-3.5" />
+              {endDate ? format(endDate, "MMM dd, yyyy") : "Pick a date"}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <CalendarComponent mode="single" selected={endDate} onSelect={(d) => { setEndDate(d); setIsEndOpen(false) }} initialFocus />
+          </PopoverContent>
+        </Popover>
+      </div>
+
+      {/* Queue Filter */}
+      <div className="flex flex-col gap-0.5">
+        <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Queue Filter</label>
+        <Popover open={queueFilterOpen} onOpenChange={setQueueFilterOpen}>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className="h-8 w-[180px] justify-start text-left font-normal text-xs">
+              {selectedQueues.length === 0
+                ? "All Queues"
+                : selectedQueues.length === 1
+                ? selectedQueues[0]
+                : `${selectedQueues.length} queues selected`}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[220px] p-2" align="start">
+            <div className="max-h-52 overflow-y-auto space-y-1">
+              {availableQueues.length === 0 ? (
+                <p className="text-xs text-muted-foreground px-2 py-1">Visit Queue Distribution to load queues</p>
+              ) : (
+                availableQueues.map((q) => (
+                  <div key={q} className="flex items-center gap-2 px-2 py-1 rounded hover:bg-accent cursor-pointer" onClick={() => toggleQueue(q)}>
+                    <Checkbox checked={selectedQueues.includes(q)} onCheckedChange={() => toggleQueue(q)} />
+                    <span className="text-xs">{q}</span>
+                  </div>
+                ))
+              )}
+            </div>
+            {selectedQueues.length > 0 && (
+              <Button variant="ghost" size="sm" className="w-full mt-1 text-xs h-7" onClick={() => setSelectedQueues([])}>
+                Clear selection
+              </Button>
+            )}
+          </PopoverContent>
+        </Popover>
+      </div>
+
+      {/* Search */}
+      <div className="flex flex-col gap-0.5">
+        <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Search</label>
+        <div className="relative">
+          <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <Input
+            className="h-8 pl-7 text-xs w-[180px]"
+            placeholder="Search..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleApply()}
+          />
+        </div>
+      </div>
+
+      {/* Apply + Reset */}
+      <div className="flex gap-2 items-end">
+        <Button size="sm" className="h-8 text-xs px-4" onClick={handleApply}>
+          Apply
+        </Button>
+        <Button size="sm" variant="outline" className="h-8 text-xs px-3" onClick={handleReset}>
+          <RefreshCw className="h-3.5 w-3.5 mr-1" />
+          Reset
+        </Button>
+      </div>
+    </div>
+  )
+}
 
 /* -------------------------------------------------------------------------- */
 /*                            Navigation Structure                             */
@@ -98,7 +223,7 @@ const NAV_STRUCTURE: NavEntry[] = [
 /*                              Dashboard Layout                               */
 /* -------------------------------------------------------------------------- */
 
-export function DashboardLayout({ children }: { children: React.ReactNode }) {
+function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const { user, logout, accessibleRoutes } = useAuth()
   const pathname = usePathname()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -291,6 +416,8 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           </h1>
         </header>
 
+        <GlobalFiltersBar />
+
         <main className="flex-1 p-4 md:p-8 overflow-y-auto">
           {children}
         </main>
@@ -327,5 +454,13 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         </div>
       )}
     </div>
+  )
+}
+
+export function DashboardLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <GlobalFiltersProvider>
+      <DashboardLayoutInner>{children}</DashboardLayoutInner>
+    </GlobalFiltersProvider>
   )
 }

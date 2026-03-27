@@ -5,17 +5,15 @@ import { DashboardLayout } from "@/components/dashboard-layout"
 import { AuthGuard } from "@/components/auth-guard"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Loader2, Search, Calendar, RefreshCw, Download, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Calendar as CalendarComponent } from "@/components/ui/calendar"
-import { format, subDays } from "date-fns"
+import { Loader2, Download, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react"
+import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 import { athenaAPI } from "@/lib/athena-api"
 import { useAuth } from "@/hooks/use-auth"
 import { DateHelper } from "@/lib/date-helper"
+import { useGlobalFilters } from "@/lib/global-filters-context"
 
 /* -------------------------------------------------------------------------- */
 /*                               Data interfaces                               */
@@ -243,13 +241,14 @@ function generateDrilldownHTML(data: DrilldownData[], title: string, startDate?:
 
 export default function AnsweredCallsPage() {
   const { user, isLoading: authLoading } = useAuth()
+  const {
+    appliedStartDate: startDate,
+    appliedEndDate: endDate,
+    appliedSearchTerm: searchTerm,
+    applyVersion,
+  } = useGlobalFilters()
 
-  const [startDate, setStartDate] = useState<Date | undefined>(subDays(new Date(), 30))
-  const [endDate, setEndDate] = useState<Date | undefined>(new Date())
-  const [isStartOpen, setIsStartOpen] = useState(false)
-  const [isEndOpen, setIsEndOpen] = useState(false)
   const [activeTab, setActiveTab] = useState("queue")
-  const [searchTerm, setSearchTerm] = useState("")
 
   const [queueData, setQueueData] = useState<AnsweredByQueueRow[]>([])
   const [didData, setDidData] = useState<AnsweredByDIDRow[]>([])
@@ -288,19 +287,14 @@ export default function AnsweredCallsPage() {
     }
   }
 
-  const handleApplyFilter = () => {
-    setLoaded({})
-    setQueueData([]); setDidData([]); setAgentData([])
-    setTimeout(() => fetchTab(activeTab, true), 0)
-  }
-
-  const handleResetFilter = () => {
-    setStartDate(subDays(new Date(), 30))
-    setEndDate(new Date())
-    setSearchTerm("")
-    setLoaded({})
-    setQueueData([]); setDidData([]); setAgentData([])
-  }
+  useEffect(() => {
+    if (!authLoading) {
+      setLoaded({})
+      setQueueData([]); setDidData([]); setAgentData([])
+      setTimeout(() => fetchTab(activeTab, true), 0)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [applyVersion])
 
   useEffect(() => {
     if (!authLoading) fetchTab("queue")
@@ -376,77 +370,23 @@ export default function AnsweredCallsPage() {
             <p className="text-muted-foreground">Answered call analysis by queue, DID, and agent</p>
           </div>
 
-          {/* Controls */}
-          <Card>
-            <CardContent className="pt-4 pb-4">
-              <div className="flex flex-wrap gap-3 items-end">
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs font-medium text-muted-foreground">Start Date</label>
-                  <Popover open={isStartOpen} onOpenChange={setIsStartOpen}>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" className={cn("w-[180px] justify-start text-left font-normal text-sm", !startDate && "text-muted-foreground")}>
-                        <Calendar className="mr-2 h-4 w-4" />
-                        {startDate ? format(startDate, "MMM dd, yyyy") : "Pick a date"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <CalendarComponent mode="single" selected={startDate} onSelect={(d) => { setStartDate(d); setIsStartOpen(false) }} initialFocus />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs font-medium text-muted-foreground">End Date</label>
-                  <Popover open={isEndOpen} onOpenChange={setIsEndOpen}>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" className={cn("w-[180px] justify-start text-left font-normal text-sm", !endDate && "text-muted-foreground")}>
-                        <Calendar className="mr-2 h-4 w-4" />
-                        {endDate ? format(endDate, "MMM dd, yyyy") : "Pick a date"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <CalendarComponent mode="single" selected={endDate} onSelect={(d) => { setEndDate(d); setIsEndOpen(false) }} initialFocus />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs font-medium text-muted-foreground">Search</label>
-                  <div className="relative">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input placeholder="Search..." className="pl-8 w-[200px] text-sm" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs font-medium text-muted-foreground invisible">Actions</label>
-                  <div className="flex gap-2">
-                    <Button onClick={handleApplyFilter} disabled={isLoading} size="sm">
-                      {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
-                      Apply
-                    </Button>
-                    <Button variant="outline" onClick={handleResetFilter} size="sm">Reset</Button>
-                    <Button variant="outline" size="sm" onClick={() => exportToCSV(currentData, `answered-${activeTab}-${format(new Date(), "yyyy-MM-dd")}.csv`)}>
-                      <Download className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
           <Card>
             <CardContent className="pt-4">
               <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="mb-4">
-                  <TabsTrigger value="queue">By Queue</TabsTrigger>
-                  <TabsTrigger value="did">By DID</TabsTrigger>
-                  <TabsTrigger value="agent">By Agent</TabsTrigger>
-                </TabsList>
+                <div className="flex items-center justify-between mb-4">
+                  <TabsList>
+                    <TabsTrigger value="queue">By Queue</TabsTrigger>
+                    <TabsTrigger value="did">By DID</TabsTrigger>
+                    <TabsTrigger value="agent">By Agent</TabsTrigger>
+                  </TabsList>
+                  <Button variant="outline" size="sm" onClick={() => exportToCSV(currentData, `answered-${activeTab}-${format(new Date(), "yyyy-MM-dd")}.csv`)}>
+                    <Download className="h-4 w-4" />
+                  </Button>
+                </div>
 
                 {/* By Queue */}
                 <TabsContent value="queue">
-                  <div className="rounded-md border overflow-auto" style={{ maxHeight: "calc(100vh - 340px)" }}>
+                  <div className="rounded-md border overflow-x-scroll overflow-y-auto" style={{ maxHeight: "calc(100vh - 340px)" }}>
                     <Table>
                       <TableHeader className="sticky top-0 bg-background z-10">
                         <TableRow>
@@ -491,7 +431,7 @@ export default function AnsweredCallsPage() {
 
                 {/* By DID */}
                 <TabsContent value="did">
-                  <div className="rounded-md border overflow-auto" style={{ maxHeight: "calc(100vh - 340px)" }}>
+                  <div className="rounded-md border overflow-x-scroll overflow-y-auto" style={{ maxHeight: "calc(100vh - 340px)" }}>
                     <Table>
                       <TableHeader className="sticky top-0 bg-background z-10">
                         <TableRow>
@@ -536,7 +476,7 @@ export default function AnsweredCallsPage() {
 
                 {/* By Agent */}
                 <TabsContent value="agent">
-                  <div className="rounded-md border overflow-auto" style={{ maxHeight: "calc(100vh - 340px)" }}>
+                  <div className="rounded-md border overflow-x-scroll overflow-y-auto" style={{ maxHeight: "calc(100vh - 340px)" }}>
                     <Table>
                       <TableHeader className="sticky top-0 bg-background z-10">
                         <TableRow>

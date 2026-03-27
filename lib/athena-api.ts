@@ -352,6 +352,65 @@ export class AthenaReportingAPI {
     return this.executeQuery('agent_agent_drilldown', params)
   }
 
+  // ── V6 Dashboard Queries ────────────────────────────────────────────────
+
+  /** Total answered calls summary — dashboard_total_answered_calls */
+  async getDashboardTotalAnswered(startDate: string, endDate: string, username?: string) {
+    return this.executeQuery('dashboard_total_answered_calls', {
+      start_datetime: startDate,
+      end_datetime: endDate
+    }, true, 60, username)
+  }
+
+  /** Total unanswered calls summary — dashboard_total_unanswered_calls */
+  async getDashboardTotalUnanswered(startDate: string, endDate: string, username?: string) {
+    return this.executeQuery('dashboard_total_unanswered_calls', {
+      start_datetime: startDate,
+      end_datetime: endDate
+    }, true, 60, username)
+  }
+
+  /** Answered service level distribution — dashboard_answered_service_level */
+  async getDashboardAnsweredServiceLevel(startDate: string, endDate: string, username?: string) {
+    return this.executeQuery('dashboard_answered_service_level', {
+      start_datetime: startDate,
+      end_datetime: endDate
+    }, true, 60, username)
+  }
+
+  /** Abandoned service level distribution — dashboard_abandoned_service_level */
+  async getDashboardAbandonedServiceLevel(startDate: string, endDate: string, username?: string) {
+    return this.executeQuery('dashboard_abandoned_service_level', {
+      start_datetime: startDate,
+      end_datetime: endDate
+    }, true, 60, username)
+  }
+
+  // ── V6 Lookup Queries ───────────────────────────────────────────────────
+
+  /** Get list of agents for dropdowns — lookup_agentlist */
+  async getLookupAgentList(username?: string) {
+    return this.executeQuery('lookup_agentlist', {}, true, 60, username)
+  }
+
+  /** Get list of queues for dropdowns — lookup_queuelist */
+  async getLookupQueueList(username?: string) {
+    return this.executeQuery('lookup_queuelist', {}, true, 60, username)
+  }
+
+  // ── V6 Distribution by State ────────────────────────────────────────────
+
+  /** Call distribution by state/area-code — distribution_distbystate */
+  async getDistributionByState(startDate: string, endDate: string, _region?: string[] | null, username?: string) {
+    const params: any = {
+      start_datetime: startDate,
+      end_datetime: endDate,
+      sla_threshold: '30',
+      true_abandon_threshold: '30'
+    }
+    return this.executeQuery('distribution_distbystate', params, true, 60, username)
+  }
+
   // RBAC Query (1 query - NO region filter support)
   async getUsers(searchFirstName = '', searchLastName = '', searchEmail = '') {
     return this.executeQuery('rbac_users_rbac', {

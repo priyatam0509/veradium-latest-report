@@ -5,18 +5,15 @@ import { DashboardLayout } from "@/components/dashboard-layout"
 import { AuthGuard } from "@/components/auth-guard"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Loader2, Search, Calendar, RefreshCw, Download, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Calendar as CalendarComponent } from "@/components/ui/calendar"
-import { Checkbox } from "@/components/ui/checkbox"
-import { format, subDays } from "date-fns"
+import { Loader2, Download, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react"
+import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 import { athenaAPI } from "@/lib/athena-api"
 import { useAuth } from "@/hooks/use-auth"
 import { DateHelper } from "@/lib/date-helper"
+import { useGlobalFilters } from "@/lib/global-filters-context"
 
 /* -------------------------------------------------------------------------- */
 /*                               Data interfaces                               */
@@ -124,6 +121,24 @@ interface AgentAnsweredData {
   transferred: string
   "%_calls": string
   talk_time: string
+}
+
+interface StateData {
+  state: string
+  region: string
+  channel: string
+  initiation_method: string
+  received: string
+  answered: string
+  unanswered: string
+  abandoned: string
+  transferred: string
+  avg_wait: string
+  avg_talk: string
+  "%_answered": string
+  "%_unanswered": string
+  sla: string
+  [key: string]: string
 }
 
 interface DrilldownData {
@@ -360,20 +375,17 @@ function generateDrilldownHTML(data: DrilldownData[], title: string, startDate?:
 
 export default function QueueDistributionPage() {
   const { user, isLoading: authLoading } = useAuth()
+  const {
+    appliedStartDate: startDate,
+    appliedEndDate: endDate,
+    appliedSearchTerm: searchTerm,
+    appliedQueues: selectedQueues,
+    applyVersion,
+    setAvailableQueues,
+  } = useGlobalFilters()
 
-  // ── date state ──────────────────────────────────────────────────────────────
-  const [startDate, setStartDate] = useState<Date | undefined>(subDays(new Date(), 30))
-  const [endDate, setEndDate] = useState<Date | undefined>(new Date())
-  const [isStartOpen, setIsStartOpen] = useState(false)
-  const [isEndOpen, setIsEndOpen] = useState(false)
-
-  // ── tab & search ────────────────────────────────────────────────────────────
+  // ── tab ─────────────────────────────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState("queue")
-  const [searchTerm, setSearchTerm] = useState("")
-
-  // ── queue multi-select filter ────────────────────────────────────────────────
-  const [selectedQueues, setSelectedQueues] = useState<string[]>([])
-  const [queueFilterOpen, setQueueFilterOpen] = useState(false)
 
   // ── data ────────────────────────────────────────────────────────────────────
   const [queueData, setQueueData] = useState<QueueData[]>([])
@@ -382,6 +394,7 @@ export default function QueueDistributionPage() {
   const [dayData, setDayData] = useState<DayData[]>([])
   const [monthData, setMonthData] = useState<MonthData[]>([])
   const [agentData, setAgentData] = useState<AgentAnsweredData[]>([])
+  const [stateData, setStateData] = useState<StateData[]>([])
 
   const [isLoading, setIsLoading] = useState(false)
   const [loadingItemId, setLoadingItemId] = useState<string | null>(null)
@@ -407,6 +420,7 @@ export default function QueueDistributionPage() {
       else if (tab === "day") result = await athenaAPI.getDistributionByDay(start, end, null, user?.email)
       else if (tab === "month") result = await athenaAPI.getDistributionByMonth(start, end, null, user?.email)
       else if (tab === "agent") result = await athenaAPI.getAnsweredByAgent(start, end, undefined, null, user?.email)
+      else if (tab === "state") result = await athenaAPI.getDistributionByState(start, end, null, user?.email)
       else return
 
       if (result?.status === "SUCCEEDED") {
@@ -416,6 +430,7 @@ export default function QueueDistributionPage() {
         else if (tab === "day") setDayData(result.data)
         else if (tab === "month") setMonthData(result.data)
         else if (tab === "agent") setAgentData(result.data)
+        else if (tab === "state") setStateData(result.data)
         setLoaded((prev) => ({ ...prev, [tab]: true }))
       }
     } catch (err) {
@@ -425,30 +440,21 @@ export default function QueueDistributionPage() {
     }
   }
 
-  const handleApplyFilter = () => {
-    setLoaded({})
-    setQueueData([])
-    setDidData([])
-    setHourData([])
-    setDayData([])
-    setMonthData([])
-    setAgentData([])
-    setTimeout(() => fetchTab(activeTab, true), 0)
-  }
-
-  const handleResetFilter = () => {
-    setStartDate(subDays(new Date(), 30))
-    setEndDate(new Date())
-    setSelectedQueues([])
-    setSearchTerm("")
-    setLoaded({})
-    setQueueData([])
-    setDidData([])
-    setHourData([])
-    setDayData([])
-    setMonthData([])
-    setAgentData([])
-  }
+  // Re-fetch all data when Apply is clicked (applyVersion increments)
+  useEffect(() => {
+    if (!authLoading) {
+      setLoaded({})
+      setQueueData([])
+      setDidData([])
+      setHourData([])
+      setDayData([])
+      setMonthData([])
+      setAgentData([])
+      setStateData([])
+      setTimeout(() => fetchTab(activeTab, true), 0)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [applyVersion])
 
   useEffect(() => {
     if (!authLoading) fetchTab("queue")
@@ -484,7 +490,12 @@ export default function QueueDistributionPage() {
   }
 
   // ── filtering ────────────────────────────────────────────────────────────────
-  const allQueueNames = useMemo(() => Array.from(new Set(queueData.map((q) => q.queue_name || q.queue_id))).sort(), [queueData])
+  const allQueueNames = useMemo(() => {
+    const names = Array.from(new Set(queueData.map((q) => q.queue_name || q.queue_id))).sort()
+    setAvailableQueues(names)
+    return names
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [queueData])
 
   const filteredQueues = useMemo(() => {
     let rows = queueData
@@ -528,6 +539,14 @@ export default function QueueDistributionPage() {
     [agentData, searchTerm]
   )
 
+  const filteredStates = useMemo(
+    () =>
+      searchTerm
+        ? stateData.filter((s) => s.state?.toLowerCase().includes(searchTerm.toLowerCase()))
+        : stateData,
+    [stateData, searchTerm]
+  )
+
   // ── sortable hooks per tab ────────────────────────────────────────────────────
   const queueSort = useSortable(filteredQueues)
   const didSort = useSortable(filteredDIDs)
@@ -535,6 +554,7 @@ export default function QueueDistributionPage() {
   const daySort = useSortable(filteredDays)
   const monthSort = useSortable(filteredMonths)
   const agentSort = useSortable(filteredAgents)
+  const stateSort = useSortable(filteredStates)
 
   // ── common numeric totals ─────────────────────────────────────────────────────
   const numericCols = ["received", "answered", "unanswered", "abandoned", "transferred"]
@@ -571,151 +591,43 @@ export default function QueueDistributionPage() {
             <p className="text-muted-foreground">Call distribution by queue, DID, agent, hour, day, and month</p>
           </div>
 
-          {/* ── Controls (Task 3: all common controls at top) ─────────────────── */}
-          <Card>
-            <CardContent className="pt-4 pb-4">
-              <div className="flex flex-wrap gap-3 items-end">
-                {/* Start Date */}
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs font-medium text-muted-foreground">Start Date</label>
-                  <Popover open={isStartOpen} onOpenChange={setIsStartOpen}>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" className={cn("w-[180px] justify-start text-left font-normal text-sm", !startDate && "text-muted-foreground")}>
-                        <Calendar className="mr-2 h-4 w-4" />
-                        {startDate ? format(startDate, "MMM dd, yyyy") : "Pick a date"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <CalendarComponent mode="single" selected={startDate} onSelect={(d) => { setStartDate(d); setIsStartOpen(false) }} initialFocus />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-
-                {/* End Date */}
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs font-medium text-muted-foreground">End Date</label>
-                  <Popover open={isEndOpen} onOpenChange={setIsEndOpen}>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" className={cn("w-[180px] justify-start text-left font-normal text-sm", !endDate && "text-muted-foreground")}>
-                        <Calendar className="mr-2 h-4 w-4" />
-                        {endDate ? format(endDate, "MMM dd, yyyy") : "Pick a date"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <CalendarComponent mode="single" selected={endDate} onSelect={(d) => { setEndDate(d); setIsEndOpen(false) }} initialFocus />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-
-                {/* Queue Multi-Select (Task 5) */}
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs font-medium text-muted-foreground">Queue Filter</label>
-                  <Popover open={queueFilterOpen} onOpenChange={setQueueFilterOpen}>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" className="w-[200px] justify-start text-left font-normal text-sm">
-                        {selectedQueues.length === 0
-                          ? "All Queues"
-                          : selectedQueues.length === 1
-                          ? selectedQueues[0]
-                          : `${selectedQueues.length} queues selected`}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[240px] p-2" align="start">
-                      <div className="space-y-1 max-h-60 overflow-y-auto">
-                        <div
-                          className="flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer hover:bg-accent text-sm"
-                          onClick={() => setSelectedQueues([])}
-                        >
-                          <Checkbox checked={selectedQueues.length === 0} />
-                          <span>All Queues</span>
-                        </div>
-                        {allQueueNames.map((name) => (
-                          <div
-                            key={name}
-                            className="flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer hover:bg-accent text-sm"
-                            onClick={() =>
-                              setSelectedQueues((prev) =>
-                                prev.includes(name) ? prev.filter((q) => q !== name) : [...prev, name]
-                              )
-                            }
-                          >
-                            <Checkbox checked={selectedQueues.includes(name)} />
-                            <span className="truncate">{name}</span>
-                          </div>
-                        ))}
-                        {allQueueNames.length === 0 && (
-                          <p className="text-xs text-muted-foreground px-2 py-1">Load queue data first</p>
-                        )}
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                </div>
-
-                {/* Search */}
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs font-medium text-muted-foreground">Search</label>
-                  <div className="relative">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Search..."
-                      className="pl-8 w-[200px] text-sm"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                {/* Buttons */}
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs font-medium text-muted-foreground invisible">Actions</label>
-                  <div className="flex gap-2">
-                    <Button onClick={handleApplyFilter} disabled={isLoading} size="sm">
-                      {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
-                      Apply
-                    </Button>
-                    <Button variant="outline" onClick={handleResetFilter} size="sm">
-                      Reset
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        const data =
-                          activeTab === "queue" ? queueSort.sorted
-                          : activeTab === "did" ? didSort.sorted
-                          : activeTab === "hour" ? hourSort.sorted
-                          : activeTab === "day" ? daySort.sorted
-                          : activeTab === "month" ? monthSort.sorted
-                          : agentSort.sorted
-                        exportToCSV(data, `distribution-${activeTab}-${format(new Date(), "yyyy-MM-dd")}.csv`)
-                      }}
-                    >
-                      <Download className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
 
           {/* ── Tabs ────────────────────────────────────────────────────────── */}
           <Card>
             <CardContent className="pt-4">
               <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="flex flex-wrap h-auto gap-1 mb-4">
-                  <TabsTrigger value="queue">By Queue</TabsTrigger>
-                  <TabsTrigger value="did">By DID</TabsTrigger>
-                  <TabsTrigger value="agent">By Agent</TabsTrigger>
-                  <TabsTrigger value="hour">By Hour</TabsTrigger>
-                  <TabsTrigger value="day">By Day</TabsTrigger>
-                  <TabsTrigger value="month">By Month</TabsTrigger>
-                  <TabsTrigger value="state" disabled>By State</TabsTrigger>
-                </TabsList>
+                <div className="flex items-center justify-between mb-4">
+                  <TabsList className="flex flex-wrap h-auto gap-1">
+                    <TabsTrigger value="queue">By Queue</TabsTrigger>
+                    <TabsTrigger value="did">By DID</TabsTrigger>
+                    <TabsTrigger value="agent">By Agent</TabsTrigger>
+                    <TabsTrigger value="hour">By Hour</TabsTrigger>
+                    <TabsTrigger value="day">By Day</TabsTrigger>
+                    <TabsTrigger value="month">By Month</TabsTrigger>
+                    <TabsTrigger value="state" disabled>By State</TabsTrigger>
+                  </TabsList>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const data =
+                        activeTab === "queue" ? queueSort.sorted
+                        : activeTab === "did" ? didSort.sorted
+                        : activeTab === "hour" ? hourSort.sorted
+                        : activeTab === "day" ? daySort.sorted
+                        : activeTab === "month" ? monthSort.sorted
+                        : agentSort.sorted
+                      exportToCSV(data, `distribution-${activeTab}-${format(new Date(), "yyyy-MM-dd")}.csv`)
+                    }}
+                  >
+                    <Download className="h-4 w-4" />
+                  </Button>
+                </div>
 
                 {/* ── BY QUEUE ─────────────────────────────────────────── */}
                 <TabsContent value="queue">
                   {/* Task 4: viewport-height table */}
-                  <div className="rounded-md border overflow-auto" style={{ maxHeight: "calc(100vh - 340px)" }}>
+                  <div className="rounded-md border overflow-x-scroll overflow-y-auto" style={{ maxHeight: "calc(100vh - 340px)" }}>
                     <Table>
                       <TableHeader className="sticky top-0 bg-background z-10">
                         <TableRow>
@@ -786,7 +698,7 @@ export default function QueueDistributionPage() {
 
                 {/* ── BY DID ───────────────────────────────────────────── */}
                 <TabsContent value="did">
-                  <div className="rounded-md border overflow-auto" style={{ maxHeight: "calc(100vh - 340px)" }}>
+                  <div className="rounded-md border overflow-x-scroll overflow-y-auto" style={{ maxHeight: "calc(100vh - 340px)" }}>
                     <Table>
                       <TableHeader className="sticky top-0 bg-background z-10">
                         <TableRow>
@@ -856,7 +768,7 @@ export default function QueueDistributionPage() {
 
                 {/* ── BY AGENT ─────────────────────────────────────────── */}
                 <TabsContent value="agent">
-                  <div className="rounded-md border overflow-auto" style={{ maxHeight: "calc(100vh - 340px)" }}>
+                  <div className="rounded-md border overflow-x-scroll overflow-y-auto" style={{ maxHeight: "calc(100vh - 340px)" }}>
                     <Table>
                       <TableHeader className="sticky top-0 bg-background z-10">
                         <TableRow>
@@ -907,7 +819,7 @@ export default function QueueDistributionPage() {
 
                 {/* ── BY HOUR ──────────────────────────────────────────── */}
                 <TabsContent value="hour">
-                  <div className="rounded-md border overflow-auto" style={{ maxHeight: "calc(100vh - 340px)" }}>
+                  <div className="rounded-md border overflow-x-scroll overflow-y-auto" style={{ maxHeight: "calc(100vh - 340px)" }}>
                     <Table>
                       <TableHeader className="sticky top-0 bg-background z-10">
                         <TableRow>
@@ -968,7 +880,7 @@ export default function QueueDistributionPage() {
 
                 {/* ── BY DAY ───────────────────────────────────────────── */}
                 <TabsContent value="day">
-                  <div className="rounded-md border overflow-auto" style={{ maxHeight: "calc(100vh - 340px)" }}>
+                  <div className="rounded-md border overflow-x-scroll overflow-y-auto" style={{ maxHeight: "calc(100vh - 340px)" }}>
                     <Table>
                       <TableHeader className="sticky top-0 bg-background z-10">
                         <TableRow>
@@ -1028,7 +940,7 @@ export default function QueueDistributionPage() {
 
                 {/* ── BY MONTH ─────────────────────────────────────────── */}
                 <TabsContent value="month">
-                  <div className="rounded-md border overflow-auto" style={{ maxHeight: "calc(100vh - 340px)" }}>
+                  <div className="rounded-md border overflow-x-scroll overflow-y-auto" style={{ maxHeight: "calc(100vh - 340px)" }}>
                     <Table>
                       <TableHeader className="sticky top-0 bg-background z-10">
                         <TableRow>
@@ -1084,10 +996,60 @@ export default function QueueDistributionPage() {
                   </div>
                 </TabsContent>
 
-                {/* ── BY STATE (placeholder — pending SQL from Vince) ───── */}
+                {/* ── BY STATE ─────────────────────────────────────────── */}
                 <TabsContent value="state">
-                  <div className="flex items-center justify-center h-40 text-muted-foreground border rounded-md">
-                    <p className="text-sm">By State report — pending SQL (Task 7)</p>
+                  <div className="rounded-md border overflow-x-scroll overflow-y-auto" style={{ maxHeight: "calc(100vh - 340px)" }}>
+                    <Table>
+                      <TableHeader className="sticky top-0 bg-background z-10">
+                        <TableRow>
+                          {[
+                            ["state","State"],["region","Region"],["channel","Channel"],["initiation_method","Method"],
+                            ["received","Received"],["answered","Answered"],["unanswered","Unanswered"],
+                            ["abandoned","Abandoned"],["transferred","Transferred"],["avg_wait","Avg Wait"],
+                            ["avg_talk","Avg Talk"],["%_answered","% Ans"],["%_unanswered","% Unans"],["sla","SLA"],
+                          ].map(([col, label]) => (
+                            <SortHead key={col} col={col} label={label} sortKey={stateSort.sortKey} sortDir={stateSort.sortDir} onSort={stateSort.handleSort} />
+                          ))}
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {isLoading && activeTab === "state" ? (
+                          <LoadingRow cols={14} />
+                        ) : stateSort.sorted.length === 0 ? (
+                          <EmptyRow cols={14} label="No state data found." />
+                        ) : (
+                          <>
+                            {stateSort.sorted.map((s, i) => (
+                              <TableRow key={(s.state || "") + i}>
+                                <TableCell className="whitespace-nowrap font-medium capitalize">{s.state || "—"}</TableCell>
+                                <TableCell>{s.region || "—"}</TableCell>
+                                <TableCell>{s.channel}</TableCell>
+                                <TableCell>{s.initiation_method}</TableCell>
+                                <TableCell>{s.received}</TableCell>
+                                <TableCell>{s.answered}</TableCell>
+                                <TableCell>{s.unanswered}</TableCell>
+                                <TableCell>{s.abandoned}</TableCell>
+                                <TableCell>{s.transferred}</TableCell>
+                                <TableCell>{s.avg_wait || "—"}</TableCell>
+                                <TableCell>{s.avg_talk || "—"}</TableCell>
+                                <TableCell>{s["%_answered"]}</TableCell>
+                                <TableCell>{s["%_unanswered"]}</TableCell>
+                                <TableCell className="font-medium">{s.sla}</TableCell>
+                              </TableRow>
+                            ))}
+                            <TableRow className="bg-muted/50 font-semibold">
+                              <TableCell colSpan={4}>TOTAL</TableCell>
+                              {numericCols.map((c) => <TableCell key={c}>{sumNumeric(stateSort.sorted, c)}</TableCell>)}
+                              <TableCell>{avgNumeric(stateSort.sorted, "avg_wait")}</TableCell>
+                              <TableCell>{avgNumeric(stateSort.sorted, "avg_talk")}</TableCell>
+                              <TableCell>{avgNumeric(stateSort.sorted, "%_answered")}</TableCell>
+                              <TableCell>{avgNumeric(stateSort.sorted, "%_unanswered")}</TableCell>
+                              <TableCell>{avgNumeric(stateSort.sorted, "sla")}</TableCell>
+                            </TableRow>
+                          </>
+                        )}
+                      </TableBody>
+                    </Table>
                   </div>
                 </TabsContent>
               </Tabs>
