@@ -382,6 +382,8 @@ export default function QueueDistributionPage() {
     appliedEndDate: endDate,
     appliedSearchTerm: searchTerm,
     appliedQueues: selectedQueues,
+    appliedAgents: selectedAgents,
+    appliedDids: selectedDids,
     applyVersion,
     setAvailableQueues,
   } = useGlobalFilters()
@@ -390,9 +392,13 @@ export default function QueueDistributionPage() {
   const startRef = useRef(startDate)
   const endRef = useRef(endDate)
   const queuesRef = useRef(selectedQueues)
+  const agentsRef = useRef(selectedAgents)
+  const didsRef = useRef(selectedDids)
   useEffect(() => { startRef.current = startDate }, [startDate])
   useEffect(() => { endRef.current = endDate }, [endDate])
   useEffect(() => { queuesRef.current = selectedQueues }, [selectedQueues])
+  useEffect(() => { agentsRef.current = selectedAgents }, [selectedAgents])
+  useEffect(() => { didsRef.current = selectedDids }, [selectedDids])
 
   // ── tab ─────────────────────────────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState("queue")
@@ -422,17 +428,19 @@ export default function QueueDistributionPage() {
     if (loaded[tab] && !force) return
     setIsLoading(true)
     const { start, end } = dateRange()
-    // Always read from ref — guaranteed to be the latest applied queue selection
+    // Always read from ref — guaranteed to be the latest applied filter values
     const queueFilter = queuesRef.current.length > 0 ? queuesRef.current : undefined
+    const agentFilter = agentsRef.current.length > 0 ? agentsRef.current : undefined
+    const didFilter = didsRef.current.length > 0 ? didsRef.current : undefined
     try {
       let result: any
-      if (tab === "queue") result = await athenaAPI.getDistributionByQueue(start, end, null, user?.email, queueFilter)
-      else if (tab === "did") result = await athenaAPI.getDistributionByDID(start, end, null, user?.email, queueFilter)
-      else if (tab === "hour") result = await athenaAPI.getDistributionByHour(start, end, null, user?.email, queueFilter)
-      else if (tab === "day") result = await athenaAPI.getDistributionByDay(start, end, null, user?.email, queueFilter)
-      else if (tab === "month") result = await athenaAPI.getDistributionByMonth(start, end, null, user?.email, queueFilter)
-      else if (tab === "agent") result = await athenaAPI.getAnsweredByAgent(start, end, queueFilter, null, user?.email)
-      else if (tab === "state") result = await athenaAPI.getDistributionByState(start, end, null, user?.email, queueFilter)
+      if (tab === "queue") result = await athenaAPI.getDistributionByQueue(start, end, null, user?.email, queueFilter, agentFilter, didFilter)
+      else if (tab === "did") result = await athenaAPI.getDistributionByDID(start, end, null, user?.email, queueFilter, agentFilter, didFilter)
+      else if (tab === "hour") result = await athenaAPI.getDistributionByHour(start, end, null, user?.email, queueFilter, agentFilter, didFilter)
+      else if (tab === "day") result = await athenaAPI.getDistributionByDay(start, end, null, user?.email, queueFilter, agentFilter, didFilter)
+      else if (tab === "month") result = await athenaAPI.getDistributionByMonth(start, end, null, user?.email, queueFilter, agentFilter, didFilter)
+      else if (tab === "agent") result = await athenaAPI.getAnsweredByAgent(start, end, queueFilter, null, user?.email, agentFilter, didFilter)
+      else if (tab === "state") result = await athenaAPI.getDistributionByState(start, end, null, user?.email, queueFilter, agentFilter, didFilter)
       else return
 
       if (result?.status === "SUCCEEDED") {

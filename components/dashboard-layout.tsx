@@ -45,18 +45,55 @@ import {
 /*                           Global Filters Bar                               */
 /* -------------------------------------------------------------------------- */
 
-function GlobalFiltersBar() {
+// Per-route filter visibility config.
+// hidden: dropdowns to hide completely on this route (not applicable per PDF spec)
+interface FilterConfig {
+  hideAgent?: boolean
+  hideQueue?: boolean
+  hideDid?: boolean
+}
+
+const FILTER_ROUTE_CONFIG: Record<string, FilterConfig> = {
+  // Queue Matrices — does NOT support agent
+  "/queues/matrix":        { hideAgent: true },
+  // Unanswered Calls — does NOT support agent
+  "/queues/unanswered":    { hideAgent: true },
+  // Agent Activity Analysis — only supports agent + region (hide queue + DID)
+  "/agents/activity-analysis": { hideQueue: true, hideDid: true },
+  // Agent Performance — does NOT support DID
+  "/agents/performance-analysis": { hideDid: true },
+  // Agent Availability — does NOT support DID
+  "/agents/availability": { hideDid: true },
+  // Queue Distribution — all dropdowns active
+  "/queues/distribution": {},
+  // Answered Calls — all dropdowns active
+  "/queues/answered": {},
+  // Transfer Analysis — all dropdowns active
+  "/analytics/transfers": {},
+}
+
+function GlobalFiltersBar({ config }: { config: FilterConfig }) {
   const {
-    startDate, endDate, searchTerm, selectedQueues,
-    isStartOpen, isEndOpen, queueFilterOpen,
-    availableQueues,
-    setStartDate, setEndDate, setSearchTerm, setSelectedQueues,
-    setIsStartOpen, setIsEndOpen, setQueueFilterOpen,
+    startDate, endDate, searchTerm,
+    selectedQueues, selectedAgents, selectedDids, selectedRegions,
+    isStartOpen, isEndOpen,
+    queueFilterOpen, agentFilterOpen, didFilterOpen, regionFilterOpen,
+    availableQueues, availableAgents, availableDids,
+    setStartDate, setEndDate, setSearchTerm,
+    setSelectedQueues, setSelectedAgents, setSelectedDids, setSelectedRegions,
+    setIsStartOpen, setIsEndOpen,
+    setQueueFilterOpen, setAgentFilterOpen, setDidFilterOpen, setRegionFilterOpen,
     handleApply, handleReset,
   } = useGlobalFilters()
 
-  const toggleQueue = (q: string) => {
-    setSelectedQueues(selectedQueues.includes(q) ? selectedQueues.filter((x) => x !== q) : [...selectedQueues, q])
+  const toggleItem = (list: string[], item: string, setter: (v: string[]) => void) => {
+    setter(list.includes(item) ? list.filter((x) => x !== item) : [...list, item])
+  }
+
+  const multiSelectLabel = (selected: string[], singular: string, all: string) => {
+    if (selected.length === 0) return all
+    if (selected.length === 1) return selected[0]
+    return `${selected.length} ${singular}s selected`
   }
 
   return (
@@ -94,35 +131,118 @@ function GlobalFiltersBar() {
       </div>
 
       {/* Queue Filter */}
+      {!config.hideQueue && (
+        <div className="flex flex-col gap-0.5">
+          <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Queue</label>
+          <Popover open={queueFilterOpen} onOpenChange={setQueueFilterOpen}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="h-8 w-[180px] justify-start text-left font-normal text-xs">
+                {multiSelectLabel(selectedQueues, "queue", "All Queues")}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[220px] p-2" align="start">
+              <div className="max-h-52 overflow-y-auto space-y-1">
+                {availableQueues.length === 0 ? (
+                  <p className="text-xs text-muted-foreground px-2 py-1">Loading queues…</p>
+                ) : (
+                  availableQueues.map((q) => (
+                    <div key={q} className="flex items-center gap-2 px-2 py-1 rounded hover:bg-accent cursor-pointer" onClick={() => toggleItem(selectedQueues, q, setSelectedQueues)}>
+                      <Checkbox checked={selectedQueues.includes(q)} onCheckedChange={() => toggleItem(selectedQueues, q, setSelectedQueues)} />
+                      <span className="text-xs">{q}</span>
+                    </div>
+                  ))
+                )}
+              </div>
+              {selectedQueues.length > 0 && (
+                <Button variant="ghost" size="sm" className="w-full mt-1 text-xs h-7" onClick={() => setSelectedQueues([])}>Clear</Button>
+              )}
+            </PopoverContent>
+          </Popover>
+        </div>
+      )}
+
+      {/* Agent Filter */}
+      {!config.hideAgent && (
+        <div className="flex flex-col gap-0.5">
+          <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Agent</label>
+          <Popover open={agentFilterOpen} onOpenChange={setAgentFilterOpen}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="h-8 w-[180px] justify-start text-left font-normal text-xs">
+                {multiSelectLabel(selectedAgents, "agent", "All Agents")}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[220px] p-2" align="start">
+              <div className="max-h-52 overflow-y-auto space-y-1">
+                {availableAgents.length === 0 ? (
+                  <p className="text-xs text-muted-foreground px-2 py-1">Loading agents…</p>
+                ) : (
+                  availableAgents.map((a) => (
+                    <div key={a} className="flex items-center gap-2 px-2 py-1 rounded hover:bg-accent cursor-pointer" onClick={() => toggleItem(selectedAgents, a, setSelectedAgents)}>
+                      <Checkbox checked={selectedAgents.includes(a)} onCheckedChange={() => toggleItem(selectedAgents, a, setSelectedAgents)} />
+                      <span className="text-xs">{a}</span>
+                    </div>
+                  ))
+                )}
+              </div>
+              {selectedAgents.length > 0 && (
+                <Button variant="ghost" size="sm" className="w-full mt-1 text-xs h-7" onClick={() => setSelectedAgents([])}>Clear</Button>
+              )}
+            </PopoverContent>
+          </Popover>
+        </div>
+      )}
+
+      {/* DID / Phone Filter */}
+      {!config.hideDid && (
+        <div className="flex flex-col gap-0.5">
+          <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">DID / Phone</label>
+          <Popover open={didFilterOpen} onOpenChange={setDidFilterOpen}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="h-8 w-[180px] justify-start text-left font-normal text-xs">
+                {multiSelectLabel(selectedDids, "DID", "All DIDs")}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[220px] p-2" align="start">
+              <div className="max-h-52 overflow-y-auto space-y-1">
+                {availableDids.length === 0 ? (
+                  <p className="text-xs text-muted-foreground px-2 py-1">Loading DIDs…</p>
+                ) : (
+                  availableDids.map((d) => (
+                    <div key={d} className="flex items-center gap-2 px-2 py-1 rounded hover:bg-accent cursor-pointer" onClick={() => toggleItem(selectedDids, d, setSelectedDids)}>
+                      <Checkbox checked={selectedDids.includes(d)} onCheckedChange={() => toggleItem(selectedDids, d, setSelectedDids)} />
+                      <span className="text-xs">{d}</span>
+                    </div>
+                  ))
+                )}
+              </div>
+              {selectedDids.length > 0 && (
+                <Button variant="ghost" size="sm" className="w-full mt-1 text-xs h-7" onClick={() => setSelectedDids([])}>Clear</Button>
+              )}
+            </PopoverContent>
+          </Popover>
+        </div>
+      )}
+
+      {/* Region Filter */}
       <div className="flex flex-col gap-0.5">
-        <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Queue Filter</label>
-        <Popover open={queueFilterOpen} onOpenChange={setQueueFilterOpen}>
+        <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Region</label>
+        <Popover open={regionFilterOpen} onOpenChange={setRegionFilterOpen}>
           <PopoverTrigger asChild>
-            <Button variant="outline" className="h-8 w-[180px] justify-start text-left font-normal text-xs">
-              {selectedQueues.length === 0
-                ? "All Queues"
-                : selectedQueues.length === 1
-                ? selectedQueues[0]
-                : `${selectedQueues.length} queues selected`}
+            <Button variant="outline" className="h-8 w-[150px] justify-start text-left font-normal text-xs">
+              {multiSelectLabel(selectedRegions, "region", "All Regions")}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-[220px] p-2" align="start">
+          <PopoverContent className="w-[200px] p-2" align="start">
             <div className="max-h-52 overflow-y-auto space-y-1">
-              {availableQueues.length === 0 ? (
-                <p className="text-xs text-muted-foreground px-2 py-1">Visit Queue Distribution to load queues</p>
-              ) : (
-                availableQueues.map((q) => (
-                  <div key={q} className="flex items-center gap-2 px-2 py-1 rounded hover:bg-accent cursor-pointer" onClick={() => toggleQueue(q)}>
-                    <Checkbox checked={selectedQueues.includes(q)} onCheckedChange={() => toggleQueue(q)} />
-                    <span className="text-xs">{q}</span>
-                  </div>
-                ))
-              )}
+              {["us-east-1", "us-west-2", "eu-west-1", "ap-southeast-1"].map((r) => (
+                <div key={r} className="flex items-center gap-2 px-2 py-1 rounded hover:bg-accent cursor-pointer" onClick={() => toggleItem(selectedRegions, r, setSelectedRegions)}>
+                  <Checkbox checked={selectedRegions.includes(r)} onCheckedChange={() => toggleItem(selectedRegions, r, setSelectedRegions)} />
+                  <span className="text-xs">{r}</span>
+                </div>
+              ))}
             </div>
-            {selectedQueues.length > 0 && (
-              <Button variant="ghost" size="sm" className="w-full mt-1 text-xs h-7" onClick={() => setSelectedQueues([])}>
-                Clear selection
-              </Button>
+            {selectedRegions.length > 0 && (
+              <Button variant="ghost" size="sm" className="w-full mt-1 text-xs h-7" onClick={() => setSelectedRegions([])}>Clear</Button>
             )}
           </PopoverContent>
         </Popover>
@@ -268,14 +388,12 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     return accessibleRouteSet.has(route)
   }
 
-  // Show the global filters bar on queue matrix landing + all 3 queue report pages
-  const FILTER_ROUTES = [
-    "/queues/matrix",
-    "/queues/distribution",
-    "/queues/answered",
-    "/queues/unanswered",
-  ]
-  const showFilters = FILTER_ROUTES.some((r) => pathname === r || pathname.startsWith(r + "/"))
+  // Show the global filters bar on all pages in FILTER_ROUTE_CONFIG
+  const showFilters = Object.keys(FILTER_ROUTE_CONFIG).some(
+    (r) => pathname === r || pathname.startsWith(r + "/")
+  )
+  const currentFilterConfig: FilterConfig =
+    Object.entries(FILTER_ROUTE_CONFIG).find(([r]) => pathname === r || pathname.startsWith(r + "/"))?.[1] ?? {}
 
   // Resolve a human-readable page title from NAV_STRUCTURE instead of the raw URL segment
   const getPageTitle = (): string => {
@@ -449,7 +567,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
           </h1>
         </header>
 
-        {showFilters && <GlobalFiltersBar />}
+        {showFilters && <GlobalFiltersBar config={currentFilterConfig} />}
 
         <main className="flex-1 p-4 md:p-8 overflow-y-auto">
           {children}

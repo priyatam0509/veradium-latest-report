@@ -248,6 +248,8 @@ export default function AnsweredCallsPage() {
     appliedEndDate: endDate,
     appliedSearchTerm: searchTerm,
     appliedQueues: selectedQueues,
+    appliedAgents: selectedAgents,
+    appliedDids: selectedDids,
     applyVersion,
   } = useGlobalFilters()
 
@@ -255,9 +257,13 @@ export default function AnsweredCallsPage() {
   const startRef = useRef(startDate)
   const endRef = useRef(endDate)
   const queuesRef = useRef(selectedQueues)
+  const agentsRef = useRef(selectedAgents)
+  const didsRef = useRef(selectedDids)
   useEffect(() => { startRef.current = startDate }, [startDate])
   useEffect(() => { endRef.current = endDate }, [endDate])
   useEffect(() => { queuesRef.current = selectedQueues }, [selectedQueues])
+  useEffect(() => { agentsRef.current = selectedAgents }, [selectedAgents])
+  useEffect(() => { didsRef.current = selectedDids }, [selectedDids])
 
   const [activeTab, setActiveTab] = useState("queue")
 
@@ -278,13 +284,15 @@ export default function AnsweredCallsPage() {
     if (loaded[tab] && !force) return
     setIsLoading(true)
     const { start, end } = getDateRange()
-    // Always read from ref — guaranteed to be the latest applied queue selection
+    // Always read from ref — guaranteed to be the latest applied filter values
     const queueFilter = queuesRef.current.length > 0 ? queuesRef.current : undefined
+    const agentFilter = agentsRef.current.length > 0 ? agentsRef.current : undefined
+    const didFilter = didsRef.current.length > 0 ? didsRef.current : undefined
     try {
       let result: any
-      if (tab === "queue") result = await athenaAPI.getAnsweredByQueue(start, end, null, user?.email, queueFilter)
-      else if (tab === "did") result = await athenaAPI.getAnsweredByDID(start, end, null, user?.email, queueFilter)
-      else if (tab === "agent") result = await athenaAPI.getAnsweredByAgent(start, end, queueFilter, null, user?.email)
+      if (tab === "queue") result = await athenaAPI.getAnsweredByQueue(start, end, null, user?.email, queueFilter, agentFilter, didFilter)
+      else if (tab === "did") result = await athenaAPI.getAnsweredByDID(start, end, null, user?.email, queueFilter, agentFilter, didFilter)
+      else if (tab === "agent") result = await athenaAPI.getAnsweredByAgent(start, end, queueFilter, null, user?.email, agentFilter, didFilter)
       else return
 
       if (result?.status === "SUCCEEDED") {

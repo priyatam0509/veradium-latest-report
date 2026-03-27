@@ -1,22 +1,18 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useRef } from "react"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { AuthGuard } from "@/components/auth-guard"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useAuth } from "@/hooks/use-auth"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, TrendingUp, Phone, User, RefreshCw, CheckCircle, Calendar, Search } from "lucide-react"
+import { Loader2, TrendingUp, Phone, User, RefreshCw, CheckCircle, Search } from "lucide-react"
 import { athenaAPI } from "@/lib/athena-api"
 import { DateHelper } from "@/lib/date-helper"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Calendar as CalendarComponent } from "@/components/ui/calendar"
-import { Checkbox } from "@/components/ui/checkbox"
-import { format, subDays } from "date-fns"
 import { cn } from "@/lib/utils"
+import { useGlobalFilters } from "@/lib/global-filters-context"
 
 interface AgentCallDisposition {
   user_id: string
@@ -36,18 +32,26 @@ export default function AgentPerformanceAnalysis() {
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date())
+  const [searchTerm, setSearchTerm] = useState("")
   const { user, isLoading: authLoading } = useAuth()
 
-  // Task 27: start/end date pickers
-  const [startDate, setStartDate] = useState<Date | undefined>(subDays(new Date(), 30))
-  const [endDate, setEndDate] = useState<Date | undefined>(new Date())
-  const [isStartOpen, setIsStartOpen] = useState(false)
-  const [isEndOpen, setIsEndOpen] = useState(false)
+  const {
+    appliedStartDate: startDate,
+    appliedEndDate: endDate,
+    appliedAgents: selectedAgents,
+    appliedQueues: selectedQueues,
+    applyVersion,
+  } = useGlobalFilters()
 
-  // Task 26: agent multi-select filter
-  const [selectedAgents, setSelectedAgents] = useState<string[]>([])
-  const [agentFilterOpen, setAgentFilterOpen] = useState(false)
-  const [searchTerm, setSearchTerm] = useState("")
+  // Refs to avoid stale closures
+  const startRef = useRef(startDate)
+  const endRef = useRef(endDate)
+  const agentsRef = useRef(selectedAgents)
+  const queuesRef = useRef(selectedQueues)
+  useEffect(() => { startRef.current = startDate }, [startDate])
+  useEffect(() => { endRef.current = endDate }, [endDate])
+  useEffect(() => { agentsRef.current = selectedAgents }, [selectedAgents])
+  useEffect(() => { queuesRef.current = selectedQueues }, [selectedQueues])
 
   useEffect(() => {
     if (!authLoading) {
@@ -56,13 +60,26 @@ export default function AgentPerformanceAnalysis() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authLoading, user?.email])
 
+  useEffect(() => {
+    if (!authLoading) {
+      loadAgentPerformanceData()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [applyVersion])
+
   const loadAgentPerformanceData = async () => {
     setIsLoading(true)
     try {
+      const start = DateHelper.formatDateFromDate(startRef.current)
+      const end = DateHelper.formatDateFromDate(endRef.current, true)
+      const agentFilter = agentsRef.current.length > 0 ? agentsRef.current : undefined
+      const queueFilter = queuesRef.current.length > 0 ? queuesRef.current : undefined
       const result = await athenaAPI.getAgentCallDisposition(
-        DateHelper.formatDateFromDate(startDate),
-        DateHelper.formatDateFromDate(endDate, true),
-        user?.email
+        start,
+        end,
+        user?.email,
+        agentFilter,
+        queueFilter,
       )
 
       if (result.status === 'SUCCEEDED') {
@@ -82,32 +99,11 @@ export default function AgentPerformanceAnalysis() {
     loadAgentPerformanceData().finally(() => setIsRefreshing(false))
   }
 
-  const handleApplyFilter = () => {
-    setSelectedAgents([])
-    loadAgentPerformanceData()
-  }
-
-  const handleResetFilter = () => {
-    setStartDate(subDays(new Date(), 30))
-    setEndDate(new Date())
-    setSelectedAgents([])
-    setSearchTerm("")
-    setTimeout(() => loadAgentPerformanceData(), 0)
-  }
-
-  // All agent names for multi-select
-  const allAgentNames = useMemo(
-    () => Array.from(new Set(agentData.map((a) => a.agent_name))).sort(),
-    [agentData]
-  )
-
-  // Filtered by agent selection + search
+  // Filtered by local search term only (global agent filter already applied at API level)
   const displayedAgents = useMemo(() => {
-    let rows = agentData
-    if (selectedAgents.length > 0) rows = rows.filter((a) => selectedAgents.includes(a.agent_name))
-    if (searchTerm) rows = rows.filter((a) => a.agent_name?.toLowerCase().includes(searchTerm.toLowerCase()))
-    return rows
-  }, [agentData, selectedAgents, searchTerm])
+    if (!searchTerm) return agentData
+    return agentData.filter((a) => a.agent_name?.toLowerCase().includes(searchTerm.toLowerCase()))
+  }, [agentData, searchTerm])
 
   const totalAgents = displayedAgents.length
   const totalReceived = displayedAgents.reduce((sum, a) => sum + parseInt(a.received || '0'), 0)
@@ -128,95 +124,6 @@ export default function AgentPerformanceAnalysis() {
             <h1 className="text-3xl font-bold tracking-tight">Agent Performance</h1>
             <p className="text-muted-foreground mt-1">Agent call disposition and performance metrics</p>
           </div>
-
-          {/* Controls — Tasks 26, 27 */}
-          <Card>
-            <CardContent className="pt-4 pb-4">
-              <div className="flex flex-wrap gap-3 items-end">
-                {/* Start Date */}
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs font-medium text-muted-foreground">Start Date</label>
-                  <Popover open={isStartOpen} onOpenChange={setIsStartOpen}>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" className={cn("w-[180px] justify-start text-left font-normal text-sm", !startDate && "text-muted-foreground")}>
-                        <Calendar className="mr-2 h-4 w-4" />
-                        {startDate ? format(startDate, "MMM dd, yyyy") : "Pick a date"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <CalendarComponent mode="single" selected={startDate} onSelect={(d) => { setStartDate(d); setIsStartOpen(false) }} initialFocus />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-
-                {/* End Date */}
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs font-medium text-muted-foreground">End Date</label>
-                  <Popover open={isEndOpen} onOpenChange={setIsEndOpen}>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" className={cn("w-[180px] justify-start text-left font-normal text-sm", !endDate && "text-muted-foreground")}>
-                        <Calendar className="mr-2 h-4 w-4" />
-                        {endDate ? format(endDate, "MMM dd, yyyy") : "Pick a date"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <CalendarComponent mode="single" selected={endDate} onSelect={(d) => { setEndDate(d); setIsEndOpen(false) }} initialFocus />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-
-                {/* Agent Multi-Select — Task 26 */}
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs font-medium text-muted-foreground">Agent Filter</label>
-                  <Popover open={agentFilterOpen} onOpenChange={setAgentFilterOpen}>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" className="w-[200px] justify-start text-left font-normal text-sm">
-                        {selectedAgents.length === 0 ? "All Agents"
-                          : selectedAgents.length === 1 ? selectedAgents[0]
-                          : `${selectedAgents.length} agents selected`}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[240px] p-2" align="start">
-                      <div className="space-y-1 max-h-60 overflow-y-auto">
-                        <div className="flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer hover:bg-accent text-sm" onClick={() => setSelectedAgents([])}>
-                          <Checkbox checked={selectedAgents.length === 0} />
-                          <span>All Agents</span>
-                        </div>
-                        {allAgentNames.map((name) => (
-                          <div key={name} className="flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer hover:bg-accent text-sm"
-                            onClick={() => setSelectedAgents((prev) => prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name])}>
-                            <Checkbox checked={selectedAgents.includes(name)} />
-                            <span className="truncate">{name}</span>
-                          </div>
-                        ))}
-                        {allAgentNames.length === 0 && <p className="text-xs text-muted-foreground px-2 py-1">Load data first</p>}
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                </div>
-
-                {/* Search */}
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs font-medium text-muted-foreground">Search</label>
-                  <div className="relative">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input placeholder="Search agents..." className="pl-8 w-[180px] text-sm" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs font-medium text-muted-foreground invisible">Actions</label>
-                  <div className="flex gap-2">
-                    <Button onClick={handleApplyFilter} disabled={isLoading} size="sm">
-                      {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
-                      Apply
-                    </Button>
-                    <Button variant="outline" onClick={handleResetFilter} size="sm">Reset</Button>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
 
           {/* KPI Cards */}
           <div>
@@ -296,7 +203,13 @@ export default function AgentPerformanceAnalysis() {
                     Individual agent call disposition metrics
                   </CardDescription>
                 </div>
-                {isRefreshing && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+                <div className="flex items-center gap-2">
+                  {isRefreshing && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input placeholder="Search agents..." className="pl-8 w-[180px] text-sm" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                  </div>
+                </div>
               </div>
             </CardHeader>
             <CardContent>

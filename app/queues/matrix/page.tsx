@@ -67,15 +67,17 @@ const UNANSWERED_LABELS: Record<keyof TotalUnansweredData, string> = {
 /* ========================================================================== */
 export default function QueueMatrixPage() {
   const { user, isLoading: authLoading } = useAuth()
-  const { appliedStartDate, appliedEndDate, appliedQueues, applyVersion } = useGlobalFilters()
+  const { appliedStartDate, appliedEndDate, appliedQueues, appliedDids, applyVersion } = useGlobalFilters()
 
   // Refs so fetchData always reads the LATEST filter values (avoids stale closure)
   const startRef = useRef(appliedStartDate)
   const endRef = useRef(appliedEndDate)
   const queuesRef = useRef(appliedQueues)
+  const didsRef = useRef(appliedDids)
   useEffect(() => { startRef.current = appliedStartDate }, [appliedStartDate])
   useEffect(() => { endRef.current = appliedEndDate }, [appliedEndDate])
   useEffect(() => { queuesRef.current = appliedQueues }, [appliedQueues])
+  useEffect(() => { didsRef.current = appliedDids }, [appliedDids])
 
   const [totalAnswered, setTotalAnswered] = useState<TotalAnsweredData | null>(null)
   const [totalUnanswered, setTotalUnanswered] = useState<TotalUnansweredData | null>(null)
@@ -91,12 +93,13 @@ export default function QueueMatrixPage() {
       const start = DateHelper.formatDateFromDate(startRef.current)
       const end = DateHelper.formatDateFromDate(endRef.current, true)
       const queueFilter = queuesRef.current.length > 0 ? queuesRef.current : undefined
+      const didFilter = didsRef.current.length > 0 ? didsRef.current : undefined
 
       const [answeredRes, unansweredRes, answeredSLRes, abandonedSLRes] = await Promise.all([
-        athenaAPI.getDashboardTotalAnswered(start, end, user.email, queueFilter),
-        athenaAPI.getDashboardTotalUnanswered(start, end, user.email, queueFilter),
-        athenaAPI.getDashboardAnsweredServiceLevel(start, end, user.email, queueFilter),
-        athenaAPI.getDashboardAbandonedServiceLevel(start, end, user.email, queueFilter),
+        athenaAPI.getDashboardTotalAnswered(start, end, user.email, queueFilter, didFilter),
+        athenaAPI.getDashboardTotalUnanswered(start, end, user.email, queueFilter, didFilter),
+        athenaAPI.getDashboardAnsweredServiceLevel(start, end, user.email, queueFilter, didFilter),
+        athenaAPI.getDashboardAbandonedServiceLevel(start, end, user.email, queueFilter, didFilter),
       ])
 
       if (answeredRes.status === "SUCCEEDED" && answeredRes.data.length > 0)

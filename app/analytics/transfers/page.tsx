@@ -1,16 +1,17 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { AuthGuard } from "@/components/auth-guard"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useAuth } from "@/hooks/use-auth"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, TrendingUp, Phone, User, Calendar, RefreshCw } from "lucide-react"
+import { Loader2, TrendingUp, Phone, User, RefreshCw } from "lucide-react"
 import { athenaAPI } from "@/lib/athena-api"
 import { DateHelper } from "@/lib/date-helper"
 import { Button } from "@/components/ui/button"
+import { useGlobalFilters } from "@/lib/global-filters-context"
 
 interface TransferData {
   agent_id: string
@@ -26,29 +27,63 @@ export default function TransferAnalysis() {
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date())
-  const [dateRange, setDateRange] = useState(DateHelper.getLastNDays(30))
-  const [appliedRegion, setAppliedRegion] = useState<string[] | null>(null)
   const { user, isLoading: authLoading } = useAuth()
+
+  const {
+    appliedStartDate: startDate,
+    appliedEndDate: endDate,
+    appliedQueues: selectedQueues,
+    appliedAgents: selectedAgents,
+    appliedDids: selectedDids,
+    applyVersion,
+  } = useGlobalFilters()
+
+  // Refs to avoid stale closures
+  const startRef = useRef(startDate)
+  const endRef = useRef(endDate)
+  const queuesRef = useRef(selectedQueues)
+  const agentsRef = useRef(selectedAgents)
+  const didsRef = useRef(selectedDids)
+  useEffect(() => { startRef.current = startDate }, [startDate])
+  useEffect(() => { endRef.current = endDate }, [endDate])
+  useEffect(() => { queuesRef.current = selectedQueues }, [selectedQueues])
+  useEffect(() => { agentsRef.current = selectedAgents }, [selectedAgents])
+  useEffect(() => { didsRef.current = selectedDids }, [selectedDids])
 
   useEffect(() => {
     if (!authLoading) {
       loadTransferData()
     }
-  }, [authLoading, user?.email, dateRange])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, user?.email])
+
+  useEffect(() => {
+    if (!authLoading) {
+      loadTransferData()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [applyVersion])
 
   const loadTransferData = async () => {
     setIsLoading(true)
     try {
+      const start = DateHelper.formatDateFromDate(startRef.current)
+      const end = DateHelper.formatDateFromDate(endRef.current, true)
+      const agentFilter = agentsRef.current.length > 0 ? agentsRef.current : undefined
+      const queueFilter = queuesRef.current.length > 0 ? queuesRef.current : undefined
+      const didFilter = didsRef.current.length > 0 ? didsRef.current : undefined
       const result = await athenaAPI.getAnsweredTransfers(
-        dateRange.start,
-        dateRange.end,
+        start,
+        end,
         null,
-        user?.email
+        user?.email,
+        agentFilter,
+        queueFilter,
+        didFilter,
       )
       
       if (result.status === 'SUCCEEDED') {
         setTransferData(result.data)
-        setAppliedRegion(result.appliedRegion || null)
       }
       
       setLastRefresh(new Date())
@@ -77,76 +112,39 @@ export default function TransferAnalysis() {
           {/* Header Section */}
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-              <div className="flex items-center gap-3">
-                <h1 className="text-3xl font-bold tracking-tight">Transfer Analysis</h1>
-                {appliedRegion && (
-                  <Badge variant="outline" className="bg-blue-500/10 text-blue-500 border-blue-500/20">
-                    <TrendingUp className="h-3 w-3 mr-1" />
-                    Region: {appliedRegion.join(', ')}
-                  </Badge>
-                )}
-              </div>
+              <h1 className="text-3xl font-bold tracking-tight">Transfer Analysis</h1>
               <p className="text-muted-foreground mt-1">
-                Call transfer patterns and analysis {appliedRegion ? `(${appliedRegion.join(', ')} region)` : '(all regions)'}
+                Call transfer patterns and analysis
               </p>
             </div>
             
-            <div className="flex flex-col sm:flex-row gap-3">
-              {/* Date Range Selector */}
-              <Card className="w-full sm:w-auto">
-                <CardContent className="p-4">
-                  <select 
-                    defaultValue="getLastNDays"
-                    onChange={(e) => {
-                      const method = e.target.value as keyof typeof DateHelper
-                      if (method === 'getLastNDays') {
-                        setDateRange(DateHelper.getLastNDays(30))
-                      } else if (method === 'getToday') {
-                        setDateRange(DateHelper.getToday())
-                      } else if (method === 'getThisMonth') {
-                        setDateRange(DateHelper.getThisMonth())
-                      }
-                    }}
-                    className="w-full p-2 border rounded"
+            <Card className="w-full sm:w-auto">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    onClick={handleManualRefresh}
+                    disabled={isRefreshing}
+                    className="h-10 w-10"
                   >
-                    <option value="getToday">Today</option>
-                    <option value="getLastNDays">Last 30 Days</option>
-                    <option value="getThisMonth">This Month</option>
-                  </select>
-                </CardContent>
-              </Card>
-
-              {/* Refresh Info */}
-              <Card className="w-full sm:w-auto">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <Button 
-                      variant="ghost" 
-                      size="icon"
-                      onClick={handleManualRefresh}
-                      disabled={isRefreshing}
-                      className="h-10 w-10"
-                    >
-                      <RefreshCw className={`h-5 w-5 ${isRefreshing ? 'animate-spin' : ''}`} />
-                    </Button>
-                    <div className="space-y-0.5">
-                      <p className="text-sm font-medium leading-none">
-                        {isRefreshing ? 'Refreshing...' : lastRefresh.toLocaleTimeString()}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Last updated
-                      </p>
-                    </div>
+                    <RefreshCw className={`h-5 w-5 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  </Button>
+                  <div className="space-y-0.5">
+                    <p className="text-sm font-medium leading-none">
+                      {isRefreshing ? 'Refreshing...' : lastRefresh.toLocaleTimeString()}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Last updated</p>
                   </div>
-                </CardContent>
-              </Card>
-            </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           {/* KPI Cards */}
           <div>
             <h2 className="text-xl font-semibold mb-4">Transfer Summary</h2>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Total Transfers</CardTitle>
@@ -156,7 +154,7 @@ export default function TransferAnalysis() {
                   <div className="text-2xl font-bold text-blue-600">
                     {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : totalTransfers.toLocaleString()}
                   </div>
-                  <p className="text-xs text-muted-foreground">Last {dateRange === DateHelper.getToday() ? '24 hours' : '30 days'}</p>
+                  <p className="text-xs text-muted-foreground">Selected period</p>
                 </CardContent>
               </Card>
 
@@ -193,23 +191,6 @@ export default function TransferAnalysis() {
                   </p>
                 </CardContent>
               </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Transfer Rate</CardTitle>
-                  <Calendar className="h-4 w-4 text-orange-600" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-orange-600">
-                    {isLoading ? (
-                      <Loader2 className="h-6 w-6 animate-spin" />
-                    ) : (
-                      `${(totalTransfers / 30).toFixed(1)}/day`
-                    )}
-                  </div>
-                  <p className="text-xs text-muted-foreground">Daily average</p>
-                </CardContent>
-              </Card>
             </div>
           </div>
 
@@ -220,7 +201,7 @@ export default function TransferAnalysis() {
                 <div>
                   <CardTitle>Transfer Details</CardTitle>
                   <CardDescription>
-                    Agent transfer patterns by destination - Last {dateRange === DateHelper.getToday() ? '24 hours' : '30 days'}
+                    Agent transfer patterns by destination
                   </CardDescription>
                 </div>
                 {isRefreshing && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
@@ -241,40 +222,34 @@ export default function TransferAnalysis() {
                         <TableHead className="text-right">Transfer Type</TableHead>
                         <TableHead className="text-right">Destination</TableHead>
                         <TableHead className="text-right">Total Transfers</TableHead>
-                        <TableHead className="text-right">Success Rate</TableHead>
+                        <TableHead className="text-right">Volume</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {transferData.map((transfer, index) => {
-                        const percentage = totalTransfers > 0 
-                          ? ((parseInt(transfer.total) / totalTransfers) * 100).toFixed(1)
-                          : '0'
-                        
-                        return (
-                          <TableRow key={index}>
-                            <TableCell className="font-medium">{transfer.agent_name}</TableCell>
-                            <TableCell>{transfer.region || '—'}</TableCell>
-                            <TableCell className="text-right">
-                              <Badge 
-                                variant={transfer.type === 'WARM' ? "default" : "secondary"}
-                                className="font-mono"
-                              >
-                                {transfer.type || 'Unknown'}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-right font-mono">{transfer.destination || 'N/A'}</TableCell>
-                            <TableCell className="text-right font-mono">{transfer.total}</TableCell>
-                            <TableCell className="text-right">
-                              <Badge 
-                                variant={parseInt(transfer.total) > 5 ? "default" : parseInt(transfer.total) > 0 ? "secondary" : "outline"}
-                                className="font-mono"
-                              >
-                                {parseInt(transfer.total) > 10 ? 'High' : parseInt(transfer.total) > 0 ? 'Normal' : 'Low'}
-                              </Badge>
-                            </TableCell>
-                          </TableRow>
-                        )
-                      })}
+                      {transferData.map((transfer, index) => (
+                        <TableRow key={index}>
+                          <TableCell className="font-medium">{transfer.agent_name}</TableCell>
+                          <TableCell>{transfer.region || '—'}</TableCell>
+                          <TableCell className="text-right">
+                            <Badge 
+                              variant={transfer.type === 'WARM' ? "default" : "secondary"}
+                              className="font-mono"
+                            >
+                              {transfer.type || 'Unknown'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right font-mono">{transfer.destination || 'N/A'}</TableCell>
+                          <TableCell className="text-right font-mono">{transfer.total}</TableCell>
+                          <TableCell className="text-right">
+                            <Badge 
+                              variant={parseInt(transfer.total) > 10 ? "default" : parseInt(transfer.total) > 0 ? "secondary" : "outline"}
+                              className="font-mono"
+                            >
+                              {parseInt(transfer.total) > 10 ? 'High' : parseInt(transfer.total) > 0 ? 'Normal' : 'Low'}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))}
                     </TableBody>
                   </Table>
                 </div>

@@ -1,19 +1,17 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { AuthGuard } from "@/components/auth-guard"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useAuth } from "@/hooks/use-auth"
-import { Loader2, RefreshCw, Users, Phone, Clock, Calendar } from "lucide-react"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Calendar as CalendarComponent } from "@/components/ui/calendar"
-import { format, subDays } from "date-fns"
-import { cn } from "@/lib/utils"
+import { Loader2, RefreshCw, Users, Phone, Clock } from "lucide-react"
+import { format } from "date-fns"
 import { athenaAPI } from "@/lib/athena-api"
 import { DateHelper } from "@/lib/date-helper"
 import { Button } from "@/components/ui/button"
+import { useGlobalFilters } from "@/lib/global-filters-context"
 
 interface AgentAvailData {
   agent_id: string
@@ -38,26 +36,54 @@ export default function AgentAvailabilityPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date())
-  const [startDate, setStartDate] = useState<Date | undefined>(subDays(new Date(), 1))
-  const [endDate, setEndDate] = useState<Date | undefined>(subDays(new Date(), 1))
-  const [isStartDateOpen, setIsStartDateOpen] = useState(false)
-  const [isEndDateOpen, setIsEndDateOpen] = useState(false)
   const [loadingAgentId, setLoadingAgentId] = useState<string | null>(null)
   const { user, isLoading: authLoading } = useAuth()
+
+  const {
+    appliedStartDate: startDate,
+    appliedEndDate: endDate,
+    appliedAgents: selectedAgents,
+    appliedQueues: selectedQueues,
+    applyVersion,
+  } = useGlobalFilters()
+
+  // Refs to avoid stale closures
+  const startRef = useRef(startDate)
+  const endRef = useRef(endDate)
+  const agentsRef = useRef(selectedAgents)
+  const queuesRef = useRef(selectedQueues)
+  useEffect(() => { startRef.current = startDate }, [startDate])
+  useEffect(() => { endRef.current = endDate }, [endDate])
+  useEffect(() => { agentsRef.current = selectedAgents }, [selectedAgents])
+  useEffect(() => { queuesRef.current = selectedQueues }, [selectedQueues])
 
   useEffect(() => {
     if (!authLoading) {
       loadData()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authLoading, user?.email])
+
+  useEffect(() => {
+    if (!authLoading) {
+      loadData()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [applyVersion])
 
   const loadData = async () => {
     setIsLoading(true)
     try {
+      const start = DateHelper.formatDateFromDate(startRef.current)
+      const end = DateHelper.formatDateFromDate(endRef.current, true)
+      const agentFilter = agentsRef.current.length > 0 ? agentsRef.current : undefined
+      const queueFilter = queuesRef.current.length > 0 ? queuesRef.current : undefined
       const result = await athenaAPI.getAgentAvailability(
-        DateHelper.formatDateFromDate(startDate),
-        DateHelper.formatDateFromDate(endDate, true),
-        user?.email
+        start,
+        end,
+        user?.email,
+        agentFilter,
+        queueFilter,
       )
       if (result.status === 'SUCCEEDED') {
         setAgentData(result.data)
@@ -78,11 +104,9 @@ export default function AgentAvailabilityPage() {
   const handleViewDrilldown = async (agent: AgentAvailData) => {
     setLoadingAgentId(agent.agent_id)
     try {
-      const result = await athenaAPI.getAgentDrilldown(
-        DateHelper.formatDateFromDate(startDate),
-        DateHelper.formatDateFromDate(endDate, true),
-        agent.agent_id
-      )
+      const start = DateHelper.formatDateFromDate(startRef.current)
+      const end = DateHelper.formatDateFromDate(endRef.current, true)
+      const result = await athenaAPI.getAgentDrilldown(start, end, agent.agent_id)
       if (result.status === 'SUCCEEDED') {
         const newWindow = window.open('', '_blank')
         if (newWindow) {
@@ -217,48 +241,6 @@ export default function AgentAvailabilityPage() {
               </Card>
             </div>
           </div>
-
-          {/* Date Filter */}
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex flex-wrap gap-4 items-end">
-                <div className="flex flex-col gap-2">
-                  <label className="text-sm font-medium">Start Date</label>
-                  <Popover open={isStartDateOpen} onOpenChange={setIsStartDateOpen}>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" className={cn("w-[200px] justify-start text-left font-normal", !startDate && "text-muted-foreground")}>
-                        <Calendar className="mr-2 h-4 w-4" />
-                        {startDate ? format(startDate, "PPP") : "Pick a date"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <CalendarComponent mode="single" selected={startDate} onSelect={(d) => { setStartDate(d); setIsStartDateOpen(false) }} autoFocus />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-                <div className="flex flex-col gap-2">
-                  <label className="text-sm font-medium">End Date</label>
-                  <Popover open={isEndDateOpen} onOpenChange={setIsEndDateOpen}>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" className={cn("w-[200px] justify-start text-left font-normal", !endDate && "text-muted-foreground")}>
-                        <Calendar className="mr-2 h-4 w-4" />
-                        {endDate ? format(endDate, "PPP") : "Pick a date"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <CalendarComponent mode="single" selected={endDate} onSelect={(d) => { setEndDate(d); setIsEndDateOpen(false) }} autoFocus />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-                <Button onClick={loadData} disabled={isLoading}>
-                  {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Loading...</> : <>Apply Filter</>}
-                </Button>
-                <Button variant="outline" onClick={() => { setStartDate(subDays(new Date(), 1)); setEndDate(subDays(new Date(), 1)) }}>
-                  Reset
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
 
           {/* KPI Cards */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

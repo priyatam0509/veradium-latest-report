@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { AuthGuard } from "@/components/auth-guard"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -11,6 +11,7 @@ import { Loader2, TrendingUp, Clock, RefreshCw, Activity, Pause, Coffee, User } 
 import { athenaAPI } from "@/lib/athena-api"
 import { DateHelper } from "@/lib/date-helper"
 import { Button } from "@/components/ui/button"
+import { useGlobalFilters } from "@/lib/global-filters-context"
 
 interface AgentPauseDetail {
   user_id: string
@@ -27,22 +28,48 @@ export default function AgentActivityAnalysis() {
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date())
-  const [dateRange, setDateRange] = useState(DateHelper.getLastNDays(30))
   const { user, isLoading: authLoading } = useAuth()
+
+  const {
+    appliedStartDate: startDate,
+    appliedEndDate: endDate,
+    appliedAgents: selectedAgents,
+    applyVersion,
+  } = useGlobalFilters()
+
+  // Refs to avoid stale closures
+  const startRef = useRef(startDate)
+  const endRef = useRef(endDate)
+  const agentsRef = useRef(selectedAgents)
+  useEffect(() => { startRef.current = startDate }, [startDate])
+  useEffect(() => { endRef.current = endDate }, [endDate])
+  useEffect(() => { agentsRef.current = selectedAgents }, [selectedAgents])
 
   useEffect(() => {
     if (!authLoading) {
       loadAgentActivityData()
     }
-  }, [authLoading, user?.email, dateRange])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, user?.email])
+
+  useEffect(() => {
+    if (!authLoading) {
+      loadAgentActivityData()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [applyVersion])
 
   const loadAgentActivityData = async () => {
     setIsLoading(true)
     try {
+      const start = DateHelper.formatDateFromDate(startRef.current)
+      const end = DateHelper.formatDateFromDate(endRef.current, true)
+      const agentFilter = agentsRef.current.length > 0 ? agentsRef.current : undefined
       const result = await athenaAPI.getAgentPauseDetail(
-        dateRange.start,
-        dateRange.end,
-        user?.email
+        start,
+        end,
+        user?.email,
+        agentFilter,
       )
       
       if (result.status === 'SUCCEEDED') {
@@ -95,30 +122,6 @@ export default function AgentActivityAnalysis() {
             </div>
             
             <div className="flex flex-col sm:flex-row gap-3">
-              {/* Date Range Selector */}
-              <Card className="w-full sm:w-auto">
-                <CardContent className="p-4">
-                  <select 
-                    defaultValue="getLastNDays"
-                    onChange={(e) => {
-                      const method = e.target.value as keyof typeof DateHelper
-                      if (method === 'getLastNDays') {
-                        setDateRange(DateHelper.getLastNDays(30))
-                      } else if (method === 'getToday') {
-                        setDateRange(DateHelper.getToday())
-                      } else if (method === 'getThisMonth') {
-                        setDateRange(DateHelper.getThisMonth())
-                      }
-                    }}
-                    className="w-full p-2 border rounded"
-                  >
-                    <option value="getToday">Today</option>
-                    <option value="getLastNDays">Last 30 Days</option>
-                    <option value="getThisMonth">This Month</option>
-                  </select>
-                </CardContent>
-              </Card>
-
               {/* Refresh Info */}
               <Card className="w-full sm:w-auto">
                 <CardContent className="p-4">
@@ -211,7 +214,7 @@ export default function AgentActivityAnalysis() {
                 <div>
                   <CardTitle>Agent Activity Details</CardTitle>
                   <CardDescription>
-                    Individual agent pause patterns and productivity - Last {dateRange === DateHelper.getToday() ? '24 hours' : '30 days'}
+                    Individual agent pause patterns and productivity
                   </CardDescription>
                 </div>
                 {isRefreshing && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
