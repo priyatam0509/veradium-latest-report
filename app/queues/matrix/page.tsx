@@ -2,7 +2,7 @@
 
 export const dynamic = "force-dynamic"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { AuthGuard } from "@/components/auth-guard"
@@ -69,6 +69,14 @@ export default function QueueMatrixPage() {
   const { user, isLoading: authLoading } = useAuth()
   const { appliedStartDate, appliedEndDate, appliedQueues, applyVersion } = useGlobalFilters()
 
+  // Refs so fetchData always reads the LATEST filter values (avoids stale closure)
+  const startRef = useRef(appliedStartDate)
+  const endRef = useRef(appliedEndDate)
+  const queuesRef = useRef(appliedQueues)
+  useEffect(() => { startRef.current = appliedStartDate }, [appliedStartDate])
+  useEffect(() => { endRef.current = appliedEndDate }, [appliedEndDate])
+  useEffect(() => { queuesRef.current = appliedQueues }, [appliedQueues])
+
   const [totalAnswered, setTotalAnswered] = useState<TotalAnsweredData | null>(null)
   const [totalUnanswered, setTotalUnanswered] = useState<TotalUnansweredData | null>(null)
   const [answeredSL, setAnsweredSL] = useState<ServiceLevelRow[]>([])
@@ -79,10 +87,10 @@ export default function QueueMatrixPage() {
     if (!user?.email) return
     setIsLoading(true)
     try {
-      const start = DateHelper.formatDateFromDate(appliedStartDate)
-      const end = DateHelper.formatDateFromDate(appliedEndDate, true)
-      // Pass selected queues as queue_id filter (empty = all queues)
-      const queueFilter = appliedQueues.length > 0 ? appliedQueues : undefined
+      // Always read from refs — guaranteed to be the latest applied values
+      const start = DateHelper.formatDateFromDate(startRef.current)
+      const end = DateHelper.formatDateFromDate(endRef.current, true)
+      const queueFilter = queuesRef.current.length > 0 ? queuesRef.current : undefined
 
       const [answeredRes, unansweredRes, answeredSLRes, abandonedSLRes] = await Promise.all([
         athenaAPI.getDashboardTotalAnswered(start, end, user.email, queueFilter),

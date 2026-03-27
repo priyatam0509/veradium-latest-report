@@ -2,7 +2,7 @@
 
 export const dynamic = "force-dynamic"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useRef } from "react"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { AuthGuard } from "@/components/auth-guard"
 import { Card, CardContent } from "@/components/ui/card"
@@ -232,6 +232,14 @@ export default function UnansweredCallsPage() {
     applyVersion,
   } = useGlobalFilters()
 
+  // Refs so fetchTab always reads the LATEST filter values (avoids stale closure)
+  const startRef = useRef(startDate)
+  const endRef = useRef(endDate)
+  const queuesRef = useRef(selectedQueues)
+  useEffect(() => { startRef.current = startDate }, [startDate])
+  useEffect(() => { endRef.current = endDate }, [endDate])
+  useEffect(() => { queuesRef.current = selectedQueues }, [selectedQueues])
+
   const [activeTab, setActiveTab] = useState("queue")
 
   const [queueData, setQueueData] = useState<UnansweredByQueueRow[]>([])
@@ -241,16 +249,16 @@ export default function UnansweredCallsPage() {
   const [loaded, setLoaded] = useState<Record<string, boolean>>({})
 
   const getDateRange = () => ({
-    start: DateHelper.formatDateFromDate(startDate),
-    end: DateHelper.formatDateFromDate(endDate, true),
+    start: DateHelper.formatDateFromDate(startRef.current),
+    end: DateHelper.formatDateFromDate(endRef.current, true),
   })
 
   const fetchTab = async (tab: string, force = false) => {
     if (loaded[tab] && !force) return
     setIsLoading(true)
     const { start, end } = getDateRange()
-    // Pass selected queues as queue_id filter (empty array = no filter = all queues)
-    const queueFilter = selectedQueues.length > 0 ? selectedQueues : undefined
+    // Always read from ref — guaranteed to be the latest applied queue selection
+    const queueFilter = queuesRef.current.length > 0 ? queuesRef.current : undefined
     try {
       let result: any
       if (tab === "queue") result = await athenaAPI.getUnansweredByQueue(start, end, null, user?.email, queueFilter)
