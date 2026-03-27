@@ -228,6 +228,7 @@ export default function UnansweredCallsPage() {
     appliedStartDate: startDate,
     appliedEndDate: endDate,
     appliedSearchTerm: searchTerm,
+    appliedQueues: selectedQueues,
     applyVersion,
   } = useGlobalFilters()
 
@@ -248,10 +249,12 @@ export default function UnansweredCallsPage() {
     if (loaded[tab] && !force) return
     setIsLoading(true)
     const { start, end } = getDateRange()
+    // Pass selected queues as queue_id filter (empty array = no filter = all queues)
+    const queueFilter = selectedQueues.length > 0 ? selectedQueues : undefined
     try {
       let result: any
-      if (tab === "queue") result = await athenaAPI.getUnansweredByQueue(start, end, null, user?.email)
-      else if (tab === "did") result = await athenaAPI.getUnansweredByDID(start, end, null, user?.email)
+      if (tab === "queue") result = await athenaAPI.getUnansweredByQueue(start, end, null, user?.email, queueFilter)
+      else if (tab === "did") result = await athenaAPI.getUnansweredByDID(start, end, null, user?.email, queueFilter)
       else return
 
       if (result?.status === "SUCCEEDED") {

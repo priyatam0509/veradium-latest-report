@@ -268,14 +268,28 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     return accessibleRouteSet.has(route)
   }
 
-  // Only show the global filters bar on pages that actually use date/queue filters
+  // Show the global filters bar only on the 3 queue report pages (NOT the matrix landing page)
   const FILTER_ROUTES = [
-    "/queues/matrix",
     "/queues/distribution",
     "/queues/answered",
     "/queues/unanswered",
   ]
   const showFilters = FILTER_ROUTES.some((r) => pathname === r || pathname.startsWith(r + "/"))
+
+  // Resolve a human-readable page title from NAV_STRUCTURE instead of the raw URL segment
+  const getPageTitle = (): string => {
+    for (const entry of NAV_STRUCTURE) {
+      if (isNavGroup(entry)) {
+        if (pathname === entry.route) return entry.label
+        const child = entry.children.find((c) => pathname === c.route || pathname.startsWith(c.route + "/"))
+        if (child) return child.label
+      } else {
+        if (pathname === entry.route || pathname.startsWith(entry.route + "/")) return entry.label
+      }
+    }
+    // Fallback: prettify last URL segment
+    return pathname.split("/").filter(Boolean).pop()?.replace(/-/g, " ") || "Dashboard"
+  }
 
   const renderNavItem = (item: NavItem, mobile = false, indent = false) => {
     const Icon = item.icon
@@ -430,7 +444,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
             <Menu className="h-5 w-5" />
           </Button>
           <h1 className="text-sm font-semibold md:text-base capitalize">
-            {pathname.split("/").filter(Boolean).pop()?.replace(/-/g, " ") || "Dashboard"}
+            {getPageTitle()}
           </h1>
         </header>
 

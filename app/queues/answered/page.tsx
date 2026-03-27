@@ -247,6 +247,7 @@ export default function AnsweredCallsPage() {
     appliedStartDate: startDate,
     appliedEndDate: endDate,
     appliedSearchTerm: searchTerm,
+    appliedQueues: selectedQueues,
     applyVersion,
   } = useGlobalFilters()
 
@@ -269,11 +270,13 @@ export default function AnsweredCallsPage() {
     if (loaded[tab] && !force) return
     setIsLoading(true)
     const { start, end } = getDateRange()
+    // Pass selected queues as queue_id filter (empty array = no filter = all queues)
+    const queueFilter = selectedQueues.length > 0 ? selectedQueues : undefined
     try {
       let result: any
-      if (tab === "queue") result = await athenaAPI.getAnsweredByQueue(start, end, null, user?.email)
-      else if (tab === "did") result = await athenaAPI.getAnsweredByDID(start, end, null, user?.email)
-      else if (tab === "agent") result = await athenaAPI.getAnsweredByAgent(start, end, undefined, null, user?.email)
+      if (tab === "queue") result = await athenaAPI.getAnsweredByQueue(start, end, null, user?.email, queueFilter)
+      else if (tab === "did") result = await athenaAPI.getAnsweredByDID(start, end, null, user?.email, queueFilter)
+      else if (tab === "agent") result = await athenaAPI.getAnsweredByAgent(start, end, queueFilter, null, user?.email)
       else return
 
       if (result?.status === "SUCCEEDED") {

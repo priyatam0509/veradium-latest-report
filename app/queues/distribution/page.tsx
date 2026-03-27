@@ -414,15 +414,17 @@ export default function QueueDistributionPage() {
     if (loaded[tab] && !force) return
     setIsLoading(true)
     const { start, end } = dateRange()
+    // Pass selected queues as queue_id filter (empty array = no filter = all queues)
+    const queueFilter = selectedQueues.length > 0 ? selectedQueues : undefined
     try {
       let result: any
-      if (tab === "queue") result = await athenaAPI.getDistributionByQueue(start, end, null, user?.email)
-      else if (tab === "did") result = await athenaAPI.getDistributionByDID(start, end, null, user?.email)
-      else if (tab === "hour") result = await athenaAPI.getDistributionByHour(start, end, null, user?.email)
-      else if (tab === "day") result = await athenaAPI.getDistributionByDay(start, end, null, user?.email)
-      else if (tab === "month") result = await athenaAPI.getDistributionByMonth(start, end, null, user?.email)
-      else if (tab === "agent") result = await athenaAPI.getAnsweredByAgent(start, end, undefined, null, user?.email)
-      else if (tab === "state") result = await athenaAPI.getDistributionByState(start, end, null, user?.email)
+      if (tab === "queue") result = await athenaAPI.getDistributionByQueue(start, end, null, user?.email, queueFilter)
+      else if (tab === "did") result = await athenaAPI.getDistributionByDID(start, end, null, user?.email, queueFilter)
+      else if (tab === "hour") result = await athenaAPI.getDistributionByHour(start, end, null, user?.email, queueFilter)
+      else if (tab === "day") result = await athenaAPI.getDistributionByDay(start, end, null, user?.email, queueFilter)
+      else if (tab === "month") result = await athenaAPI.getDistributionByMonth(start, end, null, user?.email, queueFilter)
+      else if (tab === "agent") result = await athenaAPI.getAnsweredByAgent(start, end, queueFilter, null, user?.email)
+      else if (tab === "state") result = await athenaAPI.getDistributionByState(start, end, null, user?.email, queueFilter)
       else return
 
       if (result?.status === "SUCCEEDED") {

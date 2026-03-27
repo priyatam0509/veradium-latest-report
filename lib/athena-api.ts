@@ -113,64 +113,70 @@ export class AthenaReportingAPI {
   }
 
   // Distribution Queries (8 queries - all support region filter)
-  async getDistributionByQueue(startDate: string, endDate: string, _region?: string[] | null, username?: string) {
+  async getDistributionByQueue(startDate: string, endDate: string, _region?: string[] | null, username?: string, queueIds?: string[]) {
   const params: any = {
     start_datetime: startDate,
     end_datetime: endDate,
     sla_threshold: '30',
     true_abandon_threshold: '30'
   }
+  if (queueIds && queueIds.length > 0) params.queue_id = queueIds
   // region param is ignored, always fetched from username
   return this.executeQuery('distribution_distbyqueue', params, true, 60, username)
   }
 
-  async getDistributionByDID(startDate: string, endDate: string, _region?: string[] | null, username?: string) {
+  async getDistributionByDID(startDate: string, endDate: string, _region?: string[] | null, username?: string, queueIds?: string[]) {
   const params: any = {
     start_datetime: startDate,
     end_datetime: endDate,
     sla_threshold: '30',
     true_abandon_threshold: '30'
   }
+  if (queueIds && queueIds.length > 0) params.queue_id = queueIds
   return this.executeQuery('distribution_distbydid', params, true, 60, username)
   }
 
-  async getDistributionByDay(startDate: string, endDate: string, _region?: string[] | null, username?: string) {
+  async getDistributionByDay(startDate: string, endDate: string, _region?: string[] | null, username?: string, queueIds?: string[]) {
   const params: any = {
     start_datetime: startDate,
     end_datetime: endDate,
     sla_threshold: '30',
     true_abandon_threshold: '30'
   }
+  if (queueIds && queueIds.length > 0) params.queue_id = queueIds
   return this.executeQuery('distribution_distbyday', params, true, 60, username)
   }
 
-  async getDistributionByMonth(startDate: string, endDate: string, _region?: string[] | null, username?: string) {
+  async getDistributionByMonth(startDate: string, endDate: string, _region?: string[] | null, username?: string, queueIds?: string[]) {
   const params: any = {
     start_datetime: startDate,
     end_datetime: endDate,
     sla_threshold: '30',
     true_abandon_threshold: '30'
   }
+  if (queueIds && queueIds.length > 0) params.queue_id = queueIds
   return this.executeQuery('distribution_distbymonth', params, true, 60, username)
   }
 
-  async getDistributionByWeek(startDate: string, endDate: string, _region?: string[] | null, username?: string) {
+  async getDistributionByWeek(startDate: string, endDate: string, _region?: string[] | null, username?: string, queueIds?: string[]) {
   const params: any = {
     start_datetime: startDate,
     end_datetime: endDate,
     sla_threshold: '30',
     true_abandon_threshold: '30'
   }
+  if (queueIds && queueIds.length > 0) params.queue_id = queueIds
   return this.executeQuery('distribution_distbyweek', params, true, 60, username)
   }
 
-  async getDistributionByHour(startDate: string, endDate: string, _region?: string[] | null, username?: string) {
+  async getDistributionByHour(startDate: string, endDate: string, _region?: string[] | null, username?: string, queueIds?: string[]) {
   const params: any = {
     start_datetime: startDate,
     end_datetime: endDate,
     sla_threshold: '30',
     true_abandon_threshold: '30'
   }
+  if (queueIds && queueIds.length > 0) params.queue_id = queueIds
   return this.executeQuery('distribution_distbyhour', params, true, 60, username)
   }
 
@@ -210,13 +216,15 @@ export class AthenaReportingAPI {
   }
 
   // Answered Queries (5 queries - all support region filter)
-  async getAnsweredByQueue(startDate: string, endDate: string, _region?: string[] | null, username?: string) {
+  async getAnsweredByQueue(startDate: string, endDate: string, _region?: string[] | null, username?: string, queueIds?: string[]) {
   const params: any = { start_datetime: startDate, end_datetime: endDate }
+  if (queueIds && queueIds.length > 0) params.queue_id = queueIds
   return this.executeQuery('answered_answeredbyqueue', params, true, 60, username)
   }
 
-  async getAnsweredByDID(startDate: string, endDate: string, _region?: string[] | null, username?: string) {
+  async getAnsweredByDID(startDate: string, endDate: string, _region?: string[] | null, username?: string, queueIds?: string[]) {
   const params: any = { start_datetime: startDate, end_datetime: endDate }
+  if (queueIds && queueIds.length > 0) params.queue_id = queueIds
   return this.executeQuery('answered_answeredbydid', params, true, 60, username)
   }
 
@@ -269,13 +277,15 @@ export class AthenaReportingAPI {
   }
 
   // Unanswered Queries (4 queries - all support region filter)
-  async getUnansweredByQueue(startDate: string, endDate: string, _region?: string[] | null, username?: string) {
+  async getUnansweredByQueue(startDate: string, endDate: string, _region?: string[] | null, username?: string, queueIds?: string[]) {
   const params: any = { start_datetime: startDate, end_datetime: endDate }
+  if (queueIds && queueIds.length > 0) params.queue_id = queueIds
   return this.executeQuery('unanswered_unansweredbyqueue', params, true, 60, username)
   }
 
-  async getUnansweredByDID(startDate: string, endDate: string, _region?: string[] | null, username?: string) {
+  async getUnansweredByDID(startDate: string, endDate: string, _region?: string[] | null, username?: string, queueIds?: string[]) {
   const params: any = { start_datetime: startDate, end_datetime: endDate }
+  if (queueIds && queueIds.length > 0) params.queue_id = queueIds
   return this.executeQuery('unanswered_unansweredbydid', params, true, 60, username)
   }
 
@@ -401,13 +411,14 @@ export class AthenaReportingAPI {
   // ── V6 Distribution by State ────────────────────────────────────────────
 
   /** Call distribution by state/area-code — distribution_distbystate */
-  async getDistributionByState(startDate: string, endDate: string, _region?: string[] | null, username?: string) {
+  async getDistributionByState(startDate: string, endDate: string, _region?: string[] | null, username?: string, queueIds?: string[]) {
     const params: any = {
       start_datetime: startDate,
       end_datetime: endDate,
       sla_threshold: '30',
       true_abandon_threshold: '30'
     }
+    if (queueIds && queueIds.length > 0) params.queue_id = queueIds
     return this.executeQuery('distribution_distbystate', params, true, 60, username)
   }
 
