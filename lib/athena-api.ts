@@ -60,22 +60,27 @@ export class AthenaReportingAPI {
       instance_id: this.instanceId,
       ...parameters
     };
-    // Always fetch user region if username is provided
+    // Fetch user region from API ONLY as a fallback — if the caller already
+    // set params.region explicitly (from the global filter), respect that and
+    // do NOT overwrite it with the user-lookup result.
     if (username) {
-      try {
-        // Normalize all usernames to use '@TheTicketClinic.com' domain
-        const normalizedUsername = username.replace(/@.*$/, '@TheTicketClinic.com');
-        const regionResult = await this.getUserRegion(normalizedUsername);
-        if (regionResult && regionResult.region) {
-          // If region is 'ALL', omit region from params
-          if (regionResult.region === 'ALL') {
-            delete params.region;
-          } else {
-            params.region = [regionResult.region];
+      const callerSuppliedRegion = Array.isArray((parameters as any).region) && (parameters as any).region.length > 0
+      if (!callerSuppliedRegion) {
+        try {
+          // Normalize all usernames to use '@TheTicketClinic.com' domain
+          const normalizedUsername = username.replace(/@.*$/, '@TheTicketClinic.com');
+          const regionResult = await this.getUserRegion(normalizedUsername);
+          if (regionResult && regionResult.region) {
+            // If region is 'ALL', omit region from params
+            if (regionResult.region === 'ALL') {
+              delete params.region;
+            } else {
+              params.region = [regionResult.region];
+            }
           }
+        } catch (err) {
+          console.warn('[AthenaAPI] Failed to fetch user region, proceeding without region filter:', err);
         }
-      } catch (err) {
-        console.warn('[AthenaAPI] Failed to fetch user region, proceeding without region filter:', err);
       }
     }
     // Remove any array parameter with value ['ALL']
