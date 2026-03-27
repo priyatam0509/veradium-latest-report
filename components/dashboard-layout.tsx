@@ -86,14 +86,31 @@ function GlobalFiltersBar({ config }: { config: FilterConfig }) {
     handleApply, handleReset,
   } = useGlobalFilters()
 
-  const toggleItem = (list: string[], item: string, setter: (v: string[]) => void) => {
-    setter(list.includes(item) ? list.filter((x) => x !== item) : [...list, item])
+  // Toggle item_value in/out of selection list
+  const toggleValue = (list: string[], value: string, setter: (v: string[]) => void) => {
+    setter(list.includes(value) ? list.filter((x) => x !== value) : [...list, value])
   }
 
-  const multiSelectLabel = (selected: string[], singular: string, all: string) => {
-    if (selected.length === 0) return all
+  // Label for dropdown button — shows display names of selected items
+  const multiSelectLabel = (
+    selectedValues: string[],
+    available: { display: string; value: string }[],
+    singular: string,
+    all: string
+  ) => {
+    if (selectedValues.length === 0) return all
+    if (selectedValues.length === 1) {
+      const found = available.find((a) => a.value === selectedValues[0])
+      return found ? found.display : selectedValues[0]
+    }
+    return `${selectedValues.length} ${singular}s selected`
+  }
+
+  // Region uses plain strings (not display/value pairs)
+  const regionLabel = (selected: string[]) => {
+    if (selected.length === 0) return "All Regions"
     if (selected.length === 1) return selected[0]
-    return `${selected.length} ${singular}s selected`
+    return `${selected.length} regions selected`
   }
 
   return (
@@ -130,14 +147,14 @@ function GlobalFiltersBar({ config }: { config: FilterConfig }) {
         </Popover>
       </div>
 
-      {/* Queue Filter */}
+      {/* Queue Filter — shows item_display, selects item_value (queue UID) */}
       {!config.hideQueue && (
         <div className="flex flex-col gap-0.5">
           <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Queue</label>
           <Popover open={queueFilterOpen} onOpenChange={setQueueFilterOpen}>
             <PopoverTrigger asChild>
               <Button variant="outline" className="h-8 w-[180px] justify-start text-left font-normal text-xs">
-                {multiSelectLabel(selectedQueues, "queue", "All Queues")}
+                {multiSelectLabel(selectedQueues, availableQueues, "queue", "All Queues")}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-[220px] p-2" align="start">
@@ -146,9 +163,9 @@ function GlobalFiltersBar({ config }: { config: FilterConfig }) {
                   <p className="text-xs text-muted-foreground px-2 py-1">Loading queues…</p>
                 ) : (
                   availableQueues.map((q) => (
-                    <div key={q} className="flex items-center gap-2 px-2 py-1 rounded hover:bg-accent cursor-pointer" onClick={() => toggleItem(selectedQueues, q, setSelectedQueues)}>
-                      <Checkbox checked={selectedQueues.includes(q)} onCheckedChange={() => toggleItem(selectedQueues, q, setSelectedQueues)} />
-                      <span className="text-xs">{q}</span>
+                    <div key={q.value} className="flex items-center gap-2 px-2 py-1 rounded hover:bg-accent cursor-pointer" onClick={() => toggleValue(selectedQueues, q.value, setSelectedQueues)}>
+                      <Checkbox checked={selectedQueues.includes(q.value)} onCheckedChange={() => toggleValue(selectedQueues, q.value, setSelectedQueues)} />
+                      <span className="text-xs truncate" title={q.display}>{q.display}</span>
                     </div>
                   ))
                 )}
@@ -161,14 +178,14 @@ function GlobalFiltersBar({ config }: { config: FilterConfig }) {
         </div>
       )}
 
-      {/* Agent Filter */}
+      {/* Agent Filter — shows item_display, selects item_value (agent UID) */}
       {!config.hideAgent && (
         <div className="flex flex-col gap-0.5">
           <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Agent</label>
           <Popover open={agentFilterOpen} onOpenChange={setAgentFilterOpen}>
             <PopoverTrigger asChild>
               <Button variant="outline" className="h-8 w-[180px] justify-start text-left font-normal text-xs">
-                {multiSelectLabel(selectedAgents, "agent", "All Agents")}
+                {multiSelectLabel(selectedAgents, availableAgents, "agent", "All Agents")}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-[220px] p-2" align="start">
@@ -177,9 +194,9 @@ function GlobalFiltersBar({ config }: { config: FilterConfig }) {
                   <p className="text-xs text-muted-foreground px-2 py-1">Loading agents…</p>
                 ) : (
                   availableAgents.map((a) => (
-                    <div key={a} className="flex items-center gap-2 px-2 py-1 rounded hover:bg-accent cursor-pointer" onClick={() => toggleItem(selectedAgents, a, setSelectedAgents)}>
-                      <Checkbox checked={selectedAgents.includes(a)} onCheckedChange={() => toggleItem(selectedAgents, a, setSelectedAgents)} />
-                      <span className="text-xs">{a}</span>
+                    <div key={a.value} className="flex items-center gap-2 px-2 py-1 rounded hover:bg-accent cursor-pointer" onClick={() => toggleValue(selectedAgents, a.value, setSelectedAgents)}>
+                      <Checkbox checked={selectedAgents.includes(a.value)} onCheckedChange={() => toggleValue(selectedAgents, a.value, setSelectedAgents)} />
+                      <span className="text-xs truncate" title={a.display}>{a.display}</span>
                     </div>
                   ))
                 )}
@@ -192,14 +209,14 @@ function GlobalFiltersBar({ config }: { config: FilterConfig }) {
         </div>
       )}
 
-      {/* DID / Phone Filter */}
+      {/* DID / Phone Filter — shows item_display, selects item_value (phone number) */}
       {!config.hideDid && (
         <div className="flex flex-col gap-0.5">
           <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">DID / Phone</label>
           <Popover open={didFilterOpen} onOpenChange={setDidFilterOpen}>
             <PopoverTrigger asChild>
               <Button variant="outline" className="h-8 w-[180px] justify-start text-left font-normal text-xs">
-                {multiSelectLabel(selectedDids, "DID", "All DIDs")}
+                {multiSelectLabel(selectedDids, availableDids, "DID", "All DIDs")}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-[220px] p-2" align="start">
@@ -208,9 +225,9 @@ function GlobalFiltersBar({ config }: { config: FilterConfig }) {
                   <p className="text-xs text-muted-foreground px-2 py-1">Loading DIDs…</p>
                 ) : (
                   availableDids.map((d) => (
-                    <div key={d} className="flex items-center gap-2 px-2 py-1 rounded hover:bg-accent cursor-pointer" onClick={() => toggleItem(selectedDids, d, setSelectedDids)}>
-                      <Checkbox checked={selectedDids.includes(d)} onCheckedChange={() => toggleItem(selectedDids, d, setSelectedDids)} />
-                      <span className="text-xs">{d}</span>
+                    <div key={d.value} className="flex items-center gap-2 px-2 py-1 rounded hover:bg-accent cursor-pointer" onClick={() => toggleValue(selectedDids, d.value, setSelectedDids)}>
+                      <Checkbox checked={selectedDids.includes(d.value)} onCheckedChange={() => toggleValue(selectedDids, d.value, setSelectedDids)} />
+                      <span className="text-xs truncate" title={d.display}>{d.display}</span>
                     </div>
                   ))
                 )}
@@ -229,14 +246,14 @@ function GlobalFiltersBar({ config }: { config: FilterConfig }) {
         <Popover open={regionFilterOpen} onOpenChange={setRegionFilterOpen}>
           <PopoverTrigger asChild>
             <Button variant="outline" className="h-8 w-[150px] justify-start text-left font-normal text-xs">
-              {multiSelectLabel(selectedRegions, "region", "All Regions")}
+              {regionLabel(selectedRegions)}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-[200px] p-2" align="start">
             <div className="max-h-52 overflow-y-auto space-y-1">
               {["us-east-1", "us-west-2", "eu-west-1", "ap-southeast-1"].map((r) => (
-                <div key={r} className="flex items-center gap-2 px-2 py-1 rounded hover:bg-accent cursor-pointer" onClick={() => toggleItem(selectedRegions, r, setSelectedRegions)}>
-                  <Checkbox checked={selectedRegions.includes(r)} onCheckedChange={() => toggleItem(selectedRegions, r, setSelectedRegions)} />
+                <div key={r} className="flex items-center gap-2 px-2 py-1 rounded hover:bg-accent cursor-pointer" onClick={() => toggleValue(selectedRegions, r, setSelectedRegions)}>
+                  <Checkbox checked={selectedRegions.includes(r)} onCheckedChange={() => toggleValue(selectedRegions, r, setSelectedRegions)} />
                   <span className="text-xs">{r}</span>
                 </div>
               ))}

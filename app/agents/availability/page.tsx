@@ -44,6 +44,7 @@ export default function AgentAvailabilityPage() {
     appliedEndDate: endDate,
     appliedAgents: selectedAgents,
     appliedQueues: selectedQueues,
+    appliedRegions: selectedRegions,
     applyVersion,
   } = useGlobalFilters()
 
@@ -52,10 +53,12 @@ export default function AgentAvailabilityPage() {
   const endRef = useRef(endDate)
   const agentsRef = useRef(selectedAgents)
   const queuesRef = useRef(selectedQueues)
+  const regionsRef = useRef(selectedRegions)
   useEffect(() => { startRef.current = startDate }, [startDate])
   useEffect(() => { endRef.current = endDate }, [endDate])
   useEffect(() => { agentsRef.current = selectedAgents }, [selectedAgents])
   useEffect(() => { queuesRef.current = selectedQueues }, [selectedQueues])
+  useEffect(() => { regionsRef.current = selectedRegions }, [selectedRegions])
 
   useEffect(() => {
     if (!authLoading) {
@@ -71,6 +74,7 @@ export default function AgentAvailabilityPage() {
       endRef.current = endDate
       agentsRef.current = selectedAgents
       queuesRef.current = selectedQueues
+      regionsRef.current = selectedRegions
       loadData()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -83,12 +87,14 @@ export default function AgentAvailabilityPage() {
       const end = DateHelper.formatDateFromDate(endRef.current, true)
       const agentFilter = agentsRef.current.length > 0 ? agentsRef.current : undefined
       const queueFilter = queuesRef.current.length > 0 ? queuesRef.current : undefined
+      const regionFilter = regionsRef.current.length > 0 ? regionsRef.current : undefined
       const result = await athenaAPI.getAgentAvailability(
         start,
         end,
         user?.email,
         agentFilter,
         queueFilter,
+        regionFilter,
       )
       if (result.status === 'SUCCEEDED') {
         setAgentData(result.data)

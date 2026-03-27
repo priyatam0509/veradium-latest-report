@@ -34,6 +34,7 @@ export default function AgentActivityAnalysis() {
     appliedStartDate: startDate,
     appliedEndDate: endDate,
     appliedAgents: selectedAgents,
+    appliedRegions: selectedRegions,
     applyVersion,
   } = useGlobalFilters()
 
@@ -41,9 +42,11 @@ export default function AgentActivityAnalysis() {
   const startRef = useRef(startDate)
   const endRef = useRef(endDate)
   const agentsRef = useRef(selectedAgents)
+  const regionsRef = useRef(selectedRegions)
   useEffect(() => { startRef.current = startDate }, [startDate])
   useEffect(() => { endRef.current = endDate }, [endDate])
   useEffect(() => { agentsRef.current = selectedAgents }, [selectedAgents])
+  useEffect(() => { regionsRef.current = selectedRegions }, [selectedRegions])
 
   useEffect(() => {
     if (!authLoading) {
@@ -58,6 +61,7 @@ export default function AgentActivityAnalysis() {
       startRef.current = startDate
       endRef.current = endDate
       agentsRef.current = selectedAgents
+      regionsRef.current = selectedRegions
       loadAgentActivityData()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -69,11 +73,13 @@ export default function AgentActivityAnalysis() {
       const start = DateHelper.formatDateFromDate(startRef.current)
       const end = DateHelper.formatDateFromDate(endRef.current, true)
       const agentFilter = agentsRef.current.length > 0 ? agentsRef.current : undefined
+      const regionFilter = regionsRef.current.length > 0 ? regionsRef.current : undefined
       const result = await athenaAPI.getAgentPauseDetail(
         start,
         end,
         user?.email,
         agentFilter,
+        regionFilter,
       )
       
       if (result.status === 'SUCCEEDED') {

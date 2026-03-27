@@ -9,9 +9,9 @@ interface GlobalFiltersContextValue {
   startDate: Date | undefined
   endDate: Date | undefined
   searchTerm: string
-  selectedQueues: string[]
-  selectedAgents: string[]
-  selectedDids: string[]
+  selectedQueues: string[]   // item_value UIDs
+  selectedAgents: string[]   // item_value UIDs
+  selectedDids: string[]     // item_value phone numbers
   selectedRegions: string[]
   isStartOpen: boolean
   isEndOpen: boolean
@@ -20,7 +20,7 @@ interface GlobalFiltersContextValue {
   didFilterOpen: boolean
   regionFilterOpen: boolean
 
-  // Applied state (what pages use for API calls)
+  // Applied state (what pages use for API calls) — these are item_value (UIDs/phones)
   appliedStartDate: Date | undefined
   appliedEndDate: Date | undefined
   appliedSearchTerm: string
@@ -30,10 +30,10 @@ interface GlobalFiltersContextValue {
   appliedRegions: string[]
   applyVersion: number
 
-  // Available options populated from lookup APIs on mount
-  availableQueues: string[]
-  availableAgents: string[]
-  availableDids: string[]
+  // Available options — {display: label shown in UI, value: sent to API}
+  availableQueues: { display: string; value: string }[]
+  availableAgents: { display: string; value: string }[]
+  availableDids: { display: string; value: string }[]
 
   // Setters
   setStartDate: (d: Date | undefined) => void
@@ -49,7 +49,7 @@ interface GlobalFiltersContextValue {
   setAgentFilterOpen: (v: boolean) => void
   setDidFilterOpen: (v: boolean) => void
   setRegionFilterOpen: (v: boolean) => void
-  setAvailableQueues: (q: string[]) => void
+  setAvailableQueues: (q: { display: string; value: string }[]) => void
 
   // Actions
   handleApply: () => void
@@ -75,42 +75,51 @@ export function GlobalFiltersProvider({ children }: { children: React.ReactNode 
   const [agentFilterOpen, setAgentFilterOpen] = useState(false)
   const [didFilterOpen, setDidFilterOpen] = useState(false)
   const [regionFilterOpen, setRegionFilterOpen] = useState(false)
-  const [availableQueues, setAvailableQueues] = useState<string[]>([])
-  const [availableAgents, setAvailableAgents] = useState<string[]>([])
-  const [availableDids, setAvailableDids] = useState<string[]>([])
+  const [availableQueues, setAvailableQueues] = useState<{ display: string; value: string }[]>([])
+  const [availableAgents, setAvailableAgents] = useState<{ display: string; value: string }[]>([])
+  const [availableDids, setAvailableDids] = useState<{ display: string; value: string }[]>([])
 
-  // Load lookup lists from API on mount so dropdowns are populated immediately
+  // Load lookup lists from API on mount — store both display (label) and value (UID sent to queries)
   useEffect(() => {
     // Load queue list
     athenaAPI.getLookupQueueList().then((result) => {
       if (result?.status === "SUCCEEDED" && Array.isArray(result.data) && result.data.length > 0) {
-        const names: string[] = result.data
-          .map((row: any) => row.item_display || row.queue_name || row.queue || row.name || Object.values(row)[0])
-          .filter(Boolean)
-          .sort() as string[]
-        if (names.length > 0) setAvailableQueues(names)
+        const items = result.data
+          .map((row: any) => ({
+            display: String(row.item_display || row.queue_name || row.queue || row.name || Object.values(row)[0] || ""),
+            value: String(row.item_value || row.queue_id || row.item_display || row.queue_name || Object.values(row)[0] || ""),
+          }))
+          .filter((i: { display: string; value: string }) => i.display && i.value)
+          .sort((a: { display: string; value: string }, b: { display: string; value: string }) => a.display.localeCompare(b.display))
+        if (items.length > 0) setAvailableQueues(items)
       }
     }).catch(() => {})
 
     // Load agent list
     athenaAPI.getLookupAgentList().then((result) => {
       if (result?.status === "SUCCEEDED" && Array.isArray(result.data) && result.data.length > 0) {
-        const names: string[] = result.data
-          .map((row: any) => row.item_display || row.agent_name || row.agent || row.name || Object.values(row)[0])
-          .filter(Boolean)
-          .sort() as string[]
-        if (names.length > 0) setAvailableAgents(names)
+        const items = result.data
+          .map((row: any) => ({
+            display: String(row.item_display || row.agent_name || row.agent || row.name || Object.values(row)[0] || ""),
+            value: String(row.item_value || row.agent_id || row.user_id || row.item_display || row.agent_name || Object.values(row)[0] || ""),
+          }))
+          .filter((i: { display: string; value: string }) => i.display && i.value)
+          .sort((a: { display: string; value: string }, b: { display: string; value: string }) => a.display.localeCompare(b.display))
+        if (items.length > 0) setAvailableAgents(items)
       }
     }).catch(() => {})
 
     // Load phone/DID list
     athenaAPI.getLookupPhoneList().then((result) => {
       if (result?.status === "SUCCEEDED" && Array.isArray(result.data) && result.data.length > 0) {
-        const names: string[] = result.data
-          .map((row: any) => row.item_display || row.did || row.phone || Object.values(row)[0])
-          .filter(Boolean)
-          .sort() as string[]
-        if (names.length > 0) setAvailableDids(names)
+        const items = result.data
+          .map((row: any) => ({
+            display: String(row.item_display || row.did || row.phone || Object.values(row)[0] || ""),
+            value: String(row.item_value || row.did || row.phone || row.item_display || Object.values(row)[0] || ""),
+          }))
+          .filter((i: { display: string; value: string }) => i.display && i.value)
+          .sort((a: { display: string; value: string }, b: { display: string; value: string }) => a.display.localeCompare(b.display))
+        if (items.length > 0) setAvailableDids(items)
       }
     }).catch(() => {})
   }, [])
@@ -206,9 +215,9 @@ export function useGlobalFilters() {
       appliedDids: [] as string[],
       appliedRegions: [] as string[],
       applyVersion: 0,
-      availableQueues: [] as string[],
-      availableAgents: [] as string[],
-      availableDids: [] as string[],
+      availableQueues: [] as { display: string; value: string }[],
+      availableAgents: [] as { display: string; value: string }[],
+      availableDids: [] as { display: string; value: string }[],
       setStartDate: noop,
       setEndDate: noop,
       setSearchTerm: noop,

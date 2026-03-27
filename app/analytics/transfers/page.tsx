@@ -35,6 +35,7 @@ export default function TransferAnalysis() {
     appliedQueues: selectedQueues,
     appliedAgents: selectedAgents,
     appliedDids: selectedDids,
+    appliedRegions: selectedRegions,
     applyVersion,
   } = useGlobalFilters()
 
@@ -44,11 +45,13 @@ export default function TransferAnalysis() {
   const queuesRef = useRef(selectedQueues)
   const agentsRef = useRef(selectedAgents)
   const didsRef = useRef(selectedDids)
+  const regionsRef = useRef(selectedRegions)
   useEffect(() => { startRef.current = startDate }, [startDate])
   useEffect(() => { endRef.current = endDate }, [endDate])
   useEffect(() => { queuesRef.current = selectedQueues }, [selectedQueues])
   useEffect(() => { agentsRef.current = selectedAgents }, [selectedAgents])
   useEffect(() => { didsRef.current = selectedDids }, [selectedDids])
+  useEffect(() => { regionsRef.current = selectedRegions }, [selectedRegions])
 
   useEffect(() => {
     if (!authLoading) {
@@ -65,6 +68,7 @@ export default function TransferAnalysis() {
       queuesRef.current = selectedQueues
       agentsRef.current = selectedAgents
       didsRef.current = selectedDids
+      regionsRef.current = selectedRegions
       loadTransferData()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -78,10 +82,11 @@ export default function TransferAnalysis() {
       const agentFilter = agentsRef.current.length > 0 ? agentsRef.current : undefined
       const queueFilter = queuesRef.current.length > 0 ? queuesRef.current : undefined
       const didFilter = didsRef.current.length > 0 ? didsRef.current : undefined
+      const regionFilter = regionsRef.current.length > 0 ? regionsRef.current : undefined
       const result = await athenaAPI.getAnsweredTransfers(
         start,
         end,
-        null,
+        regionFilter,
         user?.email,
         agentFilter,
         queueFilter,

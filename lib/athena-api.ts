@@ -113,7 +113,7 @@ export class AthenaReportingAPI {
   }
 
   // Distribution Queries (8 queries - all support region filter)
-  async getDistributionByQueue(startDate: string, endDate: string, _region?: string[] | null, username?: string, queueIds?: string[], agentIds?: string[], dids?: string[]) {
+  async getDistributionByQueue(startDate: string, endDate: string, region?: string[] | null, username?: string, queueIds?: string[], agentIds?: string[], dids?: string[]) {
   const params: any = {
     start_datetime: startDate,
     end_datetime: endDate,
@@ -123,11 +123,11 @@ export class AthenaReportingAPI {
   if (queueIds && queueIds.length > 0) params.queue_id = queueIds
   if (agentIds && agentIds.length > 0) params.agent_id = agentIds
   if (dids && dids.length > 0) params.did = dids
-  // region param is ignored, always fetched from username
+  if (region && region.length > 0) params.region = region
   return this.executeQuery('distribution_distbyqueue', params, true, 60, username)
   }
 
-  async getDistributionByDID(startDate: string, endDate: string, _region?: string[] | null, username?: string, queueIds?: string[], agentIds?: string[], dids?: string[]) {
+  async getDistributionByDID(startDate: string, endDate: string, region?: string[] | null, username?: string, queueIds?: string[], agentIds?: string[], dids?: string[]) {
   const params: any = {
     start_datetime: startDate,
     end_datetime: endDate,
@@ -137,10 +137,11 @@ export class AthenaReportingAPI {
   if (queueIds && queueIds.length > 0) params.queue_id = queueIds
   if (agentIds && agentIds.length > 0) params.agent_id = agentIds
   if (dids && dids.length > 0) params.did = dids
+  if (region && region.length > 0) params.region = region
   return this.executeQuery('distribution_distbydid', params, true, 60, username)
   }
 
-  async getDistributionByDay(startDate: string, endDate: string, _region?: string[] | null, username?: string, queueIds?: string[], agentIds?: string[], dids?: string[]) {
+  async getDistributionByDay(startDate: string, endDate: string, region?: string[] | null, username?: string, queueIds?: string[], agentIds?: string[], dids?: string[]) {
   const params: any = {
     start_datetime: startDate,
     end_datetime: endDate,
@@ -150,10 +151,11 @@ export class AthenaReportingAPI {
   if (queueIds && queueIds.length > 0) params.queue_id = queueIds
   if (agentIds && agentIds.length > 0) params.agent_id = agentIds
   if (dids && dids.length > 0) params.did = dids
+  if (region && region.length > 0) params.region = region
   return this.executeQuery('distribution_distbyday', params, true, 60, username)
   }
 
-  async getDistributionByMonth(startDate: string, endDate: string, _region?: string[] | null, username?: string, queueIds?: string[], agentIds?: string[], dids?: string[]) {
+  async getDistributionByMonth(startDate: string, endDate: string, region?: string[] | null, username?: string, queueIds?: string[], agentIds?: string[], dids?: string[]) {
   const params: any = {
     start_datetime: startDate,
     end_datetime: endDate,
@@ -163,10 +165,11 @@ export class AthenaReportingAPI {
   if (queueIds && queueIds.length > 0) params.queue_id = queueIds
   if (agentIds && agentIds.length > 0) params.agent_id = agentIds
   if (dids && dids.length > 0) params.did = dids
+  if (region && region.length > 0) params.region = region
   return this.executeQuery('distribution_distbymonth', params, true, 60, username)
   }
 
-  async getDistributionByWeek(startDate: string, endDate: string, _region?: string[] | null, username?: string, queueIds?: string[], agentIds?: string[], dids?: string[]) {
+  async getDistributionByWeek(startDate: string, endDate: string, region?: string[] | null, username?: string, queueIds?: string[], agentIds?: string[], dids?: string[]) {
   const params: any = {
     start_datetime: startDate,
     end_datetime: endDate,
@@ -176,10 +179,11 @@ export class AthenaReportingAPI {
   if (queueIds && queueIds.length > 0) params.queue_id = queueIds
   if (agentIds && agentIds.length > 0) params.agent_id = agentIds
   if (dids && dids.length > 0) params.did = dids
+  if (region && region.length > 0) params.region = region
   return this.executeQuery('distribution_distbyweek', params, true, 60, username)
   }
 
-  async getDistributionByHour(startDate: string, endDate: string, _region?: string[] | null, username?: string, queueIds?: string[], agentIds?: string[], dids?: string[]) {
+  async getDistributionByHour(startDate: string, endDate: string, region?: string[] | null, username?: string, queueIds?: string[], agentIds?: string[], dids?: string[]) {
   const params: any = {
     start_datetime: startDate,
     end_datetime: endDate,
@@ -189,6 +193,7 @@ export class AthenaReportingAPI {
   if (queueIds && queueIds.length > 0) params.queue_id = queueIds
   if (agentIds && agentIds.length > 0) params.agent_id = agentIds
   if (dids && dids.length > 0) params.did = dids
+  if (region && region.length > 0) params.region = region
   return this.executeQuery('distribution_distbyhour', params, true, 60, username)
   }
 
@@ -200,10 +205,9 @@ export class AthenaReportingAPI {
     startDate: string,
     endDate: string,
     filters: { did?: string[]; queueId?: string[] } = {},
-    _region?: string[] | null,
+    region?: string[] | null,
     username?: string
   ) {
-    // Only did and queue_id are supported for this query
     const params: any = {
       start_datetime: startDate,
       end_datetime: endDate,
@@ -216,7 +220,7 @@ export class AthenaReportingAPI {
     if (filters.queueId && filters.queueId.length > 0 && filters.queueId[0] !== 'ALL') {
       params.queue_id = filters.queueId
     }
-    // region param is ignored, always fetched from username
+    if (region && region.length > 0) params.region = region
     return this.executeQuery('distribution_distby_drilldown', params, true, 60, username)
   }
 
@@ -228,32 +232,32 @@ export class AthenaReportingAPI {
   }
 
   // Answered Queries (5 queries - all support region filter)
-  async getAnsweredByQueue(startDate: string, endDate: string, _region?: string[] | null, username?: string, queueIds?: string[], agentIds?: string[], dids?: string[]) {
+  async getAnsweredByQueue(startDate: string, endDate: string, region?: string[] | null, username?: string, queueIds?: string[], agentIds?: string[], dids?: string[]) {
   const params: any = { start_datetime: startDate, end_datetime: endDate }
   if (queueIds && queueIds.length > 0) params.queue_id = queueIds
   if (agentIds && agentIds.length > 0) params.agent_id = agentIds
   if (dids && dids.length > 0) params.did = dids
+  if (region && region.length > 0) params.region = region
   return this.executeQuery('answered_answeredbyqueue', params, true, 60, username)
   }
 
-  async getAnsweredByDID(startDate: string, endDate: string, _region?: string[] | null, username?: string, queueIds?: string[], agentIds?: string[], dids?: string[]) {
+  async getAnsweredByDID(startDate: string, endDate: string, region?: string[] | null, username?: string, queueIds?: string[], agentIds?: string[], dids?: string[]) {
   const params: any = { start_datetime: startDate, end_datetime: endDate }
   if (queueIds && queueIds.length > 0) params.queue_id = queueIds
   if (agentIds && agentIds.length > 0) params.agent_id = agentIds
   if (dids && dids.length > 0) params.did = dids
+  if (region && region.length > 0) params.region = region
   return this.executeQuery('answered_answeredbydid', params, true, 60, username)
   }
 
-  async getAnsweredByAgent(startDate: string, endDate: string, queueId?: string[], _region?: string[] | null, username?: string, agentIds?: string[], dids?: string[]) {
+  async getAnsweredByAgent(startDate: string, endDate: string, queueId?: string[], region?: string[] | null, username?: string, agentIds?: string[], dids?: string[]) {
     const params: any = { start_datetime: startDate, end_datetime: endDate }
-    
-    // Only add queue_id if a specific value is provided (not ["ALL"])
     if (queueId && queueId.length > 0 && queueId[0] !== 'ALL') {
       params.queue_id = queueId
     }
     if (agentIds && agentIds.length > 0) params.agent_id = agentIds
     if (dids && dids.length > 0) params.did = dids
-    
+    if (region && region.length > 0) params.region = region
   return this.executeQuery('answered_answeredbyagent', params, true, 60, username)
   }
 
@@ -264,10 +268,9 @@ export class AthenaReportingAPI {
     startDate: string,
     endDate: string,
     filters: { did?: string[]; agentId?: string[]; queueId?: string[] } = {},
-    _region?: string[] | null,
+    region?: string[] | null,
     username?: string
   ) {
-    // Only did, agent_id, and queue_id are supported for this query
     const params: any = {
       start_datetime: startDate,
       end_datetime: endDate,
@@ -283,32 +286,35 @@ export class AthenaReportingAPI {
     if (filters.queueId && filters.queueId.length > 0 && filters.queueId[0] !== 'ALL') {
       params.queue_id = filters.queueId
     }
+    if (region && region.length > 0) params.region = region
     return this.executeQuery('answered_answeredby_drilldown', params, true, 60, username)
   }
 
   /**
    * NEW QUERY: Get transfer statistics by agent
    */
-  async getAnsweredTransfers(startDate: string, endDate: string, _region?: string[] | null, username?: string, agentIds?: string[], queueIds?: string[], dids?: string[]) {
+  async getAnsweredTransfers(startDate: string, endDate: string, region?: string[] | null, username?: string, agentIds?: string[], queueIds?: string[], dids?: string[]) {
   const params: any = { start_datetime: startDate, end_datetime: endDate }
   if (agentIds && agentIds.length > 0) params.agent_id = agentIds
   if (queueIds && queueIds.length > 0) params.queue_id = queueIds
   if (dids && dids.length > 0) params.did = dids
+  if (region && region.length > 0) params.region = region
   return this.executeQuery('answered_answered_transfers', params, true, 60, username)
   }
 
-  // Unanswered Queries (4 queries - all support region filter)
-  async getUnansweredByQueue(startDate: string, endDate: string, _region?: string[] | null, username?: string, queueIds?: string[], dids?: string[]) {
+  async getUnansweredByQueue(startDate: string, endDate: string, region?: string[] | null, username?: string, queueIds?: string[], dids?: string[]) {
   const params: any = { start_datetime: startDate, end_datetime: endDate }
   if (queueIds && queueIds.length > 0) params.queue_id = queueIds
   if (dids && dids.length > 0) params.did = dids
+  if (region && region.length > 0) params.region = region
   return this.executeQuery('unanswered_unansweredbyqueue', params, true, 60, username)
   }
 
-  async getUnansweredByDID(startDate: string, endDate: string, _region?: string[] | null, username?: string, queueIds?: string[], dids?: string[]) {
+  async getUnansweredByDID(startDate: string, endDate: string, region?: string[] | null, username?: string, queueIds?: string[], dids?: string[]) {
   const params: any = { start_datetime: startDate, end_datetime: endDate }
   if (queueIds && queueIds.length > 0) params.queue_id = queueIds
   if (dids && dids.length > 0) params.did = dids
+  if (region && region.length > 0) params.region = region
   return this.executeQuery('unanswered_unansweredbydid', params, true, 60, username)
   }
 
@@ -319,10 +325,9 @@ export class AthenaReportingAPI {
     startDate: string,
     endDate: string,
     filters: { did?: string[]; queueId?: string[] } = {},
-    _region?: string[] | null,
+    region?: string[] | null,
     username?: string
   ) {
-    // Only did and queue_id are supported for this query; agent_id is NOT supported and must not be sent
     const params: any = {
       start_datetime: startDate,
       end_datetime: endDate,
@@ -335,42 +340,39 @@ export class AthenaReportingAPI {
     if (filters.queueId && filters.queueId.length > 0 && filters.queueId[0] !== 'ALL') {
       params.queue_id = filters.queueId
     }
-    // agent_id is not supported for unanswered drilldown, do not send
+    if (region && region.length > 0) params.region = region
     return this.executeQuery('unanswered_unansweredby_drilldown', params, true, 60, username)
   }
 
   /**
    * NEW QUERY: Get disconnection reasons for unanswered calls
    */
-  async getUnansweredDisconnectionCause(startDate: string, endDate: string, _region?: string[] | null, username?: string) {
+  async getUnansweredDisconnectionCause(startDate: string, endDate: string, region?: string[] | null, username?: string) {
   const params: any = { start_datetime: startDate, end_datetime: endDate }
   return this.executeQuery('unanswered_unanswered_disconnection_cause', params, true, 60, username)
   }
 
   // Agent Queries (3 queries now support region filter)
-  async getAgentAvailability(startDate: string, endDate: string, username?: string, agentIds?: string[], queueIds?: string[]) {
+  async getAgentAvailability(startDate: string, endDate: string, username?: string, agentIds?: string[], queueIds?: string[], region?: string[] | null) {
     const params: any = { start_datetime: startDate, end_datetime: endDate }
     if (agentIds && agentIds.length > 0) params.agent_id = agentIds
     if (queueIds && queueIds.length > 0) params.queue_id = queueIds
+    if (region && region.length > 0) params.region = region
     return this.executeQuery('agent_agent_avail', params, true, 60, username)
   }
 
-  /**
-   * Get call disposition statistics by agent (supports region filter)
-   */
-  async getAgentCallDisposition(startDate: string, endDate: string, username?: string, agentIds?: string[], queueIds?: string[]) {
+  async getAgentCallDisposition(startDate: string, endDate: string, username?: string, agentIds?: string[], queueIds?: string[], region?: string[] | null) {
     const params: any = { start_datetime: startDate, end_datetime: endDate }
     if (agentIds && agentIds.length > 0) params.agent_id = agentIds
     if (queueIds && queueIds.length > 0) params.queue_id = queueIds
+    if (region && region.length > 0) params.region = region
     return this.executeQuery('agent_agent_call_dispostion', params, true, 60, username)
   }
 
-  /**
-   * Get agent pause/hold statistics (supports region filter)
-   */
-  async getAgentPauseDetail(startDate: string, endDate: string, username?: string, agentIds?: string[]) {
+  async getAgentPauseDetail(startDate: string, endDate: string, username?: string, agentIds?: string[], region?: string[] | null) {
     const params: any = { start_datetime: startDate, end_datetime: endDate }
     if (agentIds && agentIds.length > 0) params.agent_id = agentIds
+    if (region && region.length > 0) params.region = region
     return this.executeQuery('agent_agent_pause_detail', params, true, 60, username)
   }
 
@@ -387,34 +389,35 @@ export class AthenaReportingAPI {
   // ── V6 Dashboard Queries ────────────────────────────────────────────────
 
   /** Total answered calls summary — dashboard_total_answered_calls */
-  async getDashboardTotalAnswered(startDate: string, endDate: string, username?: string, queueIds?: string[], dids?: string[]) {
+  async getDashboardTotalAnswered(startDate: string, endDate: string, username?: string, queueIds?: string[], dids?: string[], region?: string[] | null) {
     const params: any = { start_datetime: startDate, end_datetime: endDate }
     if (queueIds && queueIds.length > 0) params.queue_id = queueIds
     if (dids && dids.length > 0) params.did = dids
+    if (region && region.length > 0) params.region = region
     return this.executeQuery('dashboard_total_answered_calls', params, true, 60, username)
   }
 
-  /** Total unanswered calls summary — dashboard_total_unanswered_calls */
-  async getDashboardTotalUnanswered(startDate: string, endDate: string, username?: string, queueIds?: string[], dids?: string[]) {
+  async getDashboardTotalUnanswered(startDate: string, endDate: string, username?: string, queueIds?: string[], dids?: string[], region?: string[] | null) {
     const params: any = { start_datetime: startDate, end_datetime: endDate }
     if (queueIds && queueIds.length > 0) params.queue_id = queueIds
     if (dids && dids.length > 0) params.did = dids
+    if (region && region.length > 0) params.region = region
     return this.executeQuery('dashboard_total_unanswered_calls', params, true, 60, username)
   }
 
-  /** Answered service level distribution — dashboard_answered_service_level */
-  async getDashboardAnsweredServiceLevel(startDate: string, endDate: string, username?: string, queueIds?: string[], dids?: string[]) {
+  async getDashboardAnsweredServiceLevel(startDate: string, endDate: string, username?: string, queueIds?: string[], dids?: string[], region?: string[] | null) {
     const params: any = { start_datetime: startDate, end_datetime: endDate }
     if (queueIds && queueIds.length > 0) params.queue_id = queueIds
     if (dids && dids.length > 0) params.did = dids
+    if (region && region.length > 0) params.region = region
     return this.executeQuery('dashboard_answered_service_level', params, true, 60, username)
   }
 
-  /** Abandoned service level distribution — dashboard_abandoned_service_level */
-  async getDashboardAbandonedServiceLevel(startDate: string, endDate: string, username?: string, queueIds?: string[], dids?: string[]) {
+  async getDashboardAbandonedServiceLevel(startDate: string, endDate: string, username?: string, queueIds?: string[], dids?: string[], region?: string[] | null) {
     const params: any = { start_datetime: startDate, end_datetime: endDate }
     if (queueIds && queueIds.length > 0) params.queue_id = queueIds
     if (dids && dids.length > 0) params.did = dids
+    if (region && region.length > 0) params.region = region
     return this.executeQuery('dashboard_abandoned_service_level', params, true, 60, username)
   }
 
@@ -438,7 +441,7 @@ export class AthenaReportingAPI {
   // ── V6 Distribution by State ────────────────────────────────────────────
 
   /** Call distribution by state/area-code — distribution_distbystate */
-  async getDistributionByState(startDate: string, endDate: string, _region?: string[] | null, username?: string, queueIds?: string[], agentIds?: string[], dids?: string[]) {
+  async getDistributionByState(startDate: string, endDate: string, region?: string[] | null, username?: string, queueIds?: string[], agentIds?: string[], dids?: string[]) {
     const params: any = {
       start_datetime: startDate,
       end_datetime: endDate,
@@ -448,6 +451,7 @@ export class AthenaReportingAPI {
     if (queueIds && queueIds.length > 0) params.queue_id = queueIds
     if (agentIds && agentIds.length > 0) params.agent_id = agentIds
     if (dids && dids.length > 0) params.did = dids
+    if (region && region.length > 0) params.region = region
     return this.executeQuery('distribution_distbystate', params, true, 60, username)
   }
 
