@@ -365,35 +365,31 @@ export class AthenaReportingAPI {
   // ── V6 Dashboard Queries ────────────────────────────────────────────────
 
   /** Total answered calls summary — dashboard_total_answered_calls */
-  async getDashboardTotalAnswered(startDate: string, endDate: string, username?: string) {
-    return this.executeQuery('dashboard_total_answered_calls', {
-      start_datetime: startDate,
-      end_datetime: endDate
-    }, true, 60, username)
+  async getDashboardTotalAnswered(startDate: string, endDate: string, username?: string, queueIds?: string[]) {
+    const params: any = { start_datetime: startDate, end_datetime: endDate }
+    if (queueIds && queueIds.length > 0) params.queue_id = queueIds
+    return this.executeQuery('dashboard_total_answered_calls', params, true, 60, username)
   }
 
   /** Total unanswered calls summary — dashboard_total_unanswered_calls */
-  async getDashboardTotalUnanswered(startDate: string, endDate: string, username?: string) {
-    return this.executeQuery('dashboard_total_unanswered_calls', {
-      start_datetime: startDate,
-      end_datetime: endDate
-    }, true, 60, username)
+  async getDashboardTotalUnanswered(startDate: string, endDate: string, username?: string, queueIds?: string[]) {
+    const params: any = { start_datetime: startDate, end_datetime: endDate }
+    if (queueIds && queueIds.length > 0) params.queue_id = queueIds
+    return this.executeQuery('dashboard_total_unanswered_calls', params, true, 60, username)
   }
 
   /** Answered service level distribution — dashboard_answered_service_level */
-  async getDashboardAnsweredServiceLevel(startDate: string, endDate: string, username?: string) {
-    return this.executeQuery('dashboard_answered_service_level', {
-      start_datetime: startDate,
-      end_datetime: endDate
-    }, true, 60, username)
+  async getDashboardAnsweredServiceLevel(startDate: string, endDate: string, username?: string, queueIds?: string[]) {
+    const params: any = { start_datetime: startDate, end_datetime: endDate }
+    if (queueIds && queueIds.length > 0) params.queue_id = queueIds
+    return this.executeQuery('dashboard_answered_service_level', params, true, 60, username)
   }
 
   /** Abandoned service level distribution — dashboard_abandoned_service_level */
-  async getDashboardAbandonedServiceLevel(startDate: string, endDate: string, username?: string) {
-    return this.executeQuery('dashboard_abandoned_service_level', {
-      start_datetime: startDate,
-      end_datetime: endDate
-    }, true, 60, username)
+  async getDashboardAbandonedServiceLevel(startDate: string, endDate: string, username?: string, queueIds?: string[]) {
+    const params: any = { start_datetime: startDate, end_datetime: endDate }
+    if (queueIds && queueIds.length > 0) params.queue_id = queueIds
+    return this.executeQuery('dashboard_abandoned_service_level', params, true, 60, username)
   }
 
   // ── V6 Lookup Queries ───────────────────────────────────────────────────

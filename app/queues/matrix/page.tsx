@@ -67,7 +67,7 @@ const UNANSWERED_LABELS: Record<keyof TotalUnansweredData, string> = {
 /* ========================================================================== */
 export default function QueueMatrixPage() {
   const { user, isLoading: authLoading } = useAuth()
-  const { appliedStartDate, appliedEndDate, applyVersion } = useGlobalFilters()
+  const { appliedStartDate, appliedEndDate, appliedQueues, applyVersion } = useGlobalFilters()
 
   const [totalAnswered, setTotalAnswered] = useState<TotalAnsweredData | null>(null)
   const [totalUnanswered, setTotalUnanswered] = useState<TotalUnansweredData | null>(null)
@@ -81,12 +81,14 @@ export default function QueueMatrixPage() {
     try {
       const start = DateHelper.formatDateFromDate(appliedStartDate)
       const end = DateHelper.formatDateFromDate(appliedEndDate, true)
+      // Pass selected queues as queue_id filter (empty = all queues)
+      const queueFilter = appliedQueues.length > 0 ? appliedQueues : undefined
 
       const [answeredRes, unansweredRes, answeredSLRes, abandonedSLRes] = await Promise.all([
-        athenaAPI.getDashboardTotalAnswered(start, end, user.email),
-        athenaAPI.getDashboardTotalUnanswered(start, end, user.email),
-        athenaAPI.getDashboardAnsweredServiceLevel(start, end, user.email),
-        athenaAPI.getDashboardAbandonedServiceLevel(start, end, user.email),
+        athenaAPI.getDashboardTotalAnswered(start, end, user.email, queueFilter),
+        athenaAPI.getDashboardTotalUnanswered(start, end, user.email, queueFilter),
+        athenaAPI.getDashboardAnsweredServiceLevel(start, end, user.email, queueFilter),
+        athenaAPI.getDashboardAbandonedServiceLevel(start, end, user.email, queueFilter),
       ])
 
       if (answeredRes.status === "SUCCEEDED" && answeredRes.data.length > 0)
@@ -118,14 +120,8 @@ export default function QueueMatrixPage() {
     <AuthGuard>
       <DashboardLayout>
         <div className="space-y-6">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">Queue Matrix</h1>
-              <p className="text-muted-foreground mt-1">
-                Overview of queue performance. Select a report below.
-              </p>
-            </div>
+          {/* Refresh button row — the filter bar is shown by the layout above */}
+          <div className="flex items-center justify-end">
             <Button variant="outline" size="sm" onClick={fetchData} disabled={isLoading}>
               <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`} />
               Refresh

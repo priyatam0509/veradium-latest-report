@@ -193,7 +193,7 @@ const NAV_STRUCTURE: NavEntry[] = [
     icon: Home,
   },
   {
-    label: "Queue Matrix",
+    label: "Queue Matrices",
     icon: LayoutGrid,
     route: "/queues/matrix",
     children: [
@@ -203,7 +203,7 @@ const NAV_STRUCTURE: NavEntry[] = [
     ],
   },
   {
-    label: "Agent Matrix",
+    label: "Agent Matrices",
     icon: Users,
     route: "/agents/matrix",
     children: [
@@ -268,8 +268,9 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     return accessibleRouteSet.has(route)
   }
 
-  // Show the global filters bar only on the 3 queue report pages (NOT the matrix landing page)
+  // Show the global filters bar on queue matrix landing + all 3 queue report pages
   const FILTER_ROUTES = [
+    "/queues/matrix",
     "/queues/distribution",
     "/queues/answered",
     "/queues/unanswered",

@@ -13,7 +13,7 @@ export default function AgentMatrixPage() {
       <DashboardLayout>
         <div className="space-y-6">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Agent Matrix</h1>
+            <h1 className="text-3xl font-bold tracking-tight">Agent Matrices</h1>
             <p className="text-muted-foreground mt-1">
               Overview of agent performance. Select a report below.
             </p>
