@@ -66,6 +66,11 @@ export default function AgentAvailabilityPage() {
 
   useEffect(() => {
     if (!authLoading) {
+      // Sync refs immediately so loadData reads the new applied values
+      startRef.current = startDate
+      endRef.current = endDate
+      agentsRef.current = selectedAgents
+      queuesRef.current = selectedQueues
       loadData()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

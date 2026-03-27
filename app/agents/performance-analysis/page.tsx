@@ -62,6 +62,11 @@ export default function AgentPerformanceAnalysis() {
 
   useEffect(() => {
     if (!authLoading) {
+      // Sync refs immediately so loadAgentPerformanceData reads the new applied values
+      startRef.current = startDate
+      endRef.current = endDate
+      agentsRef.current = selectedAgents
+      queuesRef.current = selectedQueues
       loadAgentPerformanceData()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

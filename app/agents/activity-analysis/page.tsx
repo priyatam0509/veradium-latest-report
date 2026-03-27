@@ -54,6 +54,10 @@ export default function AgentActivityAnalysis() {
 
   useEffect(() => {
     if (!authLoading) {
+      // Sync refs immediately so loadAgentActivityData reads the new applied values
+      startRef.current = startDate
+      endRef.current = endDate
+      agentsRef.current = selectedAgents
       loadAgentActivityData()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -463,6 +463,12 @@ export default function QueueDistributionPage() {
   // Re-fetch all data when Apply is clicked (applyVersion increments)
   useEffect(() => {
     if (!authLoading) {
+      // Sync refs immediately so fetchTab reads the new applied values
+      startRef.current = startDate
+      endRef.current = endDate
+      queuesRef.current = selectedQueues
+      agentsRef.current = selectedAgents
+      didsRef.current = selectedDids
       setLoaded({})
       setQueueData([])
       setDidData([])
@@ -471,7 +477,7 @@ export default function QueueDistributionPage() {
       setMonthData([])
       setAgentData([])
       setStateData([])
-      setTimeout(() => fetchTab(activeTab, true), 0)
+      fetchTab(activeTab, true)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [applyVersion])

@@ -122,9 +122,16 @@ export default function QueueMatrixPage() {
     if (!authLoading) fetchData()
   }, [authLoading, user?.email])
 
-  // Re-fetch when global Apply is clicked
+  // Re-fetch when global Apply is clicked — sync refs first so fetchData sees the new values
   useEffect(() => {
-    if (!authLoading) fetchData()
+    if (!authLoading) {
+      startRef.current = appliedStartDate
+      endRef.current = appliedEndDate
+      queuesRef.current = appliedQueues
+      didsRef.current = appliedDids
+      fetchData()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [applyVersion])
 
   return (

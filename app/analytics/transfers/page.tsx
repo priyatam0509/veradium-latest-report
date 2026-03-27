@@ -59,6 +59,12 @@ export default function TransferAnalysis() {
 
   useEffect(() => {
     if (!authLoading) {
+      // Sync refs immediately so loadTransferData reads the new applied values
+      startRef.current = startDate
+      endRef.current = endDate
+      queuesRef.current = selectedQueues
+      agentsRef.current = selectedAgents
+      didsRef.current = selectedDids
       loadTransferData()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

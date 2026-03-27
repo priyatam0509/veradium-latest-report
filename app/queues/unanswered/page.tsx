@@ -283,9 +283,14 @@ export default function UnansweredCallsPage() {
 
   useEffect(() => {
     if (!authLoading) {
+      // Sync refs immediately so fetchTab reads the new applied values
+      startRef.current = startDate
+      endRef.current = endDate
+      queuesRef.current = selectedQueues
+      didsRef.current = selectedDids
       setLoaded({})
       setQueueData([]); setDidData([])
-      setTimeout(() => fetchTab(activeTab, true), 0)
+      fetchTab(activeTab, true)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [applyVersion])
