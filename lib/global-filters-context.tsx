@@ -11,26 +11,24 @@ interface GlobalFiltersContextValue {
   searchTerm: string
   selectedQueues: string[]   // item_value UIDs
   selectedAgents: string[]   // item_value UIDs
-  selectedDids: string[]     // item_value phone numbers
-  selectedRegions: string[]
+  selectedDids: string[]     // phone numbers
   isStartOpen: boolean
   isEndOpen: boolean
   queueFilterOpen: boolean
   agentFilterOpen: boolean
   didFilterOpen: boolean
-  regionFilterOpen: boolean
 
-  // Applied state (what pages use for API calls) — these are item_value (UIDs/phones)
+  // Applied state (what pages use for API calls)
   appliedStartDate: Date | undefined
   appliedEndDate: Date | undefined
   appliedSearchTerm: string
   appliedQueues: string[]
   appliedAgents: string[]
   appliedDids: string[]
-  appliedRegions: string[]
   applyVersion: number
 
   // Available options — {display: label shown in UI, value: sent to API}
+  // Region is NOT here — it is applied automatically per-user by executeQuery via getUserRegion()
   availableQueues: { display: string; value: string }[]
   availableAgents: { display: string; value: string }[]
   availableDids: { display: string; value: string }[]
@@ -42,14 +40,13 @@ interface GlobalFiltersContextValue {
   setSelectedQueues: (q: string[]) => void
   setSelectedAgents: (a: string[]) => void
   setSelectedDids: (d: string[]) => void
-  setSelectedRegions: (r: string[]) => void
   setIsStartOpen: (v: boolean) => void
   setIsEndOpen: (v: boolean) => void
   setQueueFilterOpen: (v: boolean) => void
   setAgentFilterOpen: (v: boolean) => void
   setDidFilterOpen: (v: boolean) => void
-  setRegionFilterOpen: (v: boolean) => void
   setAvailableQueues: (q: { display: string; value: string }[]) => void
+  setAvailableDids: (d: { display: string; value: string }[]) => void
 
   // Actions
   handleApply: () => void
@@ -68,13 +65,11 @@ export function GlobalFiltersProvider({ children }: { children: React.ReactNode 
   const [selectedQueues, setSelectedQueues] = useState<string[]>([])
   const [selectedAgents, setSelectedAgents] = useState<string[]>([])
   const [selectedDids, setSelectedDids] = useState<string[]>([])
-  const [selectedRegions, setSelectedRegions] = useState<string[]>([])
   const [isStartOpen, setIsStartOpen] = useState(false)
   const [isEndOpen, setIsEndOpen] = useState(false)
   const [queueFilterOpen, setQueueFilterOpen] = useState(false)
   const [agentFilterOpen, setAgentFilterOpen] = useState(false)
   const [didFilterOpen, setDidFilterOpen] = useState(false)
-  const [regionFilterOpen, setRegionFilterOpen] = useState(false)
   const [availableQueues, setAvailableQueues] = useState<{ display: string; value: string }[]>([])
   const [availableAgents, setAvailableAgents] = useState<{ display: string; value: string }[]>([])
   const [availableDids, setAvailableDids] = useState<{ display: string; value: string }[]>([])
@@ -109,19 +104,8 @@ export function GlobalFiltersProvider({ children }: { children: React.ReactNode 
       }
     }).catch(() => {})
 
-    // Load phone/DID list
-    athenaAPI.getLookupPhoneList().then((result) => {
-      if (result?.status === "SUCCEEDED" && Array.isArray(result.data) && result.data.length > 0) {
-        const items = result.data
-          .map((row: any) => ({
-            display: String(row.item_display || row.did || row.phone || Object.values(row)[0] || ""),
-            value: String(row.item_value || row.did || row.phone || row.item_display || Object.values(row)[0] || ""),
-          }))
-          .filter((i: { display: string; value: string }) => i.display && i.value)
-          .sort((a: { display: string; value: string }, b: { display: string; value: string }) => a.display.localeCompare(b.display))
-        if (items.length > 0) setAvailableDids(items)
-      }
-    }).catch(() => {})
+    // DID list is populated from query data (e.g. distribution page) via setAvailableDids
+    // There is no lookup_phonelist query in the API
   }, [])
 
   const [appliedStartDate, setAppliedStartDate] = useState<Date | undefined>(defaultStart)
@@ -130,7 +114,6 @@ export function GlobalFiltersProvider({ children }: { children: React.ReactNode 
   const [appliedQueues, setAppliedQueues] = useState<string[]>([])
   const [appliedAgents, setAppliedAgents] = useState<string[]>([])
   const [appliedDids, setAppliedDids] = useState<string[]>([])
-  const [appliedRegions, setAppliedRegions] = useState<string[]>([])
   const [applyVersion, setApplyVersion] = useState(0)
 
   const handleApply = useCallback(() => {
@@ -140,9 +123,8 @@ export function GlobalFiltersProvider({ children }: { children: React.ReactNode 
     setAppliedQueues(selectedQueues)
     setAppliedAgents(selectedAgents)
     setAppliedDids(selectedDids)
-    setAppliedRegions(selectedRegions)
     setApplyVersion((v) => v + 1)
-  }, [startDate, endDate, searchTerm, selectedQueues, selectedAgents, selectedDids, selectedRegions])
+  }, [startDate, endDate, searchTerm, selectedQueues, selectedAgents, selectedDids])
 
   const handleReset = useCallback(() => {
     const s = subDays(new Date(), 30)
@@ -153,14 +135,12 @@ export function GlobalFiltersProvider({ children }: { children: React.ReactNode 
     setSelectedQueues([])
     setSelectedAgents([])
     setSelectedDids([])
-    setSelectedRegions([])
     setAppliedStartDate(s)
     setAppliedEndDate(e)
     setAppliedSearchTerm("")
     setAppliedQueues([])
     setAppliedAgents([])
     setAppliedDids([])
-    setAppliedRegions([])
     setApplyVersion((v) => v + 1)
   }, [])
 
@@ -168,17 +148,17 @@ export function GlobalFiltersProvider({ children }: { children: React.ReactNode 
     <GlobalFiltersContext.Provider
       value={{
         startDate, endDate, searchTerm,
-        selectedQueues, selectedAgents, selectedDids, selectedRegions,
+        selectedQueues, selectedAgents, selectedDids,
         isStartOpen, isEndOpen,
-        queueFilterOpen, agentFilterOpen, didFilterOpen, regionFilterOpen,
+        queueFilterOpen, agentFilterOpen, didFilterOpen,
         appliedStartDate, appliedEndDate, appliedSearchTerm,
-        appliedQueues, appliedAgents, appliedDids, appliedRegions, applyVersion,
+        appliedQueues, appliedAgents, appliedDids, applyVersion,
         availableQueues, availableAgents, availableDids,
         setStartDate, setEndDate, setSearchTerm,
-        setSelectedQueues, setSelectedAgents, setSelectedDids, setSelectedRegions,
+        setSelectedQueues, setSelectedAgents, setSelectedDids,
         setIsStartOpen, setIsEndOpen,
-        setQueueFilterOpen, setAgentFilterOpen, setDidFilterOpen, setRegionFilterOpen,
-        setAvailableQueues,
+        setQueueFilterOpen, setAgentFilterOpen, setDidFilterOpen,
+        setAvailableQueues, setAvailableDids,
         handleApply, handleReset,
       }}
     >
@@ -190,7 +170,6 @@ export function GlobalFiltersProvider({ children }: { children: React.ReactNode 
 export function useGlobalFilters() {
   const ctx = useContext(GlobalFiltersContext)
   if (!ctx) {
-    // Return safe no-op defaults during SSR prerender (before provider mounts)
     const noop = () => {}
     const defaultDate = subDays(new Date(), 30)
     return {
@@ -200,20 +179,17 @@ export function useGlobalFilters() {
       selectedQueues: [] as string[],
       selectedAgents: [] as string[],
       selectedDids: [] as string[],
-      selectedRegions: [] as string[],
       isStartOpen: false,
       isEndOpen: false,
       queueFilterOpen: false,
       agentFilterOpen: false,
       didFilterOpen: false,
-      regionFilterOpen: false,
       appliedStartDate: defaultDate,
       appliedEndDate: new Date(),
       appliedSearchTerm: "",
       appliedQueues: [] as string[],
       appliedAgents: [] as string[],
       appliedDids: [] as string[],
-      appliedRegions: [] as string[],
       applyVersion: 0,
       availableQueues: [] as { display: string; value: string }[],
       availableAgents: [] as { display: string; value: string }[],
@@ -224,14 +200,13 @@ export function useGlobalFilters() {
       setSelectedQueues: noop,
       setSelectedAgents: noop,
       setSelectedDids: noop,
-      setSelectedRegions: noop,
       setIsStartOpen: noop,
       setIsEndOpen: noop,
       setQueueFilterOpen: noop,
       setAgentFilterOpen: noop,
       setDidFilterOpen: noop,
-      setRegionFilterOpen: noop,
       setAvailableQueues: noop,
+      setAvailableDids: noop,
       handleApply: noop,
       handleReset: noop,
     } as GlobalFiltersContextValue

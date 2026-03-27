@@ -67,19 +67,17 @@ const UNANSWERED_LABELS: Record<keyof TotalUnansweredData, string> = {
 /* ========================================================================== */
 export default function QueueMatrixPage() {
   const { user, isLoading: authLoading } = useAuth()
-  const { appliedStartDate, appliedEndDate, appliedQueues, appliedDids, appliedRegions, applyVersion } = useGlobalFilters()
+  const { appliedStartDate, appliedEndDate, appliedQueues, appliedDids, applyVersion } = useGlobalFilters()
 
   // Refs so fetchData always reads the LATEST filter values (avoids stale closure)
   const startRef = useRef(appliedStartDate)
   const endRef = useRef(appliedEndDate)
   const queuesRef = useRef(appliedQueues)
   const didsRef = useRef(appliedDids)
-  const regionsRef = useRef(appliedRegions)
   useEffect(() => { startRef.current = appliedStartDate }, [appliedStartDate])
   useEffect(() => { endRef.current = appliedEndDate }, [appliedEndDate])
   useEffect(() => { queuesRef.current = appliedQueues }, [appliedQueues])
   useEffect(() => { didsRef.current = appliedDids }, [appliedDids])
-  useEffect(() => { regionsRef.current = appliedRegions }, [appliedRegions])
 
   const [totalAnswered, setTotalAnswered] = useState<TotalAnsweredData | null>(null)
   const [totalUnanswered, setTotalUnanswered] = useState<TotalUnansweredData | null>(null)
@@ -96,13 +94,12 @@ export default function QueueMatrixPage() {
       const end = DateHelper.formatDateFromDate(endRef.current, true)
       const queueFilter = queuesRef.current.length > 0 ? queuesRef.current : undefined
       const didFilter = didsRef.current.length > 0 ? didsRef.current : undefined
-      const regionFilter = regionsRef.current.length > 0 ? regionsRef.current : undefined
 
       const [answeredRes, unansweredRes, answeredSLRes, abandonedSLRes] = await Promise.all([
-        athenaAPI.getDashboardTotalAnswered(start, end, user.email, queueFilter, didFilter, regionFilter),
-        athenaAPI.getDashboardTotalUnanswered(start, end, user.email, queueFilter, didFilter, regionFilter),
-        athenaAPI.getDashboardAnsweredServiceLevel(start, end, user.email, queueFilter, didFilter, regionFilter),
-        athenaAPI.getDashboardAbandonedServiceLevel(start, end, user.email, queueFilter, didFilter, regionFilter),
+        athenaAPI.getDashboardTotalAnswered(start, end, user.email, queueFilter, didFilter),
+        athenaAPI.getDashboardTotalUnanswered(start, end, user.email, queueFilter, didFilter),
+        athenaAPI.getDashboardAnsweredServiceLevel(start, end, user.email, queueFilter, didFilter),
+        athenaAPI.getDashboardAbandonedServiceLevel(start, end, user.email, queueFilter, didFilter),
       ])
 
       if (answeredRes.status === "SUCCEEDED" && answeredRes.data.length > 0)
@@ -132,7 +129,6 @@ export default function QueueMatrixPage() {
       endRef.current = appliedEndDate
       queuesRef.current = appliedQueues
       didsRef.current = appliedDids
-      regionsRef.current = appliedRegions
       fetchData()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps

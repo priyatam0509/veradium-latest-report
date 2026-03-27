@@ -250,7 +250,6 @@ export default function AnsweredCallsPage() {
     appliedQueues: selectedQueues,
     appliedAgents: selectedAgents,
     appliedDids: selectedDids,
-    appliedRegions: selectedRegions,
     applyVersion,
   } = useGlobalFilters()
 
@@ -260,13 +259,11 @@ export default function AnsweredCallsPage() {
   const queuesRef = useRef(selectedQueues)
   const agentsRef = useRef(selectedAgents)
   const didsRef = useRef(selectedDids)
-  const regionsRef = useRef(selectedRegions)
   useEffect(() => { startRef.current = startDate }, [startDate])
   useEffect(() => { endRef.current = endDate }, [endDate])
   useEffect(() => { queuesRef.current = selectedQueues }, [selectedQueues])
   useEffect(() => { agentsRef.current = selectedAgents }, [selectedAgents])
   useEffect(() => { didsRef.current = selectedDids }, [selectedDids])
-  useEffect(() => { regionsRef.current = selectedRegions }, [selectedRegions])
 
   const [activeTab, setActiveTab] = useState("queue")
 
@@ -291,12 +288,11 @@ export default function AnsweredCallsPage() {
     const queueFilter = queuesRef.current.length > 0 ? queuesRef.current : undefined
     const agentFilter = agentsRef.current.length > 0 ? agentsRef.current : undefined
     const didFilter = didsRef.current.length > 0 ? didsRef.current : undefined
-    const regionFilter = regionsRef.current.length > 0 ? regionsRef.current : undefined
     try {
       let result: any
-      if (tab === "queue") result = await athenaAPI.getAnsweredByQueue(start, end, regionFilter, user?.email, queueFilter, agentFilter, didFilter)
-      else if (tab === "did") result = await athenaAPI.getAnsweredByDID(start, end, regionFilter, user?.email, queueFilter, agentFilter, didFilter)
-      else if (tab === "agent") result = await athenaAPI.getAnsweredByAgent(start, end, queueFilter, regionFilter, user?.email, agentFilter, didFilter)
+      if (tab === "queue") result = await athenaAPI.getAnsweredByQueue(start, end, null, user?.email, queueFilter, agentFilter, didFilter)
+      else if (tab === "did") result = await athenaAPI.getAnsweredByDID(start, end, null, user?.email, queueFilter, agentFilter, didFilter)
+      else if (tab === "agent") result = await athenaAPI.getAnsweredByAgent(start, end, queueFilter, null, user?.email, agentFilter, didFilter)
       else return
 
       if (result?.status === "SUCCEEDED") {
@@ -320,7 +316,6 @@ export default function AnsweredCallsPage() {
       queuesRef.current = selectedQueues
       agentsRef.current = selectedAgents
       didsRef.current = selectedDids
-      regionsRef.current = selectedRegions
       setLoaded({})
       setQueueData([]); setDidData([]); setAgentData([])
       fetchTab(activeTab, true)
@@ -346,7 +341,7 @@ export default function AnsweredCallsPage() {
       if (filters.agentId) apiFilters.agentId = [filters.agentId]
       if (filters.queueId) apiFilters.queueId = [filters.queueId]
       if (filters.did) apiFilters.did = [filters.did]
-      const result = await athenaAPI.getAnsweredDrilldown(start, end, apiFilters, regionsRef.current.length > 0 ? regionsRef.current : null, user?.email)
+      const result = await athenaAPI.getAnsweredDrilldown(start, end, apiFilters, null, user?.email)
       if (result?.status === "SUCCEEDED") {
         const win = window.open("", "_blank")
         if (win) {

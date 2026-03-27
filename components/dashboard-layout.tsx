@@ -75,14 +75,14 @@ const FILTER_ROUTE_CONFIG: Record<string, FilterConfig> = {
 function GlobalFiltersBar({ config }: { config: FilterConfig }) {
   const {
     startDate, endDate, searchTerm,
-    selectedQueues, selectedAgents, selectedDids, selectedRegions,
+    selectedQueues, selectedAgents, selectedDids,
     isStartOpen, isEndOpen,
-    queueFilterOpen, agentFilterOpen, didFilterOpen, regionFilterOpen,
+    queueFilterOpen, agentFilterOpen, didFilterOpen,
     availableQueues, availableAgents, availableDids,
     setStartDate, setEndDate, setSearchTerm,
-    setSelectedQueues, setSelectedAgents, setSelectedDids, setSelectedRegions,
+    setSelectedQueues, setSelectedAgents, setSelectedDids,
     setIsStartOpen, setIsEndOpen,
-    setQueueFilterOpen, setAgentFilterOpen, setDidFilterOpen, setRegionFilterOpen,
+    setQueueFilterOpen, setAgentFilterOpen, setDidFilterOpen,
     handleApply, handleReset,
   } = useGlobalFilters()
 
@@ -104,13 +104,6 @@ function GlobalFiltersBar({ config }: { config: FilterConfig }) {
       return found ? found.display : selectedValues[0]
     }
     return `${selectedValues.length} ${singular}s selected`
-  }
-
-  // Region uses plain strings (not display/value pairs)
-  const regionLabel = (selected: string[]) => {
-    if (selected.length === 0) return "All Regions"
-    if (selected.length === 1) return selected[0]
-    return `${selected.length} regions selected`
   }
 
   return (
@@ -239,31 +232,6 @@ function GlobalFiltersBar({ config }: { config: FilterConfig }) {
           </Popover>
         </div>
       )}
-
-      {/* Region Filter */}
-      <div className="flex flex-col gap-0.5">
-        <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Region</label>
-        <Popover open={regionFilterOpen} onOpenChange={setRegionFilterOpen}>
-          <PopoverTrigger asChild>
-            <Button variant="outline" className="h-8 w-[150px] justify-start text-left font-normal text-xs">
-              {regionLabel(selectedRegions)}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-[200px] p-2" align="start">
-            <div className="max-h-52 overflow-y-auto space-y-1">
-              {["us-east-1", "us-west-2", "eu-west-1", "ap-southeast-1"].map((r) => (
-                <div key={r} className="flex items-center gap-2 px-2 py-1 rounded hover:bg-accent cursor-pointer" onClick={() => toggleValue(selectedRegions, r, setSelectedRegions)}>
-                  <Checkbox checked={selectedRegions.includes(r)} onCheckedChange={() => toggleValue(selectedRegions, r, setSelectedRegions)} />
-                  <span className="text-xs">{r}</span>
-                </div>
-              ))}
-            </div>
-            {selectedRegions.length > 0 && (
-              <Button variant="ghost" size="sm" className="w-full mt-1 text-xs h-7" onClick={() => setSelectedRegions([])}>Clear</Button>
-            )}
-          </PopoverContent>
-        </Popover>
-      </div>
 
       {/* Search */}
       <div className="flex flex-col gap-0.5">

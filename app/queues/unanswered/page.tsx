@@ -230,7 +230,6 @@ export default function UnansweredCallsPage() {
     appliedSearchTerm: searchTerm,
     appliedQueues: selectedQueues,
     appliedDids: selectedDids,
-    appliedRegions: selectedRegions,
     applyVersion,
   } = useGlobalFilters()
 
@@ -239,12 +238,10 @@ export default function UnansweredCallsPage() {
   const endRef = useRef(endDate)
   const queuesRef = useRef(selectedQueues)
   const didsRef = useRef(selectedDids)
-  const regionsRef = useRef(selectedRegions)
   useEffect(() => { startRef.current = startDate }, [startDate])
   useEffect(() => { endRef.current = endDate }, [endDate])
   useEffect(() => { queuesRef.current = selectedQueues }, [selectedQueues])
   useEffect(() => { didsRef.current = selectedDids }, [selectedDids])
-  useEffect(() => { regionsRef.current = selectedRegions }, [selectedRegions])
 
   const [activeTab, setActiveTab] = useState("queue")
 
@@ -266,11 +263,10 @@ export default function UnansweredCallsPage() {
     // Always read from ref — guaranteed to be the latest applied filter values
     const queueFilter = queuesRef.current.length > 0 ? queuesRef.current : undefined
     const didFilter = didsRef.current.length > 0 ? didsRef.current : undefined
-    const regionFilter = regionsRef.current.length > 0 ? regionsRef.current : undefined
     try {
       let result: any
-      if (tab === "queue") result = await athenaAPI.getUnansweredByQueue(start, end, regionFilter, user?.email, queueFilter, didFilter)
-      else if (tab === "did") result = await athenaAPI.getUnansweredByDID(start, end, regionFilter, user?.email, queueFilter, didFilter)
+      if (tab === "queue") result = await athenaAPI.getUnansweredByQueue(start, end, null, user?.email, queueFilter, didFilter)
+      else if (tab === "did") result = await athenaAPI.getUnansweredByDID(start, end, null, user?.email, queueFilter, didFilter)
       else return
 
       if (result?.status === "SUCCEEDED") {
@@ -292,7 +288,6 @@ export default function UnansweredCallsPage() {
       endRef.current = endDate
       queuesRef.current = selectedQueues
       didsRef.current = selectedDids
-      regionsRef.current = selectedRegions
       setLoaded({})
       setQueueData([]); setDidData([])
       fetchTab(activeTab, true)
@@ -317,7 +312,7 @@ export default function UnansweredCallsPage() {
       const apiFilters: any = {}
       if (filters.queueId) apiFilters.queueId = [filters.queueId]
       if (filters.did) apiFilters.did = [filters.did]
-      const result = await athenaAPI.getUnansweredDrilldown(start, end, apiFilters, regionsRef.current.length > 0 ? regionsRef.current : null, user?.email)
+      const result = await athenaAPI.getUnansweredDrilldown(start, end, apiFilters, null, user?.email)
       if (result?.status === "SUCCEEDED") {
         const win = window.open("", "_blank")
         if (win) {
