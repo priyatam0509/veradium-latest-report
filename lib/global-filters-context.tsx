@@ -100,6 +100,35 @@ export function GlobalFiltersProvider({ children }: { children: React.ReactNode 
 
 export function useGlobalFilters() {
   const ctx = useContext(GlobalFiltersContext)
-  if (!ctx) throw new Error("useGlobalFilters must be used within GlobalFiltersProvider")
+  if (!ctx) {
+    // Return safe no-op defaults during SSR prerender (before provider mounts)
+    const noop = () => {}
+    const defaultDate = subDays(new Date(), 30)
+    return {
+      startDate: defaultDate,
+      endDate: new Date(),
+      searchTerm: "",
+      selectedQueues: [] as string[],
+      isStartOpen: false,
+      isEndOpen: false,
+      queueFilterOpen: false,
+      appliedStartDate: defaultDate,
+      appliedEndDate: new Date(),
+      appliedSearchTerm: "",
+      appliedQueues: [] as string[],
+      applyVersion: 0,
+      availableQueues: [] as string[],
+      setStartDate: noop,
+      setEndDate: noop,
+      setSearchTerm: noop,
+      setSelectedQueues: noop,
+      setIsStartOpen: noop,
+      setIsEndOpen: noop,
+      setQueueFilterOpen: noop,
+      setAvailableQueues: noop,
+      handleApply: noop,
+      handleReset: noop,
+    } as GlobalFiltersContextValue
+  }
   return ctx
 }
