@@ -251,13 +251,31 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 
   const accessibleRouteSet = new Set(accessibleRoutes.map((r) => r.route))
 
-  // Check if a route is accessible (either in RBAC list or is a new landing route)
+  // Check if a route is accessible (either in RBAC list or is a hardcoded accessible route)
   const isRouteAccessible = (route: string) => {
-    // Landing pages that don't need RBAC entry yet
-    const landingRoutes = ["/queues/matrix", "/agents/matrix", "/queues/distribution", "/queues/answered", "/queues/unanswered"]
-    if (landingRoutes.includes(route)) return true
+    // Pages that are always accessible without a RBAC entry
+    const alwaysAccessible = [
+      "/queues/matrix",
+      "/queues/distribution",
+      "/queues/answered",
+      "/queues/unanswered",
+      "/agents/matrix",
+      "/agents/activity-analysis",
+      "/agents/performance-analysis",
+      "/agents/availability",
+    ]
+    if (alwaysAccessible.includes(route)) return true
     return accessibleRouteSet.has(route)
   }
+
+  // Only show the global filters bar on pages that actually use date/queue filters
+  const FILTER_ROUTES = [
+    "/queues/matrix",
+    "/queues/distribution",
+    "/queues/answered",
+    "/queues/unanswered",
+  ]
+  const showFilters = FILTER_ROUTES.some((r) => pathname === r || pathname.startsWith(r + "/"))
 
   const renderNavItem = (item: NavItem, mobile = false, indent = false) => {
     const Icon = item.icon
@@ -416,7 +434,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
           </h1>
         </header>
 
-        <GlobalFiltersBar />
+        {showFilters && <GlobalFiltersBar />}
 
         <main className="flex-1 p-4 md:p-8 overflow-y-auto">
           {children}
