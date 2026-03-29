@@ -104,8 +104,19 @@ export function GlobalFiltersProvider({ children }: { children: React.ReactNode 
       }
     }).catch(() => {})
 
-    // DID list is populated from query data (e.g. distribution page) via setAvailableDids
-    // There is no lookup_phonelist query in the API
+    // Load DID/phone list
+    athenaAPI.getLookupPhoneList().then((result) => {
+      if (result?.status === "SUCCEEDED" && Array.isArray(result.data) && result.data.length > 0) {
+        const items = result.data
+          .map((row: any) => ({
+            display: String(row.item_display || row.did || row.phone || Object.values(row)[0] || ""),
+            value: String(row.item_value || row.did || row.phone || Object.values(row)[0] || ""),
+          }))
+          .filter((i: { display: string; value: string }) => i.display && i.value)
+          .sort((a: { display: string; value: string }, b: { display: string; value: string }) => a.display.localeCompare(b.display))
+        if (items.length > 0) setAvailableDids(items)
+      }
+    }).catch(() => {})
   }, [])
 
   const [appliedStartDate, setAppliedStartDate] = useState<Date | undefined>(defaultStart)

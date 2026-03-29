@@ -70,6 +70,10 @@ const FILTER_ROUTE_CONFIG: Record<string, FilterConfig> = {
   "/queues/answered": {},
   // Transfer Analysis — all dropdowns active
   "/analytics/transfers": {},
+  // Agent Matrices landing — only agent supported (queue + DID hidden, per PDF page 6)
+  "/agents/matrix": { hideQueue: true, hideDid: true },
+  // Contact Trace — all dropdowns active (per PDF page 11)
+  "/contact-trace": {},
 }
 
 function GlobalFiltersBar({ config }: { config: FilterConfig }) {
@@ -322,6 +326,11 @@ const NAV_STRUCTURE: NavEntry[] = [
     label: "Transferred Calls",
     icon: Phone,
   },
+  {
+    route: "/contact-trace",
+    label: "Contact Trace",
+    icon: FileText,
+  },
 ]
 
 /* -------------------------------------------------------------------------- */
@@ -368,6 +377,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       "/agents/activity-analysis",
       "/agents/performance-analysis",
       "/agents/availability",
+      "/contact-trace",
     ]
     if (alwaysAccessible.includes(route)) return true
     return accessibleRouteSet.has(route)

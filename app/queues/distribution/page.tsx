@@ -636,7 +636,7 @@ export default function QueueDistributionPage() {
                     <TabsTrigger value="hour">By Hour</TabsTrigger>
                     <TabsTrigger value="day">By Day</TabsTrigger>
                     <TabsTrigger value="month">By Month</TabsTrigger>
-                    <TabsTrigger value="state" disabled>By State</TabsTrigger>
+                    <TabsTrigger value="state">By State</TabsTrigger>
                   </TabsList>
                   <Button
                     variant="outline"

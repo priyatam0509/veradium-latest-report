@@ -460,6 +460,36 @@ export class AthenaReportingAPI {
     return this.executeQuery('distribution_distbystate', params, true, 60, username)
   }
 
+  // ── Contact Trace Queries ────────────────────────────────────────────────
+
+  /** Answered call details — contact_traces_answered_call_details */
+  async getAnsweredCallDetails(startDate: string, endDate: string, username?: string, queueIds?: string[], agentIds?: string[], dids?: string[], region?: string[] | null) {
+    const params: any = { start_datetime: startDate, end_datetime: endDate }
+    if (queueIds && queueIds.length > 0) params.queue_id = queueIds
+    if (agentIds && agentIds.length > 0) params.agent_id = agentIds
+    if (dids && dids.length > 0) params.did = dids
+    if (region && region.length > 0) params.region = region
+    return this.executeQuery('contact_traces_answered_call_details', params, true, 120, username)
+  }
+
+  /** Unanswered call details — contact_traces_unanswered_call_details */
+  async getUnansweredCallDetails(startDate: string, endDate: string, username?: string, queueIds?: string[], agentIds?: string[], dids?: string[], region?: string[] | null) {
+    const params: any = { start_datetime: startDate, end_datetime: endDate }
+    if (queueIds && queueIds.length > 0) params.queue_id = queueIds
+    if (agentIds && agentIds.length > 0) params.agent_id = agentIds
+    if (dids && dids.length > 0) params.did = dids
+    if (region && region.length > 0) params.region = region
+    return this.executeQuery('contact_traces_unanswered_call_details', params, true, 120, username)
+  }
+
+  /** Agent totals summary — agent_agent_totals */
+  async getAgentTotals(startDate: string, endDate: string, username?: string, agentIds?: string[], region?: string[] | null) {
+    const params: any = { start_datetime: startDate, end_datetime: endDate }
+    if (agentIds && agentIds.length > 0) params.agent_id = agentIds
+    if (region && region.length > 0) params.region = region
+    return this.executeQuery('agent_agent_totals', params, true, 60, username)
+  }
+
   // RBAC Query (1 query - NO region filter support)
   async getUsers(searchFirstName = '', searchLastName = '', searchEmail = '') {
     return this.executeQuery('rbac_users_rbac', {
