@@ -493,6 +493,14 @@ export class AthenaReportingAPI {
     return this.executeQuery('contact_traces_unanswered_call_details', params, true, 120, username)
   }
 
+  /** Call flow drilldown — contact_traces_call_details_drilldown */
+  async getCallFlowDrilldown(contactId: string, username?: string) {
+    return this.executeQuery('contact_traces_call_details_drilldown', {
+      instance_id: 'fc8f1921-2aa3-4cf6-8fc4-ad4b42897030',
+      contact_id: contactId,
+    }, true, 60, username)
+  }
+
   /** Agent totals summary — agent_agent_totals */
   async getAgentTotals(startDate: string, endDate: string, username?: string, agentIds?: string[], region?: string[] | null) {
     const params: any = { start_datetime: startDate, end_datetime: endDate }

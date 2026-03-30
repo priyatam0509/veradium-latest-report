@@ -9,7 +9,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Loader2, Download } from "lucide-react"
+import { Loader2, Download, X } from "lucide-react"
 import { athenaAPI } from "@/lib/athena-api"
 import { useAuth } from "@/hooks/use-auth"
 import { DateHelper } from "@/lib/date-helper"
@@ -52,6 +52,18 @@ interface UnansweredCallDetail {
   [key: string]: string
 }
 
+interface CallFlowStep {
+  contact_id: string
+  start_timestamp: string
+  elapsed_time: string
+  channel: string
+  initiation_method: string
+  resource_type: string
+  resource_name: string
+  outcome: string
+  resource_id: string
+}
+
 /* -------------------------------------------------------------------------- */
 /*                                  Helpers                                    */
 /* -------------------------------------------------------------------------- */
@@ -72,6 +84,116 @@ function exportToCSV(data: any[], filename: string) {
   window.URL.revokeObjectURL(url)
 }
 
+function getBadgeStyle(resourceType: string) {
+  switch (resourceType) {
+    case "CONTACT_FLOW": return "bg-blue-100 text-blue-800"
+    case "MODULE": return "bg-purple-100 text-purple-800"
+    case "CUSTOMER_QUEUE": return "bg-orange-100 text-orange-800"
+    case "AGENT": return "bg-green-100 text-green-800"
+    default: return "bg-gray-100 text-gray-700"
+  }
+}
+
+function getResourceLabel(resourceType: string) {
+  switch (resourceType) {
+    case "CONTACT_FLOW": return "Flow"
+    case "MODULE": return "Module"
+    case "CUSTOMER_QUEUE": return "Queue"
+    case "AGENT": return "Agent"
+    default: return resourceType
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/*                           Call Flow Modal                                   */
+/* -------------------------------------------------------------------------- */
+
+function CallFlowModal({
+  contactId,
+  steps,
+  isLoading,
+  onClose,
+}: {
+  contactId: string
+  steps: CallFlowStep[]
+  isLoading: boolean
+  onClose: () => void
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+      onClick={onClose}
+    >
+      <div
+        className="bg-background rounded-xl shadow-2xl w-full max-w-2xl mx-4 flex flex-col"
+        style={{ maxHeight: "85vh" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-start justify-between p-5 border-b shrink-0">
+          <div>
+            <h2 className="text-lg font-semibold">Call Flow Timeline</h2>
+            <p className="text-xs text-muted-foreground font-mono mt-0.5">{contactId}</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-muted-foreground hover:text-foreground transition-colors ml-4 mt-0.5"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="overflow-y-auto p-5 flex-1">
+          {isLoading ? (
+            <div className="flex items-center justify-center h-40">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : steps.length === 0 ? (
+            <div className="flex items-center justify-center h-40 text-sm text-muted-foreground">
+              No flow data found for this contact
+            </div>
+          ) : (
+            <div className="space-y-1">
+              {steps.map((step, i) => (
+                <div key={i}>
+                  {/* Elapsed time connector (not shown for first step) */}
+                  {i > 0 && step.elapsed_time && (
+                    <div className="flex items-center gap-2 ml-4 my-1">
+                      <div className="w-px h-4 bg-border ml-2" />
+                      <span className="text-xs text-muted-foreground font-mono">+{step.elapsed_time}</span>
+                    </div>
+                  )}
+
+                  {/* Step card */}
+                  <div className="border rounded-lg p-4 hover:border-border/80 hover:shadow-sm transition-all bg-card">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase ${getBadgeStyle(step.resource_type)}`}>
+                            {getResourceLabel(step.resource_type)}
+                          </span>
+                        </div>
+                        <p className="text-sm font-medium truncate">{step.resource_name}</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Outcome: <span className="font-medium text-foreground">{step.outcome}</span>
+                        </p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="text-xs text-muted-foreground font-mono whitespace-nowrap">{step.start_timestamp}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 /* ========================================================================== */
 export default function ContactTracePage() {
   const { user, isLoading: authLoading } = useAuth()
@@ -88,6 +210,12 @@ export default function ContactTracePage() {
   const [answeredData, setAnsweredData] = useState<AnsweredCallDetail[]>([])
   const [unansweredData, setUnansweredData] = useState<UnansweredCallDetail[]>([])
   const [isLoading, setIsLoading] = useState(false)
+
+  // Drilldown state
+  const [selectedContactId, setSelectedContactId] = useState<string | null>(null)
+  const [callFlowSteps, setCallFlowSteps] = useState<CallFlowStep[]>([])
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isDrilldownLoading, setIsDrilldownLoading] = useState(false)
 
   // Refs to avoid stale closures
   const startRef = useRef(startDate)
@@ -122,6 +250,21 @@ export default function ContactTracePage() {
       console.error("Contact trace fetch error:", err)
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleContactIdClick = async (contactId: string) => {
+    setSelectedContactId(contactId)
+    setCallFlowSteps([])
+    setIsModalOpen(true)
+    setIsDrilldownLoading(true)
+    try {
+      const result = await athenaAPI.getCallFlowDrilldown(contactId, user?.email)
+      if (result?.status === "SUCCEEDED") setCallFlowSteps(result.data)
+    } catch (err) {
+      console.error("Drilldown fetch error:", err)
+    } finally {
+      setIsDrilldownLoading(false)
     }
   }
 
@@ -224,7 +367,14 @@ export default function ContactTracePage() {
                         <TableBody>
                           {displayedAnswered.map((row, i) => (
                             <TableRow key={i}>
-                              <TableCell className="text-xs whitespace-nowrap font-mono">{row.contact_id ?? "—"}</TableCell>
+                              <TableCell className="text-xs whitespace-nowrap font-mono">
+                                <button
+                                  onClick={() => handleContactIdClick(row.contact_id)}
+                                  className="text-blue-600 hover:underline cursor-pointer text-left"
+                                >
+                                  {row.contact_id ?? "—"}
+                                </button>
+                              </TableCell>
                               <TableCell className="text-xs whitespace-nowrap">{row.date ?? "—"}</TableCell>
                               <TableCell className="text-xs whitespace-nowrap">{row.channel ?? "—"}</TableCell>
                               <TableCell className="text-xs whitespace-nowrap">{row.queue_name ?? "—"}</TableCell>
@@ -280,7 +430,14 @@ export default function ContactTracePage() {
                         <TableBody>
                           {displayedUnanswered.map((row, i) => (
                             <TableRow key={i}>
-                              <TableCell className="text-xs whitespace-nowrap font-mono">{row.contact_id ?? "—"}</TableCell>
+                              <TableCell className="text-xs whitespace-nowrap font-mono">
+                                <button
+                                  onClick={() => handleContactIdClick(row.contact_id)}
+                                  className="text-blue-600 hover:underline cursor-pointer text-left"
+                                >
+                                  {row.contact_id ?? "—"}
+                                </button>
+                              </TableCell>
                               <TableCell className="text-xs whitespace-nowrap">{row.date ?? "—"}</TableCell>
                               <TableCell className="text-xs whitespace-nowrap">{row.channel ?? "—"}</TableCell>
                               <TableCell className="text-xs whitespace-nowrap">{row.queue_name ?? "—"}</TableCell>
@@ -305,6 +462,16 @@ export default function ContactTracePage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Drilldown Modal */}
+        {isModalOpen && selectedContactId && (
+          <CallFlowModal
+            contactId={selectedContactId}
+            steps={callFlowSteps}
+            isLoading={isDrilldownLoading}
+            onClose={() => setIsModalOpen(false)}
+          />
+        )}
       </DashboardLayout>
     </AuthGuard>
   )
