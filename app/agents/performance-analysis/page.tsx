@@ -7,9 +7,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useAuth } from "@/hooks/use-auth"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, TrendingUp, Phone, User, RefreshCw, CheckCircle, Search } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Loader2, TrendingUp, Phone, User, CheckCircle, Search } from "lucide-react"
 import { athenaAPI } from "@/lib/athena-api"
 import { DateHelper } from "@/lib/date-helper"
+import { format } from "date-fns"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 import { useGlobalFilters } from "@/lib/global-filters-context"
@@ -33,6 +35,7 @@ export default function AgentPerformanceAnalysis() {
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date())
   const [searchTerm, setSearchTerm] = useState("")
+  const [loadingDrilldownId, setLoadingDrilldownId] = useState<string | null>(null)
   const { user, isLoading: authLoading } = useAuth()
 
   const {
@@ -102,6 +105,139 @@ export default function AgentPerformanceAnalysis() {
   const handleManualRefresh = () => {
     setIsRefreshing(true)
     loadAgentPerformanceData().finally(() => setIsRefreshing(false))
+  }
+
+  const handleViewDrilldown = async (agent: AgentCallDisposition) => {
+    setLoadingDrilldownId(agent.user_id)
+    try {
+      const start = DateHelper.formatDateFromDate(startRef.current)
+      const end = DateHelper.formatDateFromDate(endRef.current, true)
+      const queueFilter = queuesRef.current.length > 0 ? queuesRef.current : undefined
+      const result = await athenaAPI.getAgentPerformanceDrilldown(start, end, agent.user_id, queueFilter)
+      if (result?.status === 'SUCCEEDED') {
+        const newWindow = window.open('', '_blank')
+        if (newWindow) {
+          newWindow.document.write(generatePerformanceDrilldownHTML(result.data, agent.agent_name))
+          newWindow.document.close()
+        }
+      }
+    } catch (error) {
+      console.error("Agent performance drilldown error:", error)
+    } finally {
+      setLoadingDrilldownId(null)
+    }
+  }
+
+  const generatePerformanceDrilldownHTML = (data: any[], agentName: string) => {
+    const dateText = startDate && endDate
+      ? `${format(startDate, "MMM dd, yyyy")} to ${format(endDate, "MMM dd, yyyy")}`
+      : ''
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Agent Performance Details - ${agentName}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 20px; background: #f9fafb; color: #1f2937; }
+    .container { max-width: 1600px; margin: 0 auto; background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); overflow: hidden; }
+    .header { padding: 24px; border-bottom: 1px solid #e5e7eb; }
+    h1 { font-size: 22px; font-weight: 600; color: #111827; margin-bottom: 4px; }
+    .subtitle { font-size: 14px; color: #6b7280; }
+    .actions { display: flex; justify-content: space-between; align-items: center; padding: 14px 24px; background: #f9fafb; border-bottom: 1px solid #e5e7eb; }
+    .count { font-size: 14px; color: #6b7280; }
+    .btn { padding: 8px 16px; background: #3b82f6; color: white; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; }
+    .btn:hover { background: #2563eb; }
+    .table-container { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th { background: #f9fafb; padding: 10px 12px; text-align: left; font-size: 11px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #e5e7eb; white-space: nowrap; }
+    td { padding: 10px 12px; font-size: 12px; border-bottom: 1px solid #e5e7eb; white-space: nowrap; }
+    tr:hover { background: #f9fafb; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+    .badge-completed { background: #dcfce7; color: #166534; }
+    .badge-transferred { background: #dbeafe; color: #1e40af; }
+    .badge-failed { background: #fee2e2; color: #991b1b; }
+    .badge-default { background: #f3f4f6; color: #374151; }
+    .mono { font-family: monospace; font-size: 11px; }
+    .empty { padding: 48px; text-align: center; color: #9ca3af; }
+    @media print { .btn { display: none; } body { background: white; } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Agent Performance Details — ${agentName}</h1>
+      <p class="subtitle">Call-level performance drilldown${dateText ? ' · ' + dateText : ''}</p>
+    </div>
+    <div class="actions">
+      <span class="count">Showing ${data.length} record${data.length !== 1 ? 's' : ''}</span>
+      <button class="btn" onclick="exportCSV()">Export CSV</button>
+    </div>
+    <div class="table-container">
+      <table id="t">
+        <thead><tr>
+          <th>#</th>
+          <th>Contact ID</th>
+          <th>Date</th>
+          <th>Queue</th>
+          <th>Agent</th>
+          <th>Customer Number</th>
+          <th>Channel</th>
+          <th>Initiation Method</th>
+          <th>Status</th>
+          <th>Agent Attempts</th>
+          <th>Event</th>
+          <th>Ring Time</th>
+          <th>Wait Time</th>
+          <th>Talk Time</th>
+          <th>DID</th>
+          <th>Region</th>
+          <th>Recording</th>
+        </tr></thead>
+        <tbody>
+          ${data.length > 0 ? data.map(r => {
+            const statusLower = (r.interaction_status || '').toLowerCase()
+            const badgeClass = statusLower === 'completed' ? 'badge-completed' : statusLower === 'transferred' ? 'badge-transferred' : statusLower.includes('fail') ? 'badge-failed' : 'badge-default'
+            let recordingCell = '—'
+            if (r.recording) {
+              try {
+                const rec = JSON.parse(r.recording)
+                if (rec.location) recordingCell = '<a href="https://s3.amazonaws.com/' + rec.location + '" target="_blank" style="color:#3b82f6">Play</a>'
+              } catch(e) { recordingCell = r.recording }
+            }
+            return `<tr>
+              <td class="mono">${r.row_no || '—'}</td>
+              <td class="mono">${r.contact_id || '—'}</td>
+              <td>${r.date || '—'}</td>
+              <td>${r.queue_name || '—'}</td>
+              <td>${r.agent_name || '—'}</td>
+              <td class="mono">${r.customer_number || '—'}</td>
+              <td>${r.channel || '—'}</td>
+              <td>${r.initiation_method || '—'}</td>
+              <td><span class="badge ${badgeClass}">${r.interaction_status || '—'}</span></td>
+              <td class="mono" style="text-align:center">${r.agent_connection_attempts || '—'}</td>
+              <td>${r.event || '—'}</td>
+              <td class="mono">${r.ring_time || '—'}</td>
+              <td class="mono">${r.wait_time || '—'}</td>
+              <td class="mono">${r.talk_time || '—'}</td>
+              <td class="mono">${r.did || '—'}</td>
+              <td>${r.region || '—'}</td>
+              <td>${recordingCell}</td>
+            </tr>`
+          }).join('') : '<tr><td colspan="17" class="empty">No records found.</td></tr>'}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <script>
+    function exportCSV() {
+      const rows = Array.from(document.querySelectorAll('#t tr'))
+      const csv = rows.map(r => Array.from(r.querySelectorAll('th,td')).map(c => '"' + c.textContent.trim().replace(/"/g,'""') + '"').join(',')).join('\\n')
+      const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(new Blob([csv], {type:'text/csv'})), download: 'agent-performance-details.csv' })
+      a.click()
+    }
+  </script>
+</body></html>`
   }
 
   // Filtered by local search term only (global agent filter already applied at API level)
@@ -237,6 +373,7 @@ export default function AgentPerformanceAnalysis() {
                         <TableHead className="text-right">Failed</TableHead>
                         <TableHead className="text-right">Missed/Rejected</TableHead>
                         <TableHead className="text-right">Completion Rate</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -265,6 +402,18 @@ export default function AgentPerformanceAnalysis() {
                               >
                                 {completionRate}%
                               </Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleViewDrilldown(agent)}
+                                disabled={loadingDrilldownId === agent.user_id}
+                              >
+                                {loadingDrilldownId === agent.user_id ? (
+                                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Loading...</>
+                                ) : 'View Details'}
+                              </Button>
                             </TableCell>
                           </TableRow>
                         )

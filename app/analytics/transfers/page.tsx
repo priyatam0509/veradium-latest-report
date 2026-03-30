@@ -81,7 +81,7 @@ export default function TransferAnalysis() {
       const result = await athenaAPI.getAnsweredTransfers(
         start,
         end,
-        null,
+        undefined,
         user?.email,
         agentFilter,
         queueFilter,

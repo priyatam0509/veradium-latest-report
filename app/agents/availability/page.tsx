@@ -134,7 +134,7 @@ export default function AgentAvailabilityPage() {
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Agent State Log - ${agentName}</title>
+  <title>Agent Availability Details - ${agentName}</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 20px; background: #f9fafb; color: #1f2937; }
@@ -156,6 +156,7 @@ export default function AgentAvailabilityPage() {
     .badge-logout { background: #fee2e2; color: #991b1b; }
     .badge-state { background: #dbeafe; color: #1e40af; }
     .badge-default { background: #f3f4f6; color: #374151; }
+    .mono { font-family: monospace; font-size: 11px; }
     .empty { padding: 48px; text-align: center; color: #9ca3af; }
     @media print { .btn { display: none; } body { background: white; } }
   </style>
@@ -163,7 +164,7 @@ export default function AgentAvailabilityPage() {
 <body>
   <div class="container">
     <div class="header">
-      <h1>Agent State Log — ${agentName}</h1>
+      <h1>Agent Availability Details — ${agentName}</h1>
       <p class="subtitle">Login, logout, and state change events${dateText ? ' · ' + dateText : ''}</p>
     </div>
     <div class="actions">
@@ -173,29 +174,36 @@ export default function AgentAvailabilityPage() {
     <div class="table-container">
       <table id="t">
         <thead><tr>
-          <th>Status Timestamp</th>
+          <th>Event Timestamp</th>
           <th>Event Type</th>
+          <th>Status Timestamp</th>
           <th>Status</th>
-          <th>Current State</th>
-          <th>Current State Time</th>
-          <th>Previous State</th>
-          <th>Previous State Time</th>
-          <th>Queues</th>
+          <th>State Timestamp</th>
+          <th>State</th>
           <th>Contact ID</th>
+          <th>Queues</th>
+          <th>Recording</th>
         </tr></thead>
         <tbody>
           ${data.length > 0 ? data.map(r => {
             const badgeClass = r.event_type === 'LOGIN' ? 'badge-login' : r.event_type === 'LOGOUT' ? 'badge-logout' : r.event_type === 'STATE_CHANGE' ? 'badge-state' : 'badge-default'
+            let recordingCell = '—'
+            if (r.recording) {
+              try {
+                const rec = JSON.parse(r.recording)
+                if (rec.location) recordingCell = '<a href="https://s3.amazonaws.com/' + rec.location + '" target="_blank" style="color:#3b82f6">Play</a>'
+              } catch(e) { recordingCell = r.recording }
+            }
             return `<tr>
-              <td>${r.status_timestamp || '—'}</td>
+              <td>${r.event_timestamp || '—'}</td>
               <td><span class="badge ${badgeClass}">${r.event_type || '—'}</span></td>
-              <td>${r.status_name || '—'}</td>
-              <td>${r.current_state || '—'}</td>
-              <td>${r.current_state_timestamp || '—'}</td>
-              <td>${r.previous_state || '—'}</td>
-              <td>${r.previous_state_timestamp || '—'}</td>
+              <td>${r.status_timestamp || '—'}</td>
+              <td>${r.status || '—'}</td>
+              <td>${r.state_timestamp || '—'}</td>
+              <td>${r.state || '—'}</td>
+              <td class="mono">${r.contact_id || '—'}</td>
               <td>${r.queues || '—'}</td>
-              <td style="font-family:monospace;font-size:11px">${r.contact_id || '—'}</td>
+              <td>${recordingCell}</td>
             </tr>`
           }).join('') : '<tr><td colspan="9" class="empty">No events found.</td></tr>'}
         </tbody>
@@ -206,7 +214,7 @@ export default function AgentAvailabilityPage() {
     function exportCSV() {
       const rows = Array.from(document.querySelectorAll('#t tr'))
       const csv = rows.map(r => Array.from(r.querySelectorAll('th,td')).map(c => '"' + c.textContent.trim().replace(/"/g,'""') + '"').join(',')).join('\\n')
-      const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(new Blob([csv], {type:'text/csv'})), download: 'agent-state-log.csv' })
+      const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(new Blob([csv], {type:'text/csv'})), download: 'agent-availability-details.csv' })
       a.click()
     }
   </script>

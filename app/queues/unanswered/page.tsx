@@ -265,8 +265,8 @@ export default function UnansweredCallsPage() {
     const didFilter = didsRef.current.length > 0 ? didsRef.current : undefined
     try {
       let result: any
-      if (tab === "queue") result = await athenaAPI.getUnansweredByQueue(start, end, null, user?.email, queueFilter, didFilter)
-      else if (tab === "did") result = await athenaAPI.getUnansweredByDID(start, end, null, user?.email, queueFilter, didFilter)
+      if (tab === "queue") result = await athenaAPI.getUnansweredByQueue(start, end, undefined, user?.email, queueFilter, didFilter)
+      else if (tab === "did") result = await athenaAPI.getUnansweredByDID(start, end, undefined, user?.email, queueFilter, didFilter)
       else return
 
       if (result?.status === "SUCCEEDED") {

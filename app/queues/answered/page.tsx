@@ -290,9 +290,9 @@ export default function AnsweredCallsPage() {
     const didFilter = didsRef.current.length > 0 ? didsRef.current : undefined
     try {
       let result: any
-      if (tab === "queue") result = await athenaAPI.getAnsweredByQueue(start, end, null, user?.email, queueFilter, agentFilter, didFilter)
-      else if (tab === "did") result = await athenaAPI.getAnsweredByDID(start, end, null, user?.email, queueFilter, agentFilter, didFilter)
-      else if (tab === "agent") result = await athenaAPI.getAnsweredByAgent(start, end, queueFilter, null, user?.email, agentFilter, didFilter)
+      if (tab === "queue") result = await athenaAPI.getAnsweredByQueue(start, end, undefined, user?.email, queueFilter, agentFilter, didFilter)
+      else if (tab === "did") result = await athenaAPI.getAnsweredByDID(start, end, undefined, user?.email, queueFilter, agentFilter, didFilter)
+      else if (tab === "agent") result = await athenaAPI.getAnsweredByAgent(start, end, queueFilter, undefined, user?.email, agentFilter, didFilter)
       else return
 
       if (result?.status === "SUCCEEDED") {

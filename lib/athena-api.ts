@@ -381,7 +381,7 @@ export class AthenaReportingAPI {
     return this.executeQuery('agent_agent_pause_detail', params, true, 60, username)
   }
 
-  // Agent drilldown - no region filter support
+  // Agent availability drilldown
   async getAgentDrilldown(startDate: string, endDate: string, agentId?: string) {
     const params: any = {
       start_datetime: startDate,
@@ -389,6 +389,17 @@ export class AthenaReportingAPI {
     }
     if (agentId) params.agent_id = [agentId]
     return this.executeQuery('agent_agent_drilldown', params)
+  }
+
+  // Agent performance drilldown — agent_agent_performance_drilldown
+  async getAgentPerformanceDrilldown(startDate: string, endDate: string, agentId: string, queueIds?: string[]) {
+    const params: any = {
+      start_datetime: startDate,
+      end_datetime: endDate,
+      agent_id: [agentId],
+    }
+    if (queueIds && queueIds.length > 0) params.queue_id = queueIds
+    return this.executeQuery('agent_agent_performance_drilldown', params)
   }
 
   // ── V6 Dashboard Queries ────────────────────────────────────────────────
