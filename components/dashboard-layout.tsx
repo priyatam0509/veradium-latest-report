@@ -73,7 +73,7 @@ const FILTER_ROUTE_CONFIG: Record<string, FilterConfig> = {
   // Agent Matrices landing — only agent supported (queue + DID hidden, per PDF page 6)
   "/agents/matrix": { hideQueue: true, hideDid: true },
   // Contact Trace — all dropdowns active (per PDF page 11)
-  "/analytics/contact-traces": {},
+  "/contact-trace": {},
 }
 
 function GlobalFiltersBar({ config }: { config: FilterConfig }) {
@@ -327,7 +327,7 @@ const NAV_STRUCTURE: NavEntry[] = [
     icon: Phone,
   },
   {
-    route: "/analytics/contact-traces",
+    route: "/contact-trace",
     label: "Contact Traces",
     icon: FileText,
   },
@@ -377,7 +377,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       "/agents/activity-analysis",
       "/agents/performance-analysis",
       "/agents/availability",
-      "/analytics/contact-traces",
+      "/contact-trace",
     ]
     if (alwaysAccessible.includes(route)) return true
     return accessibleRouteSet.has(route)
