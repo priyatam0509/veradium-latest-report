@@ -15,7 +15,7 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar"
 import { Checkbox } from "@/components/ui/checkbox"
 import { format } from "date-fns"
 import Image from "next/image"
-import { GlobalFiltersProvider, useGlobalFilters } from "@/lib/global-filters-context"
+import { useGlobalFilters } from "@/lib/global-filters-context"
 
 import {
   Home,
@@ -73,7 +73,7 @@ const FILTER_ROUTE_CONFIG: Record<string, FilterConfig> = {
   // Agent Matrices landing — only agent supported (queue + DID hidden, per PDF page 6)
   "/agents/matrix": { hideQueue: true, hideDid: true },
   // Contact Trace — all dropdowns active (per PDF page 11)
-  "/contact-trace": {},
+  "/analytics/contact-traces": {},
 }
 
 function GlobalFiltersBar({ config }: { config: FilterConfig }) {
@@ -161,7 +161,7 @@ function GlobalFiltersBar({ config }: { config: FilterConfig }) {
                 ) : (
                   availableQueues.map((q) => (
                     <div key={q.value} className="flex items-center gap-2 px-2 py-1 rounded hover:bg-accent cursor-pointer" onClick={() => toggleValue(selectedQueues, q.value, setSelectedQueues)}>
-                      <Checkbox checked={selectedQueues.includes(q.value)} onCheckedChange={() => toggleValue(selectedQueues, q.value, setSelectedQueues)} />
+                      <Checkbox checked={selectedQueues.includes(q.value)} onCheckedChange={() => toggleValue(selectedQueues, q.value, setSelectedQueues)} onClick={(e) => e.stopPropagation()} />
                       <span className="text-xs truncate" title={q.display}>{q.display}</span>
                     </div>
                   ))
@@ -192,7 +192,7 @@ function GlobalFiltersBar({ config }: { config: FilterConfig }) {
                 ) : (
                   availableAgents.map((a) => (
                     <div key={a.value} className="flex items-center gap-2 px-2 py-1 rounded hover:bg-accent cursor-pointer" onClick={() => toggleValue(selectedAgents, a.value, setSelectedAgents)}>
-                      <Checkbox checked={selectedAgents.includes(a.value)} onCheckedChange={() => toggleValue(selectedAgents, a.value, setSelectedAgents)} />
+                      <Checkbox checked={selectedAgents.includes(a.value)} onCheckedChange={() => toggleValue(selectedAgents, a.value, setSelectedAgents)} onClick={(e) => e.stopPropagation()} />
                       <span className="text-xs truncate" title={a.display}>{a.display}</span>
                     </div>
                   ))
@@ -223,7 +223,7 @@ function GlobalFiltersBar({ config }: { config: FilterConfig }) {
                 ) : (
                   availableDids.map((d) => (
                     <div key={d.value} className="flex items-center gap-2 px-2 py-1 rounded hover:bg-accent cursor-pointer" onClick={() => toggleValue(selectedDids, d.value, setSelectedDids)}>
-                      <Checkbox checked={selectedDids.includes(d.value)} onCheckedChange={() => toggleValue(selectedDids, d.value, setSelectedDids)} />
+                      <Checkbox checked={selectedDids.includes(d.value)} onCheckedChange={() => toggleValue(selectedDids, d.value, setSelectedDids)} onClick={(e) => e.stopPropagation()} />
                       <span className="text-xs truncate" title={d.display}>{d.display}</span>
                     </div>
                   ))
@@ -327,8 +327,8 @@ const NAV_STRUCTURE: NavEntry[] = [
     icon: Phone,
   },
   {
-    route: "/contact-trace",
-    label: "Contact Trace",
+    route: "/analytics/contact-traces",
+    label: "Contact Traces",
     icon: FileText,
   },
 ]
@@ -377,7 +377,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       "/agents/activity-analysis",
       "/agents/performance-analysis",
       "/agents/availability",
-      "/contact-trace",
+      "/analytics/contact-traces",
     ]
     if (alwaysAccessible.includes(route)) return true
     return accessibleRouteSet.has(route)
@@ -604,9 +604,5 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 }
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <GlobalFiltersProvider>
-      <DashboardLayoutInner>{children}</DashboardLayoutInner>
-    </GlobalFiltersProvider>
-  )
+  return <DashboardLayoutInner>{children}</DashboardLayoutInner>
 }
