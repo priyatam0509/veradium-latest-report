@@ -7,7 +7,6 @@ import { usePathname } from "next/navigation"
 
 import { useAuth } from "@/hooks/use-auth"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -37,7 +36,6 @@ import {
   LayoutGrid,
   FileText,
   Calendar,
-  Search,
   RefreshCw,
 } from "lucide-react"
 
@@ -78,12 +76,12 @@ const FILTER_ROUTE_CONFIG: Record<string, FilterConfig> = {
 
 function GlobalFiltersBar({ config }: { config: FilterConfig }) {
   const {
-    startDate, endDate, searchTerm,
+    startDate, endDate,
     selectedQueues, selectedAgents, selectedDids,
     isStartOpen, isEndOpen,
     queueFilterOpen, agentFilterOpen, didFilterOpen,
     availableQueues, availableAgents, availableDids,
-    setStartDate, setEndDate, setSearchTerm,
+    setStartDate, setEndDate,
     setSelectedQueues, setSelectedAgents, setSelectedDids,
     setIsStartOpen, setIsEndOpen,
     setQueueFilterOpen, setAgentFilterOpen, setDidFilterOpen,
@@ -236,21 +234,6 @@ function GlobalFiltersBar({ config }: { config: FilterConfig }) {
           </Popover>
         </div>
       )}
-
-      {/* Search */}
-      <div className="flex flex-col gap-0.5">
-        <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Search</label>
-        <div className="relative">
-          <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-          <Input
-            className="h-8 pl-7 text-xs w-[180px]"
-            placeholder="Search..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleApply()}
-          />
-        </div>
-      </div>
 
       {/* Apply + Reset */}
       <div className="flex gap-2 items-end">

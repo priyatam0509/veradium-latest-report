@@ -76,6 +76,7 @@ interface HourData {
 }
 
 interface DayData {
+  interval_day: string
   interval_date: string
   channel: string
   initiation_method: string
@@ -659,7 +660,7 @@ export default function QueueDistributionPage() {
                 {/* ── BY QUEUE ─────────────────────────────────────────── */}
                 <TabsContent value="queue">
                   {/* Task 4: viewport-height table */}
-                  <div className="rounded-md border overflow-x-scroll overflow-y-auto" style={{ maxHeight: "calc(100vh - 340px)" }}>
+                  <div className="rounded-md border overflow-y-auto" style={{ maxHeight: "calc(100vh - 340px)" }}><div className="overflow-x-auto">
                     <Table>
                       <TableHeader className="sticky top-0 bg-background z-10">
                         <TableRow>
@@ -667,7 +668,7 @@ export default function QueueDistributionPage() {
                             ["queue_name","Queue Name"],["channel","Channel"],["initiation_method","Method"],
                             ["received","Received"],["answered","Answered"],["unanswered","Unanswered"],
                             ["abandoned","Abandoned"],["transferred","Transferred"],["avg_wait","Avg Wait"],
-                            ["avg_talk","Avg Talk"],["max_callers","Max Callers"],["%_answered","% Ans"],
+                            ["avg_talk","Avg Talk"],["%_answered","% Ans"],
                             ["%_unanswered","% Unans"],["sla","SLA"],
                           ].map(([col, label]) => (
                             <SortHead key={col} col={col} label={label} sortKey={queueSort.sortKey} sortDir={queueSort.sortDir} onSort={queueSort.handleSort} />
@@ -677,9 +678,9 @@ export default function QueueDistributionPage() {
                       </TableHeader>
                       <TableBody>
                         {isLoading && activeTab === "queue" ? (
-                          <LoadingRow cols={15} />
+                          <LoadingRow cols={14} />
                         ) : queueSort.sorted.length === 0 ? (
-                          <EmptyRow cols={15} label="No queues found." />
+                          <EmptyRow cols={14} label="No queues found." />
                         ) : (
                           <>
                             {queueSort.sorted.map((q) => (
@@ -696,7 +697,6 @@ export default function QueueDistributionPage() {
                                 <TableCell>{q.transferred}</TableCell>
                                 <TableCell>{q.avg_wait || "—"}</TableCell>
                                 <TableCell>{q.avg_talk || "—"}</TableCell>
-                                <TableCell>{q.max_callers}</TableCell>
                                 <TableCell>{q["%_answered"]}</TableCell>
                                 <TableCell>{q["%_unanswered"]}</TableCell>
                                 <TableCell className="font-medium">{q.sla}</TableCell>
@@ -715,7 +715,6 @@ export default function QueueDistributionPage() {
                               {numericCols.map((c) => <TableCell key={c}>{sumNumeric(queueSort.sorted, c)}</TableCell>)}
                               <TableCell>{avgNumeric(queueSort.sorted, "avg_wait")}</TableCell>
                               <TableCell>{avgNumeric(queueSort.sorted, "avg_talk")}</TableCell>
-                              <TableCell>{sumNumeric(queueSort.sorted, "max_callers")}</TableCell>
                               <TableCell>{avgNumeric(queueSort.sorted, "%_answered")}</TableCell>
                               <TableCell>{avgNumeric(queueSort.sorted, "%_unanswered")}</TableCell>
                               <TableCell>{avgNumeric(queueSort.sorted, "sla")}</TableCell>
@@ -725,12 +724,13 @@ export default function QueueDistributionPage() {
                         )}
                       </TableBody>
                     </Table>
+                    </div>
                   </div>
                 </TabsContent>
 
                 {/* ── BY DID ───────────────────────────────────────────── */}
                 <TabsContent value="did">
-                  <div className="rounded-md border overflow-x-scroll overflow-y-auto" style={{ maxHeight: "calc(100vh - 340px)" }}>
+                  <div className="rounded-md border overflow-y-auto" style={{ maxHeight: "calc(100vh - 340px)" }}><div className="overflow-x-auto">
                     <Table>
                       <TableHeader className="sticky top-0 bg-background z-10">
                         <TableRow>
@@ -738,7 +738,7 @@ export default function QueueDistributionPage() {
                             ["did","Phone (DID)"],["channel","Channel"],["initiation_method","Method"],
                             ["received","Received"],["answered","Answered"],["unanswered","Unanswered"],
                             ["abandoned","Abandoned"],["transferred","Transferred"],["avg_wait","Avg Wait"],
-                            ["avg_talk","Avg Talk"],["max_callers","Max Callers"],["%_answered","% Ans"],
+                            ["avg_talk","Avg Talk"],["%_answered","% Ans"],
                             ["%_unanswered","% Unans"],["sla","SLA"],
                           ].map(([col, label]) => (
                             <SortHead key={col} col={col} label={label} sortKey={didSort.sortKey} sortDir={didSort.sortDir} onSort={didSort.handleSort} />
@@ -748,9 +748,9 @@ export default function QueueDistributionPage() {
                       </TableHeader>
                       <TableBody>
                         {isLoading && activeTab === "did" ? (
-                          <LoadingRow cols={15} />
+                          <LoadingRow cols={14} />
                         ) : didSort.sorted.length === 0 ? (
-                          <EmptyRow cols={15} label="No DIDs found." />
+                          <EmptyRow cols={14} label="No DIDs found." />
                         ) : (
                           <>
                             {didSort.sorted.map((d, i) => (
@@ -767,7 +767,6 @@ export default function QueueDistributionPage() {
                                 <TableCell>{d.transferred}</TableCell>
                                 <TableCell>{d.avg_wait || "—"}</TableCell>
                                 <TableCell>{d.avg_talk || "—"}</TableCell>
-                                <TableCell>{d.max_callers || "—"}</TableCell>
                                 <TableCell>{d["%_answered"]}</TableCell>
                                 <TableCell>{d["%_unanswered"]}</TableCell>
                                 <TableCell className="font-medium">{d.sla}</TableCell>
@@ -785,7 +784,6 @@ export default function QueueDistributionPage() {
                               {numericCols.map((c) => <TableCell key={c}>{sumNumeric(didSort.sorted, c)}</TableCell>)}
                               <TableCell>{avgNumeric(didSort.sorted, "avg_wait")}</TableCell>
                               <TableCell>{avgNumeric(didSort.sorted, "avg_talk")}</TableCell>
-                              <TableCell>{sumNumeric(didSort.sorted, "max_callers")}</TableCell>
                               <TableCell>{avgNumeric(didSort.sorted, "%_answered")}</TableCell>
                               <TableCell>{avgNumeric(didSort.sorted, "%_unanswered")}</TableCell>
                               <TableCell>{avgNumeric(didSort.sorted, "sla")}</TableCell>
@@ -795,12 +793,13 @@ export default function QueueDistributionPage() {
                         )}
                       </TableBody>
                     </Table>
+                    </div>
                   </div>
                 </TabsContent>
 
                 {/* ── BY AGENT ─────────────────────────────────────────── */}
                 <TabsContent value="agent">
-                  <div className="rounded-md border overflow-x-scroll overflow-y-auto" style={{ maxHeight: "calc(100vh - 340px)" }}>
+                  <div className="rounded-md border overflow-y-auto" style={{ maxHeight: "calc(100vh - 340px)" }}><div className="overflow-x-auto">
                     <Table>
                       <TableHeader className="sticky top-0 bg-background z-10">
                         <TableRow>
@@ -846,12 +845,13 @@ export default function QueueDistributionPage() {
                         )}
                       </TableBody>
                     </Table>
+                    </div>
                   </div>
                 </TabsContent>
 
                 {/* ── BY HOUR ──────────────────────────────────────────── */}
                 <TabsContent value="hour">
-                  <div className="rounded-md border overflow-x-scroll overflow-y-auto" style={{ maxHeight: "calc(100vh - 340px)" }}>
+                  <div className="rounded-md border overflow-y-auto" style={{ maxHeight: "calc(100vh - 340px)" }}><div className="overflow-x-auto">
                     <Table>
                       <TableHeader className="sticky top-0 bg-background z-10">
                         <TableRow>
@@ -860,7 +860,7 @@ export default function QueueDistributionPage() {
                             ["initiation_method","Method"],["region","Region"],["received","Received"],
                             ["answered","Answered"],["unanswered","Unanswered"],["abandoned","Abandoned"],
                             ["transferred","Transferred"],["avg_wait","Avg Wait"],["avg_talk","Avg Talk"],
-                            ["max_callers","Max Callers"],["%_answered","% Ans"],["%_unanswered","% Unans"],["sla","SLA"],
+                            ["%_answered","% Ans"],["%_unanswered","% Unans"],["sla","SLA"],
                           ].map(([col, label]) => (
                             <SortHead key={col} col={col} label={label} sortKey={hourSort.sortKey} sortDir={hourSort.sortDir} onSort={hourSort.handleSort} />
                           ))}
@@ -868,9 +868,9 @@ export default function QueueDistributionPage() {
                       </TableHeader>
                       <TableBody>
                         {isLoading && activeTab === "hour" ? (
-                          <LoadingRow cols={16} />
+                          <LoadingRow cols={15} />
                         ) : hourSort.sorted.length === 0 ? (
-                          <EmptyRow cols={16} label="No hourly data found." />
+                          <EmptyRow cols={15} label="No hourly data found." />
                         ) : (
                           <>
                             {hourSort.sorted.map((h, i) => (
@@ -887,7 +887,6 @@ export default function QueueDistributionPage() {
                                 <TableCell>{h.transferred}</TableCell>
                                 <TableCell>{h.avg_wait || "—"}</TableCell>
                                 <TableCell>{h.avg_talk || "—"}</TableCell>
-                                <TableCell>{h.max_callers || "—"}</TableCell>
                                 <TableCell>{h["%_answered"]}</TableCell>
                                 <TableCell>{h["%_unanswered"]}</TableCell>
                                 <TableCell className="font-medium">{h.sla}</TableCell>
@@ -898,7 +897,6 @@ export default function QueueDistributionPage() {
                               {numericCols.map((c) => <TableCell key={c}>{sumNumeric(hourSort.sorted, c)}</TableCell>)}
                               <TableCell>{avgNumeric(hourSort.sorted, "avg_wait")}</TableCell>
                               <TableCell>{avgNumeric(hourSort.sorted, "avg_talk")}</TableCell>
-                              <TableCell>{sumNumeric(hourSort.sorted, "max_callers")}</TableCell>
                               <TableCell>{avgNumeric(hourSort.sorted, "%_answered")}</TableCell>
                               <TableCell>{avgNumeric(hourSort.sorted, "%_unanswered")}</TableCell>
                               <TableCell>{avgNumeric(hourSort.sorted, "sla")}</TableCell>
@@ -907,12 +905,13 @@ export default function QueueDistributionPage() {
                         )}
                       </TableBody>
                     </Table>
+                    </div>
                   </div>
                 </TabsContent>
 
                 {/* ── BY DAY ───────────────────────────────────────────── */}
                 <TabsContent value="day">
-                  <div className="rounded-md border overflow-x-scroll overflow-y-auto" style={{ maxHeight: "calc(100vh - 340px)" }}>
+                  <div className="rounded-md border overflow-y-auto" style={{ maxHeight: "calc(100vh - 340px)" }}><div className="overflow-x-auto">
                     <Table>
                       <TableHeader className="sticky top-0 bg-background z-10">
                         <TableRow>
@@ -920,7 +919,7 @@ export default function QueueDistributionPage() {
                             ["interval_date","Date"],["channel","Channel"],["initiation_method","Method"],
                             ["region","Region"],["received","Received"],["answered","Answered"],
                             ["unanswered","Unanswered"],["abandoned","Abandoned"],["transferred","Transferred"],
-                            ["avg_wait","Avg Wait"],["avg_talk","Avg Talk"],["max_callers","Max Callers"],
+                            ["avg_wait","Avg Wait"],["avg_talk","Avg Talk"],
                             ["%_answered","% Ans"],["%_unanswered","% Unans"],["sla","SLA"],
                           ].map(([col, label]) => (
                             <SortHead key={col} col={col} label={label} sortKey={daySort.sortKey} sortDir={daySort.sortDir} onSort={daySort.handleSort} />
@@ -929,14 +928,14 @@ export default function QueueDistributionPage() {
                       </TableHeader>
                       <TableBody>
                         {isLoading && activeTab === "day" ? (
-                          <LoadingRow cols={15} />
+                          <LoadingRow cols={14} />
                         ) : daySort.sorted.length === 0 ? (
-                          <EmptyRow cols={15} label="No daily data found." />
+                          <EmptyRow cols={14} label="No daily data found." />
                         ) : (
                           <>
                             {daySort.sorted.map((d, i) => (
-                              <TableRow key={(d.interval_date || "") + i}>
-                                <TableCell className="whitespace-nowrap font-medium">{d.interval_date || "—"}</TableCell>
+                              <TableRow key={(d.interval_day || d.interval_date || d.date || "") + i}>
+                                <TableCell className="whitespace-nowrap font-medium">{d.interval_day || d.interval_date || d.date || "—"}</TableCell>
                                 <TableCell>{d.channel}</TableCell>
                                 <TableCell>{d.initiation_method}</TableCell>
                                 <TableCell>{d.region || "—"}</TableCell>
@@ -947,7 +946,6 @@ export default function QueueDistributionPage() {
                                 <TableCell>{d.transferred}</TableCell>
                                 <TableCell>{d.avg_wait || "—"}</TableCell>
                                 <TableCell>{d.avg_talk || "—"}</TableCell>
-                                <TableCell>{d.max_callers || "—"}</TableCell>
                                 <TableCell>{d["%_answered"]}</TableCell>
                                 <TableCell>{d["%_unanswered"]}</TableCell>
                                 <TableCell className="font-medium">{d.sla}</TableCell>
@@ -958,7 +956,6 @@ export default function QueueDistributionPage() {
                               {numericCols.map((c) => <TableCell key={c}>{sumNumeric(daySort.sorted, c)}</TableCell>)}
                               <TableCell>{avgNumeric(daySort.sorted, "avg_wait")}</TableCell>
                               <TableCell>{avgNumeric(daySort.sorted, "avg_talk")}</TableCell>
-                              <TableCell>{sumNumeric(daySort.sorted, "max_callers")}</TableCell>
                               <TableCell>{avgNumeric(daySort.sorted, "%_answered")}</TableCell>
                               <TableCell>{avgNumeric(daySort.sorted, "%_unanswered")}</TableCell>
                               <TableCell>{avgNumeric(daySort.sorted, "sla")}</TableCell>
@@ -967,12 +964,13 @@ export default function QueueDistributionPage() {
                         )}
                       </TableBody>
                     </Table>
+                    </div>
                   </div>
                 </TabsContent>
 
                 {/* ── BY MONTH ─────────────────────────────────────────── */}
                 <TabsContent value="month">
-                  <div className="rounded-md border overflow-x-scroll overflow-y-auto" style={{ maxHeight: "calc(100vh - 340px)" }}>
+                  <div className="rounded-md border overflow-y-auto" style={{ maxHeight: "calc(100vh - 340px)" }}><div className="overflow-x-auto">
                     <Table>
                       <TableHeader className="sticky top-0 bg-background z-10">
                         <TableRow>
@@ -1025,12 +1023,13 @@ export default function QueueDistributionPage() {
                         )}
                       </TableBody>
                     </Table>
+                    </div>
                   </div>
                 </TabsContent>
 
                 {/* ── BY STATE ─────────────────────────────────────────── */}
                 <TabsContent value="state">
-                  <div className="rounded-md border overflow-x-scroll overflow-y-auto" style={{ maxHeight: "calc(100vh - 340px)" }}>
+                  <div className="rounded-md border overflow-y-auto" style={{ maxHeight: "calc(100vh - 340px)" }}><div className="overflow-x-auto">
                     <Table>
                       <TableHeader className="sticky top-0 bg-background z-10">
                         <TableRow>
@@ -1082,6 +1081,7 @@ export default function QueueDistributionPage() {
                         )}
                       </TableBody>
                     </Table>
+                    </div>
                   </div>
                 </TabsContent>
               </Tabs>
