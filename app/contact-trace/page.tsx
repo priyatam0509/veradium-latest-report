@@ -68,6 +68,9 @@ interface CallFlowStep {
 /*                                  Helpers                                    */
 /* -------------------------------------------------------------------------- */
 
+// Shared ref to track the currently playing RecordingCell's stop callback
+let activeRecordingStop: (() => void) | null = null
+
 function RecordingCell({ recording }: { recording?: string }) {
   const [playing, setPlaying] = useState(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
@@ -88,12 +91,24 @@ function RecordingCell({ recording }: { recording?: string }) {
 
   if (!key) return <span>—</span>
 
-  const handleToggle = () => {
-    if (playing && audioRef.current) {
+  const stopPlayback = () => {
+    if (audioRef.current) {
       audioRef.current.pause()
       audioRef.current.src = ""
     }
-    setPlaying(!playing)
+    setPlaying(false)
+  }
+
+  const handleToggle = () => {
+    if (playing) {
+      stopPlayback()
+      activeRecordingStop = null
+      return
+    }
+    // Stop any other playing recording first
+    if (activeRecordingStop) activeRecordingStop()
+    activeRecordingStop = stopPlayback
+    setPlaying(true)
   }
 
   return (
@@ -106,7 +121,7 @@ function RecordingCell({ recording }: { recording?: string }) {
       </button>
       {playing && (
         <audio ref={audioRef} controls autoPlay className="mt-1 w-48 h-8"
-          onEnded={() => setPlaying(false)}>
+          onEnded={() => { setPlaying(false); activeRecordingStop = null }}>
           <source src={`/api/recording?key=${encodeURIComponent(key)}`} type="audio/wav" />
         </audio>
       )}
