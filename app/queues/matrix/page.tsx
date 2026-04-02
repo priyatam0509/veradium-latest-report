@@ -228,7 +228,7 @@ export default function QueueMatrixPage() {
                 ) : answeredSL.length === 0 ? (
                   <div className="flex items-center justify-center h-36 text-sm text-muted-foreground">No data</div>
                 ) : (
-                  <div className="overflow-x-scroll overflow-y-auto" style={{ maxHeight: "320px" }}>
+                  <div className="overflow-auto" style={{ maxHeight: "320px" }}>
                     <Table>
                       <TableHeader className="sticky top-0 bg-background z-10">
                         <TableRow>
@@ -267,7 +267,7 @@ export default function QueueMatrixPage() {
                 ) : abandonedSL.length === 0 ? (
                   <div className="flex items-center justify-center h-36 text-sm text-muted-foreground">No data</div>
                 ) : (
-                  <div className="overflow-x-scroll overflow-y-auto" style={{ maxHeight: "320px" }}>
+                  <div className="overflow-auto" style={{ maxHeight: "320px" }}>
                     <Table>
                       <TableHeader className="sticky top-0 bg-background z-10">
                         <TableRow>

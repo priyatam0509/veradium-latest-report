@@ -324,9 +324,9 @@ export default function DashboardOverview() {
                   <Loader2 className="h-8 w-8 animate-spin" />
                 </div>
               ) : (
-                <div className="rounded-md border">
+                <div className="scrollable-table">
                   <Table>
-                    <TableHeader>
+                    <TableHeader className="sticky top-0 bg-background z-10">
                       <TableRow>
                         <TableHead>Queue Name</TableHead>
                         <TableHead className="text-right">Channel</TableHead>
@@ -399,9 +399,9 @@ export default function DashboardOverview() {
                   <Loader2 className="h-8 w-8 animate-spin" />
                 </div>
               ) : hourlyData.length > 0 ? (
-                <div className="rounded-md border">
+                <div className="scrollable-table">
                   <Table>
-                    <TableHeader>
+                    <TableHeader className="sticky top-0 bg-background z-10">
                       <TableRow>
                         <TableHead>Hour</TableHead>
                         <TableHead className="text-right">Received</TableHead>

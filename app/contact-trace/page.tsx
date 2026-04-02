@@ -344,8 +344,7 @@ export default function ContactTracePage() {
                       No answered call data for the selected period
                     </div>
                   ) : (
-                    <div className="rounded-md border overflow-y-auto mt-3" style={{ maxHeight: "calc(100vh - 280px)" }}>
-                      <div className="overflow-x-auto">
+                    <div className="scrollable-table mt-3">
                       <Table>
                         <TableHeader className="sticky top-0 bg-background z-10">
                           <TableRow>
@@ -393,7 +392,6 @@ export default function ContactTracePage() {
                           ))}
                         </TableBody>
                       </Table>
-                      </div>
                     </div>
                   )}
                   {!isLoading && displayedAnswered.length > 0 && (
@@ -412,8 +410,7 @@ export default function ContactTracePage() {
                       No unanswered call data for the selected period
                     </div>
                   ) : (
-                    <div className="rounded-md border overflow-y-auto mt-3" style={{ maxHeight: "calc(100vh - 280px)" }}>
-                      <div className="overflow-x-auto">
+                    <div className="scrollable-table mt-3">
                       <Table>
                         <TableHeader className="sticky top-0 bg-background z-10">
                           <TableRow>
@@ -455,7 +452,6 @@ export default function ContactTracePage() {
                           ))}
                         </TableBody>
                       </Table>
-                      </div>
                     </div>
                   )}
                   {!isLoading && displayedUnanswered.length > 0 && (

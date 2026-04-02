@@ -422,9 +422,9 @@ export default function RBACManagementPage() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="rounded-md border">
+                  <div className="scrollable-table">
                     <Table>
-                      <TableHeader>
+                      <TableHeader className="sticky top-0 bg-background z-10">
                         <TableRow>
                           <TableHead>Route</TableHead>
                           <TableHead>Label</TableHead>

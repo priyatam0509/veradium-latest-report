@@ -674,7 +674,7 @@ export default function QueueDistributionPage() {
                 {/* ── BY QUEUE ─────────────────────────────────────────── */}
                 <TabsContent value="queue">
                   {/* Task 4: viewport-height table */}
-                  <div className="rounded-md border overflow-y-auto" style={{ maxHeight: "calc(100vh - 340px)" }}><div className="overflow-x-auto">
+                  <div className="scrollable-table">
                     <Table>
                       <TableHeader className="sticky top-0 bg-background z-10">
                         <TableRow>
@@ -738,13 +738,12 @@ export default function QueueDistributionPage() {
                         )}
                       </TableBody>
                     </Table>
-                    </div>
                   </div>
                 </TabsContent>
 
                 {/* ── BY DID ───────────────────────────────────────────── */}
                 <TabsContent value="did">
-                  <div className="rounded-md border overflow-y-auto" style={{ maxHeight: "calc(100vh - 340px)" }}><div className="overflow-x-auto">
+                  <div className="scrollable-table">
                     <Table>
                       <TableHeader className="sticky top-0 bg-background z-10">
                         <TableRow>
@@ -807,13 +806,12 @@ export default function QueueDistributionPage() {
                         )}
                       </TableBody>
                     </Table>
-                    </div>
                   </div>
                 </TabsContent>
 
                 {/* ── BY AGENT ─────────────────────────────────────────── */}
                 <TabsContent value="agent">
-                  <div className="rounded-md border overflow-y-auto" style={{ maxHeight: "calc(100vh - 340px)" }}><div className="overflow-x-auto">
+                  <div className="scrollable-table">
                     <Table>
                       <TableHeader className="sticky top-0 bg-background z-10">
                         <TableRow>
@@ -862,13 +860,12 @@ export default function QueueDistributionPage() {
                         )}
                       </TableBody>
                     </Table>
-                    </div>
                   </div>
                 </TabsContent>
 
                 {/* ── BY HOUR ──────────────────────────────────────────── */}
                 <TabsContent value="hour">
-                  <div className="rounded-md border overflow-y-auto" style={{ maxHeight: "calc(100vh - 340px)" }}><div className="overflow-x-auto">
+                  <div className="scrollable-table">
                     <Table>
                       <TableHeader className="sticky top-0 bg-background z-10">
                         <TableRow>
@@ -930,13 +927,12 @@ export default function QueueDistributionPage() {
                         )}
                       </TableBody>
                     </Table>
-                    </div>
                   </div>
                 </TabsContent>
 
                 {/* ── BY DAY ───────────────────────────────────────────── */}
                 <TabsContent value="day">
-                  <div className="rounded-md border overflow-y-auto" style={{ maxHeight: "calc(100vh - 340px)" }}><div className="overflow-x-auto">
+                  <div className="scrollable-table">
                     <Table>
                       <TableHeader className="sticky top-0 bg-background z-10">
                         <TableRow>
@@ -997,13 +993,12 @@ export default function QueueDistributionPage() {
                         )}
                       </TableBody>
                     </Table>
-                    </div>
                   </div>
                 </TabsContent>
 
                 {/* ── BY MONTH ─────────────────────────────────────────── */}
                 <TabsContent value="month">
-                  <div className="rounded-md border overflow-y-auto" style={{ maxHeight: "calc(100vh - 340px)" }}><div className="overflow-x-auto">
+                  <div className="scrollable-table">
                     <Table>
                       <TableHeader className="sticky top-0 bg-background z-10">
                         <TableRow>
@@ -1069,13 +1064,12 @@ export default function QueueDistributionPage() {
                         )}
                       </TableBody>
                     </Table>
-                    </div>
                   </div>
                 </TabsContent>
 
                 {/* ── BY STATE ─────────────────────────────────────────── */}
                 <TabsContent value="state">
-                  <div className="rounded-md border overflow-y-auto" style={{ maxHeight: "calc(100vh - 340px)" }}><div className="overflow-x-auto">
+                  <div className="scrollable-table">
                     <Table>
                       <TableHeader className="sticky top-0 bg-background z-10">
                         <TableRow>
@@ -1132,7 +1126,6 @@ export default function QueueDistributionPage() {
                         )}
                       </TableBody>
                     </Table>
-                    </div>
                   </div>
                 </TabsContent>
               </Tabs>

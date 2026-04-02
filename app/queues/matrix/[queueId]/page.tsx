@@ -404,9 +404,9 @@ export default function QueueDetailsPage() {
                   </div>
                 </div>
               ) : (
-                <div className="rounded-md border overflow-x-auto">
+                <div className="scrollable-table">
                   <Table>
-                    <TableHeader>
+                    <TableHeader className="sticky top-0 bg-background z-10">
                       <TableRow>
                         <TableHead>Contact ID</TableHead>
                         <TableHead>Agent</TableHead>

@@ -413,7 +413,7 @@ export default function AnsweredCallsPage() {
 
                 {/* By Queue */}
                 <TabsContent value="queue">
-                  <div className="rounded-md border overflow-x-scroll overflow-y-auto" style={{ maxHeight: "calc(100vh - 340px)" }}>
+                  <div className="scrollable-table">
                     <Table>
                       <TableHeader className="sticky top-0 bg-background z-10">
                         <TableRow>
@@ -458,7 +458,7 @@ export default function AnsweredCallsPage() {
 
                 {/* By DID */}
                 <TabsContent value="did">
-                  <div className="rounded-md border overflow-x-scroll overflow-y-auto" style={{ maxHeight: "calc(100vh - 340px)" }}>
+                  <div className="scrollable-table">
                     <Table>
                       <TableHeader className="sticky top-0 bg-background z-10">
                         <TableRow>
@@ -503,7 +503,7 @@ export default function AnsweredCallsPage() {
 
                 {/* By Agent */}
                 <TabsContent value="agent">
-                  <div className="rounded-md border overflow-x-scroll overflow-y-auto" style={{ maxHeight: "calc(100vh - 340px)" }}>
+                  <div className="scrollable-table">
                     <Table>
                       <TableHeader className="sticky top-0 bg-background z-10">
                         <TableRow>

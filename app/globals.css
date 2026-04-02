@@ -118,3 +118,21 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* ── Scrollable data-table container ────────────────────────────────── */
+/* Wraps <Table> with a viewport-height-bounded box that scrolls both
+   axes from a SINGLE container so the horizontal scrollbar is always
+   reachable without scrolling to the last row first.
+   Usage:
+     <div className="scrollable-table">
+       <Table> … </Table>
+     </div>
+   Pair with:
+     <TableHeader className="sticky top-0 bg-background z-10">
+*/
+.scrollable-table {
+  overflow: auto;
+  max-height: calc(100vh - 340px);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+}

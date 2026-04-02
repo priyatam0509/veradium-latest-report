@@ -198,9 +198,9 @@ export default function AnsweredByDIDPage() {
                   <Loader2 className="h-8 w-8 animate-spin" />
                 </div>
               ) : data.length > 0 ? (
-                <div className="rounded-md border overflow-x-auto">
+                <div className="scrollable-table">
                   <Table>
-                    <TableHeader>
+                    <TableHeader className="sticky top-0 bg-background z-10">
                       <TableRow>
                         <TableHead>DID</TableHead>
                         <TableHead>Region</TableHead>

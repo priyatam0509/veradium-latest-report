@@ -498,9 +498,9 @@ export default function AgentPerformancePage() {
                   <Loader2 className="h-8 w-8 animate-spin" />
                 </div>
               ) : (
-                <div className="rounded-md border">
+                <div className="scrollable-table">
                   <Table>
-                    <TableHeader>
+                    <TableHeader className="sticky top-0 bg-background z-10">
                       <TableRow>
                         <TableHead>Agent Name</TableHead>
                         <TableHead className="text-right">Region</TableHead>

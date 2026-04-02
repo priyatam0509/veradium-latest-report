@@ -300,9 +300,9 @@ export default function UserManagementPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="rounded-md border overflow-x-auto">
+              <div className="scrollable-table">
                 <Table>
-                  <TableHeader>
+                  <TableHeader className="sticky top-0 bg-background z-10">
                     <TableRow>
                       <TableHead>User</TableHead>
                       <TableHead>Role</TableHead>
