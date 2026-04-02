@@ -7,20 +7,24 @@ import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3"
  * Streams the call recording audio directly from S3 to the browser.
  * This approach works with KMS-encrypted objects (presigned URLs don't).
  *
- * Required env vars:
- *   S3_ACCESS_KEY_ID
- *   S3_SECRET_ACCESS_KEY
- *   S3_REGION (defaults to us-east-1)
+ * Credentials resolution:
+ *   1. S3_ACCESS_KEY_ID / S3_SECRET_ACCESS_KEY env vars (local dev)
+ *   2. AWS default credential chain - IAM role (Amplify SSR)
  */
 
 const RECORDING_BUCKET = "ticketclinic-prod"
 
+// Build S3 client: use explicit credentials if provided, otherwise fall back to default chain (IAM role)
+const hasExplicitCreds = process.env.S3_ACCESS_KEY_ID && process.env.S3_SECRET_ACCESS_KEY
+
 const s3Client = new S3Client({
   region: process.env.S3_REGION || process.env.AWS_REGION || "us-east-1",
-  credentials: {
-    accessKeyId: process.env.S3_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID || "",
-    secretAccessKey: process.env.S3_SECRET_ACCESS_KEY || process.env.AWS_SECRET_ACCESS_KEY || "",
-  },
+  ...(hasExplicitCreds && {
+    credentials: {
+      accessKeyId: process.env.S3_ACCESS_KEY_ID!,
+      secretAccessKey: process.env.S3_SECRET_ACCESS_KEY!,
+    },
+  }),
 })
 
 export async function GET(request: NextRequest) {
