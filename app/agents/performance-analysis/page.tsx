@@ -113,7 +113,7 @@ export default function AgentPerformanceAnalysis() {
       const start = DateHelper.formatDateFromDate(startRef.current)
       const end = DateHelper.formatDateFromDate(endRef.current, true)
       const queueFilter = queuesRef.current.length > 0 ? queuesRef.current : undefined
-      const result = await athenaAPI.getAgentPerformanceDrilldown(start, end, agent.user_id, queueFilter)
+      const result = await athenaAPI.getAgentPerformanceDrilldown(start, end, agent.user_id, queueFilter, user?.email)
       if (result?.status === 'SUCCEEDED') {
         const newWindow = window.open('', '_blank')
         if (newWindow) {

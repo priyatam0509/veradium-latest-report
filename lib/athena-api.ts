@@ -386,24 +386,24 @@ export class AthenaReportingAPI {
   }
 
   // Agent availability drilldown
-  async getAgentDrilldown(startDate: string, endDate: string, agentId?: string) {
+  async getAgentDrilldown(startDate: string, endDate: string, agentId?: string, username?: string) {
     const params: any = {
       start_datetime: startDate,
       end_datetime: endDate
     }
     if (agentId) params.agent_id = [agentId]
-    return this.executeQuery('agent_agent_drilldown', params)
+    return this.executeQuery('agent_agent_drilldown', params, true, 60, username)
   }
 
   // Agent performance drilldown — agent_agent_performance_drilldown
-  async getAgentPerformanceDrilldown(startDate: string, endDate: string, agentId: string, queueIds?: string[]) {
+  async getAgentPerformanceDrilldown(startDate: string, endDate: string, agentId: string, queueIds?: string[], username?: string) {
     const params: any = {
       start_datetime: startDate,
       end_datetime: endDate,
       agent_id: [agentId],
     }
     if (queueIds && queueIds.length > 0) params.queue_id = queueIds
-    return this.executeQuery('agent_agent_performance_drilldown', params)
+    return this.executeQuery('agent_agent_performance_drilldown', params, true, 60, username)
   }
 
   // ── V6 Dashboard Queries ────────────────────────────────────────────────

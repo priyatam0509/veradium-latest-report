@@ -111,7 +111,7 @@ export default function AgentAvailabilityPage() {
     try {
       const start = DateHelper.formatDateFromDate(startRef.current)
       const end = DateHelper.formatDateFromDate(endRef.current, true)
-      const result = await athenaAPI.getAgentDrilldown(start, end, agent.agent_id)
+      const result = await athenaAPI.getAgentDrilldown(start, end, agent.agent_id, user?.email)
       if (result.status === 'SUCCEEDED') {
         const newWindow = window.open('', '_blank')
         if (newWindow) {
