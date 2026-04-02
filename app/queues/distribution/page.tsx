@@ -395,8 +395,14 @@ function generateDrilldownHTML(data: DrilldownData[], title: string, startDate?:
     function playRec(btn) {
       const key = decodeURIComponent(btn.dataset.key)
       const tr = btn.closest('tr')
-      const existing = tr.querySelector('.audio-row')
-      if (existing) { existing.remove(); btn.innerHTML = '&#9654; Play'; return }
+      const existing = tr.nextElementSibling
+      if (existing && existing.classList.contains('audio-row')) {
+        const audio = existing.querySelector('audio')
+        if (audio) { audio.pause(); audio.src = '' }
+        existing.remove()
+        btn.innerHTML = '&#9654; Play'
+        return
+      }
       const cell = document.createElement('tr')
       cell.className = 'audio-row'
       cell.innerHTML = '<td colspan="999" style="padding:8px;background:#f8f9fa;"><audio controls autoplay style="width:100%"><source src="/api/recording?key=' + encodeURIComponent(key) + '" type="audio/wav">Your browser does not support audio.</audio></td>'
