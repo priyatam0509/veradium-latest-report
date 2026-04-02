@@ -69,6 +69,7 @@ interface CallFlowStep {
 /* -------------------------------------------------------------------------- */
 
 function RecordingCell({ recording }: { recording?: string }) {
+  const [playing, setPlaying] = useState(false)
   if (!recording) return <span>—</span>
 
   let key = ""
@@ -86,17 +87,20 @@ function RecordingCell({ recording }: { recording?: string }) {
 
   if (!key) return <span>—</span>
 
-  const handlePlay = () => {
-    window.open(`/api/recording?key=${encodeURIComponent(key)}`, "_blank")
-  }
-
   return (
-    <button
-      onClick={handlePlay}
-      className="text-xs text-blue-600 hover:underline"
-    >
-      ▶ Play
-    </button>
+    <div>
+      <button
+        onClick={() => setPlaying(!playing)}
+        className="text-xs text-blue-600 hover:underline"
+      >
+        {playing ? "⏹ Stop" : "▶ Play"}
+      </button>
+      {playing && (
+        <audio controls autoPlay className="mt-1 w-48 h-8">
+          <source src={`/api/recording?key=${encodeURIComponent(key)}`} type="audio/wav" />
+        </audio>
+      )}
+    </div>
   )
 }
 
