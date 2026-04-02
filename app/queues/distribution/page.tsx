@@ -152,6 +152,7 @@ interface DrilldownData {
   date: string
   queue_name: string
   region: string
+  state: string
   customer_number: string
   channel: string
   initiation_method: string
@@ -161,6 +162,7 @@ interface DrilldownData {
   ring_time: string
   wait_time: string
   talk_time: string
+  recording: string
 }
 
 /* -------------------------------------------------------------------------- */
@@ -311,6 +313,8 @@ function generateDrilldownHTML(data: DrilldownData[], title: string, startDate?:
     tr:hover { background:#f9fafb; }
     .mono { font-family:ui-monospace,SFMono-Regular,monospace; font-size:12px; }
     .empty { padding:48px; text-align:center; color:#9ca3af; }
+    a { color:#3b82f6; text-decoration:none; }
+    a:hover { text-decoration:underline; }
     @media print { .btn { display:none; } body { background:white; } }
   </style>
 </head>
@@ -328,21 +332,30 @@ function generateDrilldownHTML(data: DrilldownData[], title: string, startDate?:
       <table id="t">
         <thead><tr>
           <th>DID</th><th>Contact ID</th><th>Agent</th><th>Date</th><th>Queue</th>
-          <th>Region</th><th>Customer</th><th>Channel</th><th>Method</th><th>Status</th>
-          <th>Agent Conn.</th><th>Event</th><th>Ring Time</th><th>Wait Time</th><th>Talk Time</th>
+          <th>Region</th><th>State</th><th>Customer</th><th>Channel</th><th>Method</th><th>Status</th>
+          <th>Agent Conn.</th><th>Event</th><th>Ring Time</th><th>Wait Time</th><th>Talk Time</th><th>Recording</th>
         </tr></thead>
         <tbody>
           ${
             data.length > 0
               ? data
                   .map(
-                    (r) => `<tr>
+                    (r) => {
+                      let recordingCell = '—'
+                      if (r.recording) {
+                        try {
+                          const rec = JSON.parse(r.recording)
+                          if (rec.location) recordingCell = '<a href="https://s3.amazonaws.com/' + rec.location + '" target="_blank">Play</a>'
+                        } catch(e) { recordingCell = r.recording }
+                      }
+                      return `<tr>
               <td class="mono">${r.did || "—"}</td>
               <td class="mono">${r.contact_id || "—"}</td>
               <td>${r.agent_name || "—"}</td>
               <td>${r.date || "—"}</td>
               <td>${r.queue_name || "—"}</td>
               <td>${r.region || "—"}</td>
+              <td>${r.state || "—"}</td>
               <td class="mono">${r.customer_number || "—"}</td>
               <td>${r.channel || "—"}</td>
               <td>${r.initiation_method || "—"}</td>
@@ -352,10 +365,12 @@ function generateDrilldownHTML(data: DrilldownData[], title: string, startDate?:
               <td>${r.ring_time || "—"}</td>
               <td>${r.wait_time || "—"}</td>
               <td>${r.talk_time || "—"}</td>
+              <td>${recordingCell}</td>
             </tr>`
+                    }
                   )
                   .join("")
-              : '<tr><td colspan="15" class="empty">No contacts found.</td></tr>'
+              : '<tr><td colspan="17" class="empty">No contacts found.</td></tr>'
           }
         </tbody>
       </table>
@@ -386,7 +401,6 @@ export default function QueueDistributionPage() {
     appliedAgents: selectedAgents,
     appliedDids: selectedDids,
     applyVersion,
-    setAvailableQueues,
   } = useGlobalFilters()
 
   // Refs so fetchTab always reads the LATEST filter values (avoids stale closure)
@@ -494,18 +508,30 @@ export default function QueueDistributionPage() {
   }, [activeTab])
 
   // ── drilldown ────────────────────────────────────────────────────────────────
-  const fetchDrilldown = async (queueId?: string, did?: string, title?: string, itemId?: string) => {
-    setLoadingItemId(itemId || null)
+  const fetchDrilldown = async (
+    filters: { queueId?: string; did?: string; agentId?: string; state?: string; startOverride?: string; endOverride?: string },
+    title: string,
+    itemId: string,
+  ) => {
+    setLoadingItemId(itemId)
     try {
       const { start, end } = dateRange()
-      const filters: any = {}
-      if (queueId) filters.queueId = [queueId]
-      if (did) filters.did = [did]
-      const result = await athenaAPI.getDistributionDrilldown(start, end, filters, null, user?.email)
+      const apiFilters: { queueId?: string[]; did?: string[]; agentId?: string[]; state?: string } = {}
+      if (filters.queueId) apiFilters.queueId = [filters.queueId]
+      if (filters.did) apiFilters.did = [filters.did]
+      if (filters.agentId) apiFilters.agentId = [filters.agentId]
+      if (filters.state) apiFilters.state = filters.state
+      const result = await athenaAPI.getDistributionDrilldown(
+        filters.startOverride || start,
+        filters.endOverride || end,
+        apiFilters,
+        null,
+        user?.email,
+      )
       if (result?.status === "SUCCEEDED") {
         const win = window.open("", "_blank")
         if (win) {
-          win.document.write(generateDrilldownHTML(result.data, title || "Contact Details", startDate, endDate))
+          win.document.write(generateDrilldownHTML(result.data, title, startDate, endDate))
           win.document.close()
         }
       }
@@ -517,18 +543,6 @@ export default function QueueDistributionPage() {
   }
 
   // ── filtering ────────────────────────────────────────────────────────────────
-  // Keep availableQueues in sync whenever fresh queue data arrives
-  useEffect(() => {
-    if (queueData.length > 0) {
-      const seen = new Set<string>()
-      const items = queueData
-        .filter((q) => { const v = q.queue_id; if (!v || seen.has(v)) return false; seen.add(v); return true })
-        .map((q) => ({ display: q.queue_name || q.queue_id, value: q.queue_id }))
-        .sort((a, b) => a.display.localeCompare(b.display))
-      setAvailableQueues(items)
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [queueData])
 
   const filteredQueues = useMemo(() => {
     let rows = queueData
@@ -685,7 +699,7 @@ export default function QueueDistributionPage() {
                           <>
                             {queueSort.sorted.map((q) => (
                               <TableRow key={q.queue_id}>
-                                <TableCell className="font-medium cursor-pointer text-primary hover:underline whitespace-nowrap" onClick={() => fetchDrilldown(q.queue_id, undefined, `Contact Details — ${q.queue_name || q.queue_id}`, q.queue_id)}>
+                                <TableCell className="font-medium cursor-pointer text-primary hover:underline whitespace-nowrap" onClick={() => fetchDrilldown({ queueId: q.queue_id }, `Contact Details — ${q.queue_name || q.queue_id}`, q.queue_id)}>
                                   {q.queue_name || q.queue_id}
                                 </TableCell>
                                 <TableCell>{q.channel}</TableCell>
@@ -701,7 +715,7 @@ export default function QueueDistributionPage() {
                                 <TableCell>{q["%_unanswered"]}</TableCell>
                                 <TableCell className="font-medium">{q.sla}</TableCell>
                                 <TableCell>
-                                  <Button variant="outline" size="sm" onClick={() => fetchDrilldown(q.queue_id, undefined, `Contact Details — ${q.queue_name || q.queue_id}`, q.queue_id)} disabled={loadingItemId === q.queue_id}>
+                                  <Button variant="outline" size="sm" onClick={() => fetchDrilldown({ queueId: q.queue_id }, `Contact Details — ${q.queue_name || q.queue_id}`, q.queue_id)} disabled={loadingItemId === q.queue_id}>
                                     {loadingItemId === q.queue_id ? <Loader2 className="h-4 w-4 animate-spin" /> : "Details"}
                                   </Button>
                                 </TableCell>
@@ -755,7 +769,7 @@ export default function QueueDistributionPage() {
                           <>
                             {didSort.sorted.map((d, i) => (
                               <TableRow key={d.did + i}>
-                                <TableCell className="font-mono cursor-pointer text-primary hover:underline" onClick={() => fetchDrilldown(undefined, d.did, `Contact Details — ${d.did}`, d.did)}>
+                                <TableCell className="font-mono cursor-pointer text-primary hover:underline" onClick={() => fetchDrilldown({ did: d.did }, `Contact Details — ${d.did}`, d.did)}>
                                   {d.did}
                                 </TableCell>
                                 <TableCell>{d.channel}</TableCell>
@@ -771,7 +785,7 @@ export default function QueueDistributionPage() {
                                 <TableCell>{d["%_unanswered"]}</TableCell>
                                 <TableCell className="font-medium">{d.sla}</TableCell>
                                 <TableCell>
-                                  <Button variant="outline" size="sm" onClick={() => fetchDrilldown(undefined, d.did, `Contact Details — ${d.did}`, d.did)} disabled={loadingItemId === d.did}>
+                                  <Button variant="outline" size="sm" onClick={() => fetchDrilldown({ did: d.did }, `Contact Details — ${d.did}`, d.did)} disabled={loadingItemId === d.did}>
                                     {loadingItemId === d.did ? <Loader2 className="h-4 w-4 animate-spin" /> : "Details"}
                                   </Button>
                                 </TableCell>
@@ -821,7 +835,10 @@ export default function QueueDistributionPage() {
                           <>
                             {agentSort.sorted.map((a, i) => (
                               <TableRow key={a.agent_id + i}>
-                                <TableCell className="font-medium">{a.agent_name}</TableCell>
+                                <TableCell className="font-medium cursor-pointer text-primary hover:underline whitespace-nowrap" onClick={() => fetchDrilldown({ agentId: a.agent_id }, `Contact Details — ${a.agent_name}`, a.agent_id)}>
+                                  {loadingItemId === a.agent_id ? <Loader2 className="h-4 w-4 animate-spin inline mr-1" /> : null}
+                                  {a.agent_name}
+                                </TableCell>
                                 <TableCell>{a.region || "—"}</TableCell>
                                 <TableCell>{a.channel}</TableCell>
                                 <TableCell>{a.initiation_method}</TableCell>
@@ -873,10 +890,18 @@ export default function QueueDistributionPage() {
                           <EmptyRow cols={15} label="No hourly data found." />
                         ) : (
                           <>
-                            {hourSort.sorted.map((h, i) => (
+                            {hourSort.sorted.map((h, i) => {
+                              const hourItemId = `hour-${h.interval_date}-${h.interval_hour}-${i}`
+                              const hourNum = (h.interval_hour || "").split(":")[0].padStart(2, "0")
+                              const hourStart = `${h.interval_date} ${hourNum}:00:00`
+                              const hourEnd = `${h.interval_date} ${hourNum}:59:59`
+                              return (
                               <TableRow key={h.interval_date + h.interval_hour + i}>
                                 <TableCell className="whitespace-nowrap">{h.interval_date || "—"}</TableCell>
-                                <TableCell className="whitespace-nowrap font-medium">{h.interval_hour}</TableCell>
+                                <TableCell className="whitespace-nowrap font-medium cursor-pointer text-primary hover:underline" onClick={() => fetchDrilldown({ startOverride: hourStart, endOverride: hourEnd }, `Contact Details — ${h.interval_date} ${h.interval_hour}`, hourItemId)}>
+                                  {loadingItemId === hourItemId ? <Loader2 className="h-4 w-4 animate-spin inline mr-1" /> : null}
+                                  {h.interval_hour}
+                                </TableCell>
                                 <TableCell>{h.channel}</TableCell>
                                 <TableCell>{h.initiation_method}</TableCell>
                                 <TableCell>{h.region || "—"}</TableCell>
@@ -891,7 +916,7 @@ export default function QueueDistributionPage() {
                                 <TableCell>{h["%_unanswered"]}</TableCell>
                                 <TableCell className="font-medium">{h.sla}</TableCell>
                               </TableRow>
-                            ))}
+                            )})}
                             <TableRow className="bg-muted/50 font-semibold">
                               <TableCell colSpan={5}>TOTAL</TableCell>
                               {numericCols.map((c) => <TableCell key={c}>{sumNumeric(hourSort.sorted, c)}</TableCell>)}
@@ -933,9 +958,17 @@ export default function QueueDistributionPage() {
                           <EmptyRow cols={14} label="No daily data found." />
                         ) : (
                           <>
-                            {daySort.sorted.map((d, i) => (
-                              <TableRow key={(d.interval_day || d.interval_date || d.date || "") + i}>
-                                <TableCell className="whitespace-nowrap font-medium">{d.interval_day || d.interval_date || d.date || "—"}</TableCell>
+                            {daySort.sorted.map((d, i) => {
+                              const dayDate = d.interval_day || d.interval_date || d.date || ""
+                              const dayItemId = `day-${dayDate}-${i}`
+                              const dayStart = `${dayDate} 00:00:00`
+                              const dayEnd = `${dayDate} 23:59:59`
+                              return (
+                              <TableRow key={dayDate + i}>
+                                <TableCell className="whitespace-nowrap font-medium cursor-pointer text-primary hover:underline" onClick={() => fetchDrilldown({ startOverride: dayStart, endOverride: dayEnd }, `Contact Details — ${dayDate}`, dayItemId)}>
+                                  {loadingItemId === dayItemId ? <Loader2 className="h-4 w-4 animate-spin inline mr-1" /> : null}
+                                  {dayDate || "—"}
+                                </TableCell>
                                 <TableCell>{d.channel}</TableCell>
                                 <TableCell>{d.initiation_method}</TableCell>
                                 <TableCell>{d.region || "—"}</TableCell>
@@ -950,7 +983,7 @@ export default function QueueDistributionPage() {
                                 <TableCell>{d["%_unanswered"]}</TableCell>
                                 <TableCell className="font-medium">{d.sla}</TableCell>
                               </TableRow>
-                            ))}
+                            )})}
                             <TableRow className="bg-muted/50 font-semibold">
                               <TableCell colSpan={4}>TOTAL</TableCell>
                               {numericCols.map((c) => <TableCell key={c}>{sumNumeric(daySort.sorted, c)}</TableCell>)}
@@ -992,9 +1025,22 @@ export default function QueueDistributionPage() {
                           <EmptyRow cols={14} label="No monthly data found." />
                         ) : (
                           <>
-                            {monthSort.sorted.map((m, i) => (
-                              <TableRow key={(m.month || m.interval_month || "") + i}>
-                                <TableCell className="whitespace-nowrap font-medium">{m.month || m.interval_month || "—"}</TableCell>
+                            {monthSort.sorted.map((m, i) => {
+                              const monthVal = m.month || m.interval_month || ""
+                              const monthItemId = `month-${monthVal}-${i}`
+                              // monthVal is "YYYY-MM" or "YYYY-MM-DD" — extract year and month
+                              const parts = monthVal.split("-")
+                              const yr = parts[0] || "2026"
+                              const mo = parts[1] || "01"
+                              const lastDay = new Date(parseInt(yr), parseInt(mo), 0).getDate()
+                              const monthStart = `${yr}-${mo}-01 00:00:00`
+                              const monthEnd = `${yr}-${mo}-${String(lastDay).padStart(2, "0")} 23:59:59`
+                              return (
+                              <TableRow key={monthVal + i}>
+                                <TableCell className="whitespace-nowrap font-medium cursor-pointer text-primary hover:underline" onClick={() => fetchDrilldown({ startOverride: monthStart, endOverride: monthEnd }, `Contact Details — ${monthVal}`, monthItemId)}>
+                                  {loadingItemId === monthItemId ? <Loader2 className="h-4 w-4 animate-spin inline mr-1" /> : null}
+                                  {monthVal || "—"}
+                                </TableCell>
                                 <TableCell>{m.channel}</TableCell>
                                 <TableCell>{m.initiation_method}</TableCell>
                                 <TableCell>{m.region || "—"}</TableCell>
@@ -1009,7 +1055,7 @@ export default function QueueDistributionPage() {
                                 <TableCell>{m["%_unanswered"]}</TableCell>
                                 <TableCell className="font-medium">{m.sla}</TableCell>
                               </TableRow>
-                            ))}
+                            )})}
                             <TableRow className="bg-muted/50 font-semibold">
                               <TableCell colSpan={4}>TOTAL</TableCell>
                               {numericCols.map((c) => <TableCell key={c}>{sumNumeric(monthSort.sorted, c)}</TableCell>)}
@@ -1050,9 +1096,14 @@ export default function QueueDistributionPage() {
                           <EmptyRow cols={14} label="No state data found." />
                         ) : (
                           <>
-                            {stateSort.sorted.map((s, i) => (
+                            {stateSort.sorted.map((s, i) => {
+                              const stateItemId = `state-${s.state || ""}-${i}`
+                              return (
                               <TableRow key={(s.state || "") + i}>
-                                <TableCell className="whitespace-nowrap font-medium capitalize">{s.state || "—"}</TableCell>
+                                <TableCell className="whitespace-nowrap font-medium capitalize cursor-pointer text-primary hover:underline" onClick={() => fetchDrilldown({ state: s.state }, `Contact Details — ${s.state}`, stateItemId)}>
+                                  {loadingItemId === stateItemId ? <Loader2 className="h-4 w-4 animate-spin inline mr-1" /> : null}
+                                  {s.state || "—"}
+                                </TableCell>
                                 <TableCell>{s.region || "—"}</TableCell>
                                 <TableCell>{s.channel}</TableCell>
                                 <TableCell>{s.initiation_method}</TableCell>
@@ -1067,7 +1118,7 @@ export default function QueueDistributionPage() {
                                 <TableCell>{s["%_unanswered"]}</TableCell>
                                 <TableCell className="font-medium">{s.sla}</TableCell>
                               </TableRow>
-                            ))}
+                            )})}
                             <TableRow className="bg-muted/50 font-semibold">
                               <TableCell colSpan={4}>TOTAL</TableCell>
                               {numericCols.map((c) => <TableCell key={c}>{sumNumeric(stateSort.sorted, c)}</TableCell>)}

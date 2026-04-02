@@ -209,21 +209,25 @@ export class AthenaReportingAPI {
   async getDistributionDrilldown(
     startDate: string,
     endDate: string,
-    filters: { did?: string[]; queueId?: string[] } = {},
+    filters: { did?: string[]; queueId?: string[]; agentId?: string[]; state?: string } = {},
     region?: string[] | null,
     username?: string
   ) {
     const params: any = {
       start_datetime: startDate,
       end_datetime: endDate,
-      sla_threshold: '30',
-      true_abandon_threshold: '30'
     }
     if (filters.did && filters.did.length > 0 && filters.did[0] !== 'ALL') {
       params.did = filters.did
     }
     if (filters.queueId && filters.queueId.length > 0 && filters.queueId[0] !== 'ALL') {
       params.queue_id = filters.queueId
+    }
+    if (filters.agentId && filters.agentId.length > 0) {
+      params.agent_id = filters.agentId
+    }
+    if (filters.state) {
+      params.state = filters.state
     }
     if (region && region.length > 0) params.region = region
     return this.executeQuery('distribution_distby_drilldown', params, true, 60, username)

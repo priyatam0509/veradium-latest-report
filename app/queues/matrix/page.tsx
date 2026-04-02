@@ -138,6 +138,14 @@ export default function QueueMatrixPage() {
     <AuthGuard>
       <DashboardLayout>
         <div className="space-y-6">
+          {/* Page header */}
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Queue Matrices</h1>
+            <p className="text-muted-foreground mt-1">
+              Overview of queue call metrics, service levels, and call distribution.
+            </p>
+          </div>
+
           {/* Refresh button row — the filter bar is shown by the layout above */}
           <div className="flex items-center justify-end">
             <Button variant="outline" size="sm" onClick={fetchData} disabled={isLoading}>
