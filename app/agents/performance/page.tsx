@@ -207,7 +207,8 @@ export default function AgentPerformancePage() {
       background-color: #2563eb;
     }
     .table-container {
-      overflow-x: auto;
+      overflow: auto;
+      height: calc(100vh - 200px);
     }
     table {
       width: 100%;
@@ -273,7 +274,7 @@ export default function AgentPerformancePage() {
     
     <div class="table-container">
       <table id="dataTable">
-        <thead>
+        <thead style="position:sticky;top:0;z-index:1;">
           <tr>
             <th>DID</th>
             <th>Contact ID</th>
@@ -511,7 +512,6 @@ export default function AgentPerformancePage() {
                         <TableHead className="text-right">Transferred</TableHead>
                         <TableHead className="text-right">% Calls</TableHead>
                         <TableHead className="text-right">Talk Time</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -521,6 +521,7 @@ export default function AgentPerformancePage() {
                             className="font-medium cursor-pointer text-primary hover:underline"
                             onClick={() => handleViewAgentDetails(agent)}
                           >
+                            {loadingAgentId === agent.agent_id ? <Loader2 className="h-4 w-4 animate-spin inline mr-1" /> : null}
                             {agent.agent_name}
                           </TableCell>
                           <TableCell className="text-right">{agent.region || '—'}</TableCell>
@@ -531,28 +532,11 @@ export default function AgentPerformancePage() {
                           <TableCell className="text-right">{agent.transferred}</TableCell>
                           <TableCell className="text-right">{agent['%_calls']}</TableCell>
                           <TableCell className="text-right">{agent.talk_time}</TableCell>
-                          <TableCell className="text-right">
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              onClick={() => handleViewAgentDetails(agent)}
-                              disabled={loadingAgentId === agent.agent_id}
-                            >
-                              {loadingAgentId === agent.agent_id ? (
-                                <>
-                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                  Loading...
-                                </>
-                              ) : (
-                                'View Calls'
-                              )}
-                            </Button>
-                          </TableCell>
                         </TableRow>
                       ))}
                       {filteredAgents.length === 0 && (
                         <TableRow>
-                          <TableCell colSpan={10} className="text-center text-muted-foreground">
+                          <TableCell colSpan={9} className="text-center text-muted-foreground">
                             No agent data available
                           </TableCell>
                         </TableRow>

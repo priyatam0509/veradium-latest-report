@@ -246,7 +246,8 @@ export default function MissedCallsPage() {
       background-color: #2563eb;
     }
     .table-container {
-      overflow-x: auto;
+      overflow: auto;
+      height: calc(100vh - 200px);
     }
     table {
       width: 100%;
@@ -316,7 +317,7 @@ export default function MissedCallsPage() {
     
     <div class="table-container">
       <table id="dataTable">
-        <thead>
+        <thead style="position:sticky;top:0;z-index:1;">
           <tr>
             <th>Contact ID</th>
             <th>Date</th>

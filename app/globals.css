@@ -132,7 +132,15 @@
 */
 .scrollable-table {
   overflow: auto;
-  max-height: calc(100vh - 340px);
+  max-height: calc(100vh - 300px);
+  min-height: 200px;
   border-radius: var(--radius-md);
   border: 1px solid var(--border);
+  position: relative;
+}
+
+/* When Table is inside .scrollable-table, remove the intermediate overflow
+   from shadcn's table-container div so position:sticky on thead works. */
+.scrollable-table [data-slot="table-container"] {
+  overflow: visible;
 }

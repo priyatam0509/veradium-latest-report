@@ -156,7 +156,7 @@ function generateDrilldownHTML(data: DrilldownData[], title: string, startDate?:
     .count { font-size:14px; color:#6b7280; }
     .btn { padding:8px 16px; background:#3b82f6; color:white; border:none; border-radius:6px; font-size:14px; cursor:pointer; }
     .btn:hover { background:#2563eb; }
-    .table-container { overflow-x:auto; }
+    .table-container { overflow:auto; height:calc(100vh - 200px); }
     table { width:100%; border-collapse:collapse; }
     th { background:#f9fafb; padding:11px 16px; text-align:left; font-size:11px; font-weight:600; color:#374151; text-transform:uppercase; letter-spacing:.05em; border-bottom:1px solid #e5e7eb; white-space:nowrap; }
     td { padding:11px 16px; font-size:13px; border-bottom:1px solid #e5e7eb; white-space:nowrap; }
@@ -179,7 +179,7 @@ function generateDrilldownHTML(data: DrilldownData[], title: string, startDate?:
     </div>
     <div class="table-container">
       <table id="t">
-        <thead><tr>
+        <thead style="position:sticky;top:0;z-index:1;"><tr>
           <th>Contact ID</th><th>Date</th><th>Queue</th><th>Region</th>
           <th>Customer</th><th>DID</th><th>Channel</th><th>Method</th>
           <th>Status</th><th>Event</th><th>Agent Conn.</th><th>Ring Time</th><th>Wait Time</th>
@@ -384,16 +384,16 @@ export default function UnansweredCallsPage() {
                           {[["queue_name","Queue"],["channel","Channel"],["initiation_method","Method"],["region","Region"],["received","Received"],["unanswered","Unanswered"],["abandoned","Abandoned"],["%_calls","% Calls"]].map(([col,label]) => (
                             <SortHead key={col} col={col} label={label} sortKey={queueSort.sortKey} sortDir={queueSort.sortDir} onSort={queueSort.handleSort} />
                           ))}
-                          <TableHead>Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {isLoading && activeTab === "queue" ? <LoadingRow cols={9} />
-                        : queueSort.sorted.length === 0 ? <EmptyRow cols={9} label="No queue data found." />
+                        {isLoading && activeTab === "queue" ? <LoadingRow cols={8} />
+                        : queueSort.sorted.length === 0 ? <EmptyRow cols={8} label="No queue data found." />
                         : <>
                           {queueSort.sorted.map((q) => (
                             <TableRow key={q.queue_id}>
                               <TableCell className="font-medium cursor-pointer text-primary hover:underline whitespace-nowrap" onClick={() => fetchDrilldown({ queueId: q.queue_id }, `Unanswered Calls — ${q.queue_name || q.queue_id}`, q.queue_id)}>
+                                {loadingItemId === q.queue_id ? <Loader2 className="h-4 w-4 animate-spin inline mr-1" /> : null}
                                 {q.queue_name || q.queue_id}
                               </TableCell>
                               <TableCell>{q.channel}</TableCell>
@@ -403,11 +403,6 @@ export default function UnansweredCallsPage() {
                               <TableCell className="text-red-600 font-mono">{q.unanswered}</TableCell>
                               <TableCell className="text-orange-600 font-mono">{q.abandoned}</TableCell>
                               <TableCell>{q["%_calls"]}</TableCell>
-                              <TableCell>
-                                <Button variant="outline" size="sm" onClick={() => fetchDrilldown({ queueId: q.queue_id }, `Unanswered Calls — ${q.queue_name || q.queue_id}`, q.queue_id)} disabled={loadingItemId === q.queue_id}>
-                                  {loadingItemId === q.queue_id ? <Loader2 className="h-4 w-4 animate-spin" /> : "Details"}
-                                </Button>
-                              </TableCell>
                             </TableRow>
                           ))}
                           <TableRow className="bg-muted/50 font-semibold">
@@ -416,7 +411,6 @@ export default function UnansweredCallsPage() {
                             <TableCell>{sumNumeric(queueSort.sorted, "unanswered")}</TableCell>
                             <TableCell>{sumNumeric(queueSort.sorted, "abandoned")}</TableCell>
                             <TableCell>{avgNumeric(queueSort.sorted, "%_calls")}</TableCell>
-                            <TableCell />
                           </TableRow>
                         </>}
                       </TableBody>
@@ -433,16 +427,16 @@ export default function UnansweredCallsPage() {
                           {[["did","DID"],["channel","Channel"],["initiation_method","Method"],["region","Region"],["received","Received"],["unanswered","Unanswered"],["abandoned","Abandoned"],["%_calls","% Calls"]].map(([col,label]) => (
                             <SortHead key={col} col={col} label={label} sortKey={didSort.sortKey} sortDir={didSort.sortDir} onSort={didSort.handleSort} />
                           ))}
-                          <TableHead>Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {isLoading && activeTab === "did" ? <LoadingRow cols={9} />
-                        : didSort.sorted.length === 0 ? <EmptyRow cols={9} label="No DID data found." />
+                        {isLoading && activeTab === "did" ? <LoadingRow cols={8} />
+                        : didSort.sorted.length === 0 ? <EmptyRow cols={8} label="No DID data found." />
                         : <>
                           {didSort.sorted.map((d, i) => (
                             <TableRow key={d.did + i}>
                               <TableCell className="font-mono cursor-pointer text-primary hover:underline" onClick={() => fetchDrilldown({ did: d.did }, `Unanswered Calls — ${d.did}`, d.did)}>
+                                {loadingItemId === d.did ? <Loader2 className="h-4 w-4 animate-spin inline mr-1" /> : null}
                                 {d.did}
                               </TableCell>
                               <TableCell>{d.channel}</TableCell>
@@ -452,11 +446,6 @@ export default function UnansweredCallsPage() {
                               <TableCell className="text-red-600 font-mono">{d.unanswered}</TableCell>
                               <TableCell className="text-orange-600 font-mono">{d.abandoned}</TableCell>
                               <TableCell>{d["%_calls"]}</TableCell>
-                              <TableCell>
-                                <Button variant="outline" size="sm" onClick={() => fetchDrilldown({ did: d.did }, `Unanswered Calls — ${d.did}`, d.did)} disabled={loadingItemId === d.did}>
-                                  {loadingItemId === d.did ? <Loader2 className="h-4 w-4 animate-spin" /> : "Details"}
-                                </Button>
-                              </TableCell>
                             </TableRow>
                           ))}
                           <TableRow className="bg-muted/50 font-semibold">
@@ -465,7 +454,6 @@ export default function UnansweredCallsPage() {
                             <TableCell>{sumNumeric(didSort.sorted, "unanswered")}</TableCell>
                             <TableCell>{sumNumeric(didSort.sorted, "abandoned")}</TableCell>
                             <TableCell>{avgNumeric(didSort.sorted, "%_calls")}</TableCell>
-                            <TableCell />
                           </TableRow>
                         </>}
                       </TableBody>

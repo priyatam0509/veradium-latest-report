@@ -19,7 +19,9 @@ interface AnsweredByQueueRow {
   initiation_method: string
   region: string
   answered: string
+  count: string
   '%_calls': string
+  [key: string]: string
 }
 
 export default function AnsweredByQueuePage() {
@@ -60,7 +62,7 @@ export default function AnsweredByQueuePage() {
   }
 
   const totalQueues = data.length
-  const totalAnswered = data.reduce((sum, r) => sum + parseInt(r.answered || '0'), 0)
+  const totalAnswered = data.reduce((sum, r) => sum + parseInt(r.answered || r.count || '0'), 0)
 
   return (
     <AuthGuard>
@@ -184,7 +186,7 @@ export default function AnsweredByQueuePage() {
                           <TableCell>{row.region || '—'}</TableCell>
                           <TableCell>{row.channel || '—'}</TableCell>
                           <TableCell>{row.initiation_method || '—'}</TableCell>
-                          <TableCell className="text-right text-green-600 font-mono">{row.answered || '0'}</TableCell>
+                          <TableCell className="text-right text-green-600 font-mono">{row.answered || row.count || '0'}</TableCell>
                           <TableCell className="text-right font-mono">{row['%_calls'] || '—'}</TableCell>
                         </TableRow>
                       ))}

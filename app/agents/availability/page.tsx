@@ -374,13 +374,15 @@ export default function AgentAvailabilityPage() {
                         <TableHead className="text-right">Wrap-up Time</TableHead>
                         <TableHead className="text-right">Idle Time</TableHead>
                         <TableHead className="text-right">AHT</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {agentData.map((agent, index) => (
                         <TableRow key={index}>
-                          <TableCell className="font-medium">{agent.agent}</TableCell>
+                          <TableCell className="font-medium cursor-pointer text-primary hover:underline" onClick={() => handleViewDrilldown(agent)}>
+                            {loadingAgentId === agent.agent_id ? <Loader2 className="h-4 w-4 animate-spin inline mr-1" /> : null}
+                            {agent.agent}
+                          </TableCell>
                           <TableCell>{agent.agent_region || '—'}</TableCell>
                           <TableCell className="text-right text-green-600 font-mono">{agent.answered || '0'}</TableCell>
                           <TableCell className="text-right text-red-600 font-mono">{agent.failed || '0'}</TableCell>
@@ -394,18 +396,6 @@ export default function AgentAvailabilityPage() {
                           <TableCell className="text-right font-mono">{agent.wrap_up_time || '—'}</TableCell>
                           <TableCell className="text-right font-mono">{agent.idle_time || '—'}</TableCell>
                           <TableCell className="text-right font-mono">{agent.aht || '—'}</TableCell>
-                          <TableCell className="text-right">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleViewDrilldown(agent)}
-                              disabled={loadingAgentId === agent.agent_id}
-                            >
-                              {loadingAgentId === agent.agent_id ? (
-                                <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Loading...</>
-                              ) : 'View Details'}
-                            </Button>
-                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>

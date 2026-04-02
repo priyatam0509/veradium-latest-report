@@ -113,6 +113,25 @@ interface MonthData {
   [key: string]: string
 }
 
+interface WeekData {
+  week: string
+  year: string
+  channel: string
+  initiation_method: string
+  region: string
+  received: string
+  answered: string
+  unanswered: string
+  abandoned: string
+  transferred: string
+  avg_wait: string
+  avg_talk: string
+  "%_answered": string
+  "%_unanswered": string
+  sla: string
+  [key: string]: string
+}
+
 interface AgentAnsweredData {
   agent_id: string
   agent_name: string
@@ -453,6 +472,7 @@ export default function QueueDistributionPage() {
   const [didData, setDidData] = useState<DIDData[]>([])
   const [hourData, setHourData] = useState<HourData[]>([])
   const [dayData, setDayData] = useState<DayData[]>([])
+  const [weekData, setWeekData] = useState<WeekData[]>([])
   const [monthData, setMonthData] = useState<MonthData[]>([])
   const [agentData, setAgentData] = useState<AgentAnsweredData[]>([])
   const [stateData, setStateData] = useState<StateData[]>([])
@@ -483,6 +503,7 @@ export default function QueueDistributionPage() {
       else if (tab === "did") result = await athenaAPI.getDistributionByDID(start, end, null, user?.email, queueFilter, agentFilter, didFilter)
       else if (tab === "hour") result = await athenaAPI.getDistributionByHour(start, end, null, user?.email, queueFilter, agentFilter, didFilter)
       else if (tab === "day") result = await athenaAPI.getDistributionByDay(start, end, null, user?.email, queueFilter, agentFilter, didFilter)
+      else if (tab === "week") result = await athenaAPI.getDistributionByWeek(start, end, null, user?.email, queueFilter, agentFilter, didFilter)
       else if (tab === "month") result = await athenaAPI.getDistributionByMonth(start, end, null, user?.email, queueFilter, agentFilter, didFilter)
       else if (tab === "agent") result = await athenaAPI.getAnsweredByAgent(start, end, queueFilter, null, user?.email, agentFilter, didFilter)
       else if (tab === "state") result = await athenaAPI.getDistributionByState(start, end, null, user?.email, queueFilter, agentFilter, didFilter)
@@ -493,6 +514,7 @@ export default function QueueDistributionPage() {
         else if (tab === "did") setDidData(result.data)
         else if (tab === "hour") setHourData(result.data)
         else if (tab === "day") setDayData(result.data)
+        else if (tab === "week") setWeekData(result.data)
         else if (tab === "month") setMonthData(result.data)
         else if (tab === "agent") setAgentData(result.data)
         else if (tab === "state") setStateData(result.data)
@@ -519,6 +541,7 @@ export default function QueueDistributionPage() {
       setDidData([])
       setHourData([])
       setDayData([])
+      setWeekData([])
       setMonthData([])
       setAgentData([])
       setStateData([])
@@ -603,6 +626,11 @@ export default function QueueDistributionPage() {
     [dayData, searchTerm]
   )
 
+  const filteredWeeks = useMemo(
+    () => (searchTerm ? weekData.filter((w) => (w.week || "").toLowerCase().includes(searchTerm.toLowerCase())) : weekData),
+    [weekData, searchTerm]
+  )
+
   const filteredMonths = useMemo(
     () => (searchTerm ? monthData.filter((m) => (m.month || m.interval_month || "").toLowerCase().includes(searchTerm.toLowerCase())) : monthData),
     [monthData, searchTerm]
@@ -629,6 +657,7 @@ export default function QueueDistributionPage() {
   const didSort = useSortable(filteredDIDs)
   const hourSort = useSortable(filteredHours)
   const daySort = useSortable(filteredDays)
+  const weekSort = useSortable(filteredWeeks)
   const monthSort = useSortable(filteredMonths)
   const agentSort = useSortable(filteredAgents)
   const stateSort = useSortable(filteredStates)
@@ -680,6 +709,7 @@ export default function QueueDistributionPage() {
                     <TabsTrigger value="agent">By Agent</TabsTrigger>
                     <TabsTrigger value="hour">By Hour</TabsTrigger>
                     <TabsTrigger value="day">By Day</TabsTrigger>
+                    <TabsTrigger value="week">By Week</TabsTrigger>
                     <TabsTrigger value="month">By Month</TabsTrigger>
                     <TabsTrigger value="state">By State</TabsTrigger>
                   </TabsList>
@@ -692,7 +722,9 @@ export default function QueueDistributionPage() {
                         : activeTab === "did" ? didSort.sorted
                         : activeTab === "hour" ? hourSort.sorted
                         : activeTab === "day" ? daySort.sorted
+                        : activeTab === "week" ? weekSort.sorted
                         : activeTab === "month" ? monthSort.sorted
+                        : activeTab === "state" ? stateSort.sorted
                         : agentSort.sorted
                       exportToCSV(data, `distribution-${activeTab}-${format(new Date(), "yyyy-MM-dd")}.csv`)
                     }}
@@ -717,19 +749,19 @@ export default function QueueDistributionPage() {
                           ].map(([col, label]) => (
                             <SortHead key={col} col={col} label={label} sortKey={queueSort.sortKey} sortDir={queueSort.sortDir} onSort={queueSort.handleSort} />
                           ))}
-                          <TableHead>Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {isLoading && activeTab === "queue" ? (
-                          <LoadingRow cols={14} />
+                          <LoadingRow cols={13} />
                         ) : queueSort.sorted.length === 0 ? (
-                          <EmptyRow cols={14} label="No queues found." />
+                          <EmptyRow cols={13} label="No queues found." />
                         ) : (
                           <>
                             {queueSort.sorted.map((q) => (
                               <TableRow key={q.queue_id}>
                                 <TableCell className="font-medium cursor-pointer text-primary hover:underline whitespace-nowrap" onClick={() => fetchDrilldown({ queueId: q.queue_id }, `Contact Details — ${q.queue_name || q.queue_id}`, q.queue_id)}>
+                                  {loadingItemId === q.queue_id ? <Loader2 className="h-4 w-4 animate-spin inline mr-1" /> : null}
                                   {q.queue_name || q.queue_id}
                                 </TableCell>
                                 <TableCell>{q.channel}</TableCell>
@@ -744,11 +776,6 @@ export default function QueueDistributionPage() {
                                 <TableCell>{q["%_answered"]}</TableCell>
                                 <TableCell>{q["%_unanswered"]}</TableCell>
                                 <TableCell className="font-medium">{q.sla}</TableCell>
-                                <TableCell>
-                                  <Button variant="outline" size="sm" onClick={() => fetchDrilldown({ queueId: q.queue_id }, `Contact Details — ${q.queue_name || q.queue_id}`, q.queue_id)} disabled={loadingItemId === q.queue_id}>
-                                    {loadingItemId === q.queue_id ? <Loader2 className="h-4 w-4 animate-spin" /> : "Details"}
-                                  </Button>
-                                </TableCell>
                               </TableRow>
                             ))}
                             {/* Task 8: totals row */}
@@ -762,7 +789,6 @@ export default function QueueDistributionPage() {
                               <TableCell>{avgNumeric(queueSort.sorted, "%_answered")}</TableCell>
                               <TableCell>{avgNumeric(queueSort.sorted, "%_unanswered")}</TableCell>
                               <TableCell>{avgNumeric(queueSort.sorted, "sla")}</TableCell>
-                              <TableCell />
                             </TableRow>
                           </>
                         )}
@@ -786,19 +812,19 @@ export default function QueueDistributionPage() {
                           ].map(([col, label]) => (
                             <SortHead key={col} col={col} label={label} sortKey={didSort.sortKey} sortDir={didSort.sortDir} onSort={didSort.handleSort} />
                           ))}
-                          <TableHead>Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {isLoading && activeTab === "did" ? (
-                          <LoadingRow cols={14} />
+                          <LoadingRow cols={13} />
                         ) : didSort.sorted.length === 0 ? (
-                          <EmptyRow cols={14} label="No DIDs found." />
+                          <EmptyRow cols={13} label="No DIDs found." />
                         ) : (
                           <>
                             {didSort.sorted.map((d, i) => (
                               <TableRow key={d.did + i}>
                                 <TableCell className="font-mono cursor-pointer text-primary hover:underline" onClick={() => fetchDrilldown({ did: d.did }, `Contact Details — ${d.did}`, d.did)}>
+                                  {loadingItemId === d.did ? <Loader2 className="h-4 w-4 animate-spin inline mr-1" /> : null}
                                   {d.did}
                                 </TableCell>
                                 <TableCell>{d.channel}</TableCell>
@@ -813,11 +839,6 @@ export default function QueueDistributionPage() {
                                 <TableCell>{d["%_answered"]}</TableCell>
                                 <TableCell>{d["%_unanswered"]}</TableCell>
                                 <TableCell className="font-medium">{d.sla}</TableCell>
-                                <TableCell>
-                                  <Button variant="outline" size="sm" onClick={() => fetchDrilldown({ did: d.did }, `Contact Details — ${d.did}`, d.did)} disabled={loadingItemId === d.did}>
-                                    {loadingItemId === d.did ? <Loader2 className="h-4 w-4 animate-spin" /> : "Details"}
-                                  </Button>
-                                </TableCell>
                               </TableRow>
                             ))}
                             <TableRow className="bg-muted/50 font-semibold">
@@ -830,7 +851,6 @@ export default function QueueDistributionPage() {
                               <TableCell>{avgNumeric(didSort.sorted, "%_answered")}</TableCell>
                               <TableCell>{avgNumeric(didSort.sorted, "%_unanswered")}</TableCell>
                               <TableCell>{avgNumeric(didSort.sorted, "sla")}</TableCell>
-                              <TableCell />
                             </TableRow>
                           </>
                         )}
@@ -1018,6 +1038,84 @@ export default function QueueDistributionPage() {
                               <TableCell>{avgNumeric(daySort.sorted, "%_answered")}</TableCell>
                               <TableCell>{avgNumeric(daySort.sorted, "%_unanswered")}</TableCell>
                               <TableCell>{avgNumeric(daySort.sorted, "sla")}</TableCell>
+                            </TableRow>
+                          </>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </TabsContent>
+
+                {/* ── BY WEEK ──────────────────────────────────────────── */}
+                <TabsContent value="week">
+                  <div className="scrollable-table">
+                    <Table>
+                      <TableHeader className="sticky top-0 bg-background z-10">
+                        <TableRow>
+                          {[
+                            ["week","Week"],["year","Year"],["channel","Channel"],["initiation_method","Method"],
+                            ["region","Region"],["received","Received"],["answered","Answered"],
+                            ["unanswered","Unanswered"],["abandoned","Abandoned"],["transferred","Transferred"],
+                            ["avg_wait","Avg Wait"],["avg_talk","Avg Talk"],
+                            ["%_answered","% Ans"],["%_unanswered","% Unans"],["sla","SLA"],
+                          ].map(([col, label]) => (
+                            <SortHead key={col} col={col} label={label} sortKey={weekSort.sortKey} sortDir={weekSort.sortDir} onSort={weekSort.handleSort} />
+                          ))}
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {isLoading && activeTab === "week" ? (
+                          <LoadingRow cols={15} />
+                        ) : weekSort.sorted.length === 0 ? (
+                          <EmptyRow cols={15} label="No weekly data found." />
+                        ) : (
+                          <>
+                            {weekSort.sorted.map((w, i) => {
+                              const weekVal = w.week || w.interval_week || ""
+                              const yearVal = w.year || ""
+                              const weekItemId = `week-${weekVal}-${yearVal}-${i}`
+                              return (
+                              <TableRow key={weekVal + yearVal + i}>
+                                <TableCell className="whitespace-nowrap font-medium cursor-pointer text-primary hover:underline" onClick={async () => {
+                                  setLoadingItemId(weekItemId)
+                                  try {
+                                    const rangeResult = await athenaAPI.getWeekDateRange(weekVal, yearVal)
+                                    if (rangeResult?.status === "SUCCEEDED" && rangeResult.data?.length > 0) {
+                                      const range = rangeResult.data[0]
+                                      const weekStart = range.start_date || range.start_datetime || `${yearVal}-01-01 00:00:00`
+                                      const weekEnd = range.end_date || range.end_datetime || `${yearVal}-12-31 23:59:59`
+                                      await fetchDrilldown({ startOverride: weekStart, endOverride: weekEnd }, `Contact Details — Week ${weekVal}, ${yearVal}`, weekItemId)
+                                    }
+                                  } catch (err) { console.error("Week drilldown error:", err) }
+                                  finally { setLoadingItemId(null) }
+                                }}>
+                                  {loadingItemId === weekItemId ? <Loader2 className="h-4 w-4 animate-spin inline mr-1" /> : null}
+                                  {weekVal || "—"}
+                                </TableCell>
+                                <TableCell>{yearVal || "—"}</TableCell>
+                                <TableCell>{w.channel}</TableCell>
+                                <TableCell>{w.initiation_method}</TableCell>
+                                <TableCell>{w.region || "—"}</TableCell>
+                                <TableCell>{w.received}</TableCell>
+                                <TableCell>{w.answered}</TableCell>
+                                <TableCell>{w.unanswered}</TableCell>
+                                <TableCell>{w.abandoned}</TableCell>
+                                <TableCell>{w.transferred}</TableCell>
+                                <TableCell>{w.avg_wait || "—"}</TableCell>
+                                <TableCell>{w.avg_talk || "—"}</TableCell>
+                                <TableCell>{w["%_answered"]}</TableCell>
+                                <TableCell>{w["%_unanswered"]}</TableCell>
+                                <TableCell className="font-medium">{w.sla}</TableCell>
+                              </TableRow>
+                            )})}
+                            <TableRow className="bg-muted/50 font-semibold">
+                              <TableCell colSpan={5}>TOTAL</TableCell>
+                              {numericCols.map((c) => <TableCell key={c}>{sumNumeric(weekSort.sorted, c)}</TableCell>)}
+                              <TableCell>{avgNumeric(weekSort.sorted, "avg_wait")}</TableCell>
+                              <TableCell>{avgNumeric(weekSort.sorted, "avg_talk")}</TableCell>
+                              <TableCell>{avgNumeric(weekSort.sorted, "%_answered")}</TableCell>
+                              <TableCell>{avgNumeric(weekSort.sorted, "%_unanswered")}</TableCell>
+                              <TableCell>{avgNumeric(weekSort.sorted, "sla")}</TableCell>
                             </TableRow>
                           </>
                         )}

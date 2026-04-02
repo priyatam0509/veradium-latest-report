@@ -28,7 +28,9 @@ interface AnsweredByQueueRow {
   initiation_method: string
   region: string
   answered: string
+  count: string
   "%_calls": string
+  [key: string]: string
 }
 
 interface AnsweredByDIDRow {
@@ -37,7 +39,9 @@ interface AnsweredByDIDRow {
   initiation_method: string
   region: string
   answered: string
+  count: string
   "%_calls": string
+  [key: string]: string
 }
 
 interface AnsweredByAgentRow {
@@ -174,7 +178,7 @@ function generateDrilldownHTML(data: DrilldownData[], title: string, startDate?:
     .count { font-size:14px; color:#6b7280; }
     .btn { padding:8px 16px; background:#3b82f6; color:white; border:none; border-radius:6px; font-size:14px; cursor:pointer; }
     .btn:hover { background:#2563eb; }
-    .table-container { overflow-x:auto; }
+    .table-container { overflow:auto; height:calc(100vh - 200px); }
     table { width:100%; border-collapse:collapse; }
     th { background:#f9fafb; padding:11px 16px; text-align:left; font-size:11px; font-weight:600; color:#374151; text-transform:uppercase; letter-spacing:.05em; border-bottom:1px solid #e5e7eb; white-space:nowrap; }
     td { padding:11px 16px; font-size:13px; border-bottom:1px solid #e5e7eb; white-space:nowrap; }
@@ -196,7 +200,7 @@ function generateDrilldownHTML(data: DrilldownData[], title: string, startDate?:
     </div>
     <div class="table-container">
       <table id="t">
-        <thead><tr>
+        <thead style="position:sticky;top:0;z-index:1;"><tr>
           <th>DID</th><th>Contact ID</th><th>Agent</th><th>Date</th><th>Queue</th>
           <th>Region</th><th>Customer</th><th>Channel</th><th>Method</th><th>Status</th>
           <th>Agent Conn.</th><th>Event</th><th>Ring Time</th><th>Wait Time</th><th>Talk Time</th>
@@ -296,6 +300,7 @@ export default function AnsweredCallsPage() {
       else return
 
       if (result?.status === "SUCCEEDED") {
+        console.log(`[Answered ${tab}] columns:`, result.columns, "first row:", result.data?.[0])
         if (tab === "queue") setQueueData(result.data)
         else if (tab === "did") setDidData(result.data)
         else if (tab === "agent") setAgentData(result.data)
@@ -420,35 +425,29 @@ export default function AnsweredCallsPage() {
                           {[["queue_name","Queue"],["channel","Channel"],["initiation_method","Method"],["region","Region"],["answered","Answered"],["%_calls","% Calls"]].map(([col,label]) => (
                             <SortHead key={col} col={col} label={label} sortKey={queueSort.sortKey} sortDir={queueSort.sortDir} onSort={queueSort.handleSort} />
                           ))}
-                          <TableHead>Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {isLoading && activeTab === "queue" ? <LoadingRow cols={7} />
-                        : queueSort.sorted.length === 0 ? <EmptyRow cols={7} label="No queue data found." />
+                        {isLoading && activeTab === "queue" ? <LoadingRow cols={6} />
+                        : queueSort.sorted.length === 0 ? <EmptyRow cols={6} label="No queue data found." />
                         : <>
                           {queueSort.sorted.map((q) => (
                             <TableRow key={q.queue_id}>
                               <TableCell className="font-medium cursor-pointer text-primary hover:underline whitespace-nowrap" onClick={() => fetchDrilldown({ queueId: q.queue_id }, `Answered Calls — ${q.queue_name || q.queue_id}`, q.queue_id)}>
+                                {loadingItemId === q.queue_id ? <Loader2 className="h-4 w-4 animate-spin inline mr-1" /> : null}
                                 {q.queue_name || q.queue_id}
                               </TableCell>
                               <TableCell>{q.channel}</TableCell>
                               <TableCell>{q.initiation_method}</TableCell>
                               <TableCell>{q.region || "—"}</TableCell>
-                              <TableCell>{q.answered}</TableCell>
+                              <TableCell>{q.answered || q.count || "—"}</TableCell>
                               <TableCell>{q["%_calls"]}</TableCell>
-                              <TableCell>
-                                <Button variant="outline" size="sm" onClick={() => fetchDrilldown({ queueId: q.queue_id }, `Answered Calls — ${q.queue_name || q.queue_id}`, q.queue_id)} disabled={loadingItemId === q.queue_id}>
-                                  {loadingItemId === q.queue_id ? <Loader2 className="h-4 w-4 animate-spin" /> : "Details"}
-                                </Button>
-                              </TableCell>
                             </TableRow>
                           ))}
                           <TableRow className="bg-muted/50 font-semibold">
                             <TableCell colSpan={4}>TOTAL</TableCell>
-                            <TableCell>{sumNumeric(queueSort.sorted, "answered")}</TableCell>
+                            <TableCell>{sumNumeric(queueSort.sorted, "answered") !== "0" ? sumNumeric(queueSort.sorted, "answered") : sumNumeric(queueSort.sorted, "count")}</TableCell>
                             <TableCell>{avgNumeric(queueSort.sorted, "%_calls")}</TableCell>
-                            <TableCell />
                           </TableRow>
                         </>}
                       </TableBody>
@@ -465,35 +464,29 @@ export default function AnsweredCallsPage() {
                           {[["did","DID"],["channel","Channel"],["initiation_method","Method"],["region","Region"],["answered","Answered"],["%_calls","% Calls"]].map(([col,label]) => (
                             <SortHead key={col} col={col} label={label} sortKey={didSort.sortKey} sortDir={didSort.sortDir} onSort={didSort.handleSort} />
                           ))}
-                          <TableHead>Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {isLoading && activeTab === "did" ? <LoadingRow cols={7} />
-                        : didSort.sorted.length === 0 ? <EmptyRow cols={7} label="No DID data found." />
+                        {isLoading && activeTab === "did" ? <LoadingRow cols={6} />
+                        : didSort.sorted.length === 0 ? <EmptyRow cols={6} label="No DID data found." />
                         : <>
                           {didSort.sorted.map((d, i) => (
                             <TableRow key={d.did + i}>
                               <TableCell className="font-mono cursor-pointer text-primary hover:underline" onClick={() => fetchDrilldown({ did: d.did }, `Answered Calls — ${d.did}`, d.did)}>
+                                {loadingItemId === d.did ? <Loader2 className="h-4 w-4 animate-spin inline mr-1" /> : null}
                                 {d.did}
                               </TableCell>
                               <TableCell>{d.channel}</TableCell>
                               <TableCell>{d.initiation_method}</TableCell>
                               <TableCell>{d.region || "—"}</TableCell>
-                              <TableCell>{d.answered}</TableCell>
+                              <TableCell>{d.answered || d.count || "—"}</TableCell>
                               <TableCell>{d["%_calls"]}</TableCell>
-                              <TableCell>
-                                <Button variant="outline" size="sm" onClick={() => fetchDrilldown({ did: d.did }, `Answered Calls — ${d.did}`, d.did)} disabled={loadingItemId === d.did}>
-                                  {loadingItemId === d.did ? <Loader2 className="h-4 w-4 animate-spin" /> : "Details"}
-                                </Button>
-                              </TableCell>
                             </TableRow>
                           ))}
                           <TableRow className="bg-muted/50 font-semibold">
                             <TableCell colSpan={4}>TOTAL</TableCell>
-                            <TableCell>{sumNumeric(didSort.sorted, "answered")}</TableCell>
+                            <TableCell>{sumNumeric(didSort.sorted, "answered") !== "0" ? sumNumeric(didSort.sorted, "answered") : sumNumeric(didSort.sorted, "count")}</TableCell>
                             <TableCell>{avgNumeric(didSort.sorted, "%_calls")}</TableCell>
-                            <TableCell />
                           </TableRow>
                         </>}
                       </TableBody>
@@ -510,16 +503,16 @@ export default function AnsweredCallsPage() {
                           {[["agent_name","Agent"],["region","Region"],["channel","Channel"],["initiation_method","Method"],["received","Received"],["completed","Completed"],["transferred","Transferred"],["%_calls","% Calls"],["talk_time","Talk Time"]].map(([col,label]) => (
                             <SortHead key={col} col={col} label={label} sortKey={agentSort.sortKey} sortDir={agentSort.sortDir} onSort={agentSort.handleSort} />
                           ))}
-                          <TableHead>Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {isLoading && activeTab === "agent" ? <LoadingRow cols={10} />
-                        : agentSort.sorted.length === 0 ? <EmptyRow cols={10} label="No agent data found." />
+                        {isLoading && activeTab === "agent" ? <LoadingRow cols={9} />
+                        : agentSort.sorted.length === 0 ? <EmptyRow cols={9} label="No agent data found." />
                         : <>
                           {agentSort.sorted.map((a, i) => (
                             <TableRow key={a.agent_id + i}>
                               <TableCell className="font-medium cursor-pointer text-primary hover:underline whitespace-nowrap" onClick={() => fetchDrilldown({ agentId: a.agent_id }, `Answered Calls — ${a.agent_name}`, a.agent_id)}>
+                                {loadingItemId === a.agent_id ? <Loader2 className="h-4 w-4 animate-spin inline mr-1" /> : null}
                                 {a.agent_name}
                               </TableCell>
                               <TableCell>{a.region || "—"}</TableCell>
@@ -530,11 +523,6 @@ export default function AnsweredCallsPage() {
                               <TableCell>{a.transferred}</TableCell>
                               <TableCell>{a["%_calls"]}</TableCell>
                               <TableCell>{a.talk_time}</TableCell>
-                              <TableCell>
-                                <Button variant="outline" size="sm" onClick={() => fetchDrilldown({ agentId: a.agent_id }, `Answered Calls — ${a.agent_name}`, a.agent_id)} disabled={loadingItemId === a.agent_id}>
-                                  {loadingItemId === a.agent_id ? <Loader2 className="h-4 w-4 animate-spin" /> : "Details"}
-                                </Button>
-                              </TableCell>
                             </TableRow>
                           ))}
                           <TableRow className="bg-muted/50 font-semibold">
@@ -544,7 +532,6 @@ export default function AnsweredCallsPage() {
                             <TableCell>{sumNumeric(agentSort.sorted, "transferred")}</TableCell>
                             <TableCell>{avgNumeric(agentSort.sorted, "%_calls")}</TableCell>
                             <TableCell>—</TableCell>
-                            <TableCell />
                           </TableRow>
                         </>}
                       </TableBody>
