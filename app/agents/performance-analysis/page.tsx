@@ -148,7 +148,7 @@ export default function AgentPerformanceAnalysis() {
     .count { font-size: 14px; color: #6b7280; }
     .btn { padding: 8px 16px; background: #3b82f6; color: white; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; }
     .btn:hover { background: #2563eb; }
-    .table-container { overflow-x: auto; }
+    .table-container { overflow: auto; height: calc(100vh - 200px); }
     table { width: 100%; border-collapse: collapse; }
     th { background: #f9fafb; padding: 10px 12px; text-align: left; font-size: 11px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #e5e7eb; white-space: nowrap; }
     td { padding: 10px 12px; font-size: 12px; border-bottom: 1px solid #e5e7eb; white-space: nowrap; }
@@ -178,7 +178,7 @@ export default function AgentPerformanceAnalysis() {
     </div>
     <div class="table-container">
       <table id="t">
-        <thead><tr>
+        <thead style="position:sticky;top:0;z-index:1;"><tr>
           <th>#</th>
           <th>Contact ID</th>
           <th>Date</th>

@@ -306,7 +306,7 @@ function generateDrilldownHTML(data: DrilldownData[], title: string, startDate?:
     .count { font-size:14px; color:#6b7280; }
     .btn { padding:8px 16px; background:#3b82f6; color:white; border:none; border-radius:6px; font-size:14px; cursor:pointer; }
     .btn:hover { background:#2563eb; }
-    .table-container { overflow-x:auto; }
+    .table-container { overflow:auto; height:calc(100vh - 200px); }
     table { width:100%; border-collapse:collapse; }
     th { background:#f9fafb; padding:11px 16px; text-align:left; font-size:11px; font-weight:600; color:#374151; text-transform:uppercase; letter-spacing:.05em; border-bottom:1px solid #e5e7eb; white-space:nowrap; }
     td { padding:11px 16px; font-size:13px; border-bottom:1px solid #e5e7eb; white-space:nowrap; }
@@ -333,7 +333,7 @@ function generateDrilldownHTML(data: DrilldownData[], title: string, startDate?:
     </div>
     <div class="table-container">
       <table id="t">
-        <thead><tr>
+        <thead style="position:sticky;top:0;z-index:1;"><tr>
           <th>DID</th><th>Contact ID</th><th>Agent</th><th>Date</th><th>Queue</th>
           <th>Region</th><th>State</th><th>Customer</th><th>Channel</th><th>Method</th><th>Status</th>
           <th>Agent Conn.</th><th>Event</th><th>Ring Time</th><th>Wait Time</th><th>Talk Time</th><th>Recording</th>
