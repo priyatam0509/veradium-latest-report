@@ -160,6 +160,9 @@ export default function AgentPerformanceAnalysis() {
     .badge-default { background: #f3f4f6; color: #374151; }
     .mono { font-family: monospace; font-size: 11px; }
     .empty { padding: 48px; text-align: center; color: #9ca3af; }
+    .play-btn { color:#3b82f6; cursor:pointer; border:none; background:none; font-size:12px; font-family:inherit; padding:0; }
+    .play-btn:hover { text-decoration:underline; }
+    .play-btn:disabled { color:#9ca3af; cursor:wait; }
     @media print { .btn { display: none; } body { background: white; } }
   </style>
 </head>
@@ -202,7 +205,13 @@ export default function AgentPerformanceAnalysis() {
             if (r.recording) {
               try {
                 const rec = JSON.parse(r.recording)
-                if (rec.location) recordingCell = '<a href="https://s3.amazonaws.com/' + rec.location + '" target="_blank" style="color:#3b82f6">Play</a>'
+                if (rec.location) {
+                  const slashIdx = rec.location.indexOf('/')
+                  if (slashIdx > 0) {
+                    const key = encodeURIComponent(rec.location.substring(slashIdx + 1))
+                    recordingCell = '<button class="play-btn" data-key="' + key + '" onclick="playRec(this)">&#9654; Play</button>'
+                  }
+                }
               } catch(e) { recordingCell = r.recording }
             }
             return `<tr>
@@ -235,6 +244,10 @@ export default function AgentPerformanceAnalysis() {
       const csv = rows.map(r => Array.from(r.querySelectorAll('th,td')).map(c => '"' + c.textContent.trim().replace(/"/g,'""') + '"').join(',')).join('\\n')
       const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(new Blob([csv], {type:'text/csv'})), download: 'agent-performance-details.csv' })
       a.click()
+    }
+    function playRec(btn) {
+      const key = decodeURIComponent(btn.dataset.key)
+      window.open('/api/recording?key=' + encodeURIComponent(key), '_blank')
     }
   </script>
 </body></html>`

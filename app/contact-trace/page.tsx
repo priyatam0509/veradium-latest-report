@@ -2,7 +2,7 @@
 
 export const dynamic = "force-dynamic"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { AuthGuard } from "@/components/auth-guard"
 import { Card, CardContent } from "@/components/ui/card"
@@ -67,6 +67,38 @@ interface CallFlowStep {
 /* -------------------------------------------------------------------------- */
 /*                                  Helpers                                    */
 /* -------------------------------------------------------------------------- */
+
+function RecordingCell({ recording }: { recording?: string }) {
+  if (!recording) return <span>—</span>
+
+  let key = ""
+  try {
+    const rec = JSON.parse(recording)
+    if (rec.location) {
+      const slashIdx = rec.location.indexOf("/")
+      if (slashIdx > 0) {
+        key = rec.location.substring(slashIdx + 1)
+      }
+    }
+  } catch {
+    return <span className="text-xs">{recording}</span>
+  }
+
+  if (!key) return <span>—</span>
+
+  const handlePlay = () => {
+    window.open(`/api/recording?key=${encodeURIComponent(key)}`, "_blank")
+  }
+
+  return (
+    <button
+      onClick={handlePlay}
+      className="text-xs text-blue-600 hover:underline"
+    >
+      ▶ Play
+    </button>
+  )
+}
 
 function exportToCSV(data: any[], filename: string) {
   if (!data || data.length === 0) return
@@ -387,7 +419,7 @@ export default function ContactTracePage() {
                               <TableCell className="text-xs whitespace-nowrap font-mono">{row.did ?? "—"}</TableCell>
                               <TableCell className="text-xs whitespace-nowrap">{row.region ?? "—"}</TableCell>
                               <TableCell className="text-xs whitespace-nowrap">{row.state ?? "—"}</TableCell>
-                              <TableCell className="text-xs whitespace-nowrap">{row.recording ?? "—"}</TableCell>
+                              <TableCell className="text-xs whitespace-nowrap"><RecordingCell recording={row.recording} /></TableCell>
                             </TableRow>
                           ))}
                         </TableBody>
@@ -447,7 +479,7 @@ export default function ContactTracePage() {
                               <TableCell className="text-xs text-right font-mono">{row.wait_time ?? "—"}</TableCell>
                               <TableCell className="text-xs whitespace-nowrap font-mono">{row.did ?? "—"}</TableCell>
                               <TableCell className="text-xs whitespace-nowrap">{row.region ?? "—"}</TableCell>
-                              <TableCell className="text-xs whitespace-nowrap">{row.recording ?? "—"}</TableCell>
+                              <TableCell className="text-xs whitespace-nowrap"><RecordingCell recording={row.recording} /></TableCell>
                             </TableRow>
                           ))}
                         </TableBody>

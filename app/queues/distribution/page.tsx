@@ -313,8 +313,11 @@ function generateDrilldownHTML(data: DrilldownData[], title: string, startDate?:
     tr:hover { background:#f9fafb; }
     .mono { font-family:ui-monospace,SFMono-Regular,monospace; font-size:12px; }
     .empty { padding:48px; text-align:center; color:#9ca3af; }
-    a { color:#3b82f6; text-decoration:none; }
+    a { color:#3b82f6; text-decoration:none; cursor:pointer; }
     a:hover { text-decoration:underline; }
+    .play-btn { color:#3b82f6; cursor:pointer; border:none; background:none; font-size:13px; font-family:inherit; padding:0; }
+    .play-btn:hover { text-decoration:underline; }
+    .play-btn:disabled { color:#9ca3af; cursor:wait; }
     @media print { .btn { display:none; } body { background:white; } }
   </style>
 </head>
@@ -345,7 +348,13 @@ function generateDrilldownHTML(data: DrilldownData[], title: string, startDate?:
                       if (r.recording) {
                         try {
                           const rec = JSON.parse(r.recording)
-                          if (rec.location) recordingCell = '<a href="https://s3.amazonaws.com/' + rec.location + '" target="_blank">Play</a>'
+                          if (rec.location) {
+                            const slashIdx = rec.location.indexOf('/')
+                            if (slashIdx > 0) {
+                              const key = encodeURIComponent(rec.location.substring(slashIdx + 1))
+                              recordingCell = '<button class="play-btn" data-key="' + key + '" onclick="playRec(this)">&#9654; Play</button>'
+                            }
+                          }
                         } catch(e) { recordingCell = r.recording }
                       }
                       return `<tr>
@@ -382,6 +391,10 @@ function generateDrilldownHTML(data: DrilldownData[], title: string, startDate?:
       const csv = rows.map(r => Array.from(r.querySelectorAll('th,td')).map(c => '"' + c.textContent.trim().replace(/"/g,'""') + '"').join(',')).join('\\n')
       const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(new Blob([csv],{type:'text/csv'})), download: 'distribution-drilldown.csv' })
       a.click()
+    }
+    function playRec(btn) {
+      const key = decodeURIComponent(btn.dataset.key)
+      window.open('/api/recording?key=' + encodeURIComponent(key), '_blank')
     }
   </script>
 </body></html>`
