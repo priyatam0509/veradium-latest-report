@@ -1,16 +1,17 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useMemo } from "react"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { AuthGuard } from "@/components/auth-guard"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useAuth } from "@/hooks/use-auth"
-import { Loader2, RefreshCw, Users, Phone, Clock } from "lucide-react"
+import { Loader2, RefreshCw, Users, Phone, Clock, Search } from "lucide-react"
 import { format } from "date-fns"
 import { athenaAPI } from "@/lib/athena-api"
 import { DateHelper } from "@/lib/date-helper"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { useGlobalFilters } from "@/lib/global-filters-context"
 
 interface AgentAvailData {
@@ -37,6 +38,7 @@ export default function AgentAvailabilityPage() {
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date())
   const [loadingAgentId, setLoadingAgentId] = useState<string | null>(null)
+  const [localSearch, setLocalSearch] = useState("")
   const { user, isLoading: authLoading } = useAuth()
 
   const {
@@ -144,6 +146,8 @@ export default function AgentAvailabilityPage() {
     .subtitle { font-size: 14px; color: #6b7280; }
     .actions { display: flex; justify-content: space-between; align-items: center; padding: 14px 24px; background: #f9fafb; border-bottom: 1px solid #e5e7eb; }
     .count { font-size: 14px; color: #6b7280; }
+    .search-box { padding:8px 12px; border:1px solid #d1d5db; border-radius:6px; font-size:14px; width:280px; outline:none; }
+    .search-box:focus { border-color:#3b82f6; box-shadow:0 0 0 2px rgba(59,130,246,.15); }
     .btn { padding: 8px 16px; background: #3b82f6; color: white; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; }
     .btn:hover { background: #2563eb; }
     .table-container { overflow: auto; height: calc(100vh - 200px); }
@@ -171,8 +175,11 @@ export default function AgentAvailabilityPage() {
       <p class="subtitle">Login, logout, and state change events${dateText ? ' · ' + dateText : ''}</p>
     </div>
     <div class="actions">
-      <span class="count">Showing ${data.length} event${data.length !== 1 ? 's' : ''}</span>
-      <button class="btn" onclick="exportCSV()">Export CSV</button>
+      <span class="count" id="rowCount">Showing ${data.length} event${data.length !== 1 ? 's' : ''}</span>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input type="text" class="search-box" id="searchInput" placeholder="Search events..." oninput="filterTable()" />
+        <button class="btn" onclick="exportCSV()">Export CSV</button>
+      </div>
     </div>
     <div class="table-container">
       <table id="t">
@@ -246,6 +253,18 @@ export default function AgentAvailabilityPage() {
       tr.after(cell)
       btn.innerHTML = '&#9724; Stop'
     }
+    function filterTable() {
+      var term = document.getElementById('searchInput').value.toLowerCase()
+      var rows = document.querySelectorAll('#t tbody tr:not(.audio-row)')
+      var visible = 0
+      rows.forEach(function(row) {
+        var text = row.textContent.toLowerCase()
+        var show = !term || text.indexOf(term) > -1
+        row.style.display = show ? '' : 'none'
+        if (show) visible++
+      })
+      document.getElementById('rowCount').textContent = 'Showing ' + visible + ' event' + (visible !== 1 ? 's' : '')
+    }
   </script>
 </body></html>`
   }
@@ -254,6 +273,30 @@ export default function AgentAvailabilityPage() {
   const totalAnswered = agentData.reduce((sum, a) => sum + parseInt(a.answered || '0'), 0)
   const totalFailed = agentData.reduce((sum, a) => sum + parseInt(a.failed || '0'), 0)
   const totalPauses = agentData.reduce((sum, a) => sum + parseInt(a.pauses || '0'), 0)
+
+  const filteredAgentData = useMemo(() => {
+    const search = localSearch.trim().toLowerCase()
+    if (!search) return agentData
+    return agentData.filter((agent) => {
+      const values = [
+        agent.agent,
+        agent.agent_region,
+        agent.answered,
+        agent.failed,
+        agent.missed_rejected,
+        agent.online_time,
+        agent.pause_time,
+        agent['%_pauses'],
+        agent.pauses,
+        agent.talk_time,
+        agent.hold_time,
+        agent.wrap_up_time,
+        agent.idle_time,
+        agent.aht,
+      ]
+      return values.some((v) => (v || '').toString().toLowerCase().includes(search))
+    })
+  }, [agentData, localSearch])
 
   return (
     <AuthGuard>
@@ -349,13 +392,22 @@ export default function AgentAvailabilityPage() {
                 </div>
                 {isRefreshing && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
               </div>
+              <div className="relative mt-4">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by agent name, region..."
+                  value={localSearch}
+                  onChange={(e) => setLocalSearch(e.target.value)}
+                  className="pl-9 max-w-sm"
+                />
+              </div>
             </CardHeader>
             <CardContent>
               {isLoading ? (
                 <div className="flex justify-center py-8">
                   <Loader2 className="h-8 w-8 animate-spin" />
                 </div>
-              ) : agentData.length > 0 ? (
+              ) : filteredAgentData.length > 0 ? (
                 <div className="scrollable-table">
                   <Table>
                     <TableHeader className="sticky top-0 bg-background z-10">
@@ -377,7 +429,7 @@ export default function AgentAvailabilityPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {agentData.map((agent, index) => (
+                      {filteredAgentData.map((agent, index) => (
                         <TableRow key={index}>
                           <TableCell className="font-medium cursor-pointer text-primary hover:underline" onClick={() => handleViewDrilldown(agent)}>
                             {loadingAgentId === agent.agent_id ? <Loader2 className="h-4 w-4 animate-spin inline mr-1" /> : null}
@@ -403,7 +455,9 @@ export default function AgentAvailabilityPage() {
                 </div>
               ) : (
                 <p className="text-center text-muted-foreground py-8">
-                  No agent availability data for the selected period
+                  {localSearch
+                    ? `No results found for "${localSearch}"`
+                    : 'No agent availability data for the selected period'}
                 </p>
               )}
             </CardContent>

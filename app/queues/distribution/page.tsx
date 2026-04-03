@@ -9,13 +9,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Loader2, Download, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react"
+import { Loader2, Download, ChevronUp, ChevronDown, ChevronsUpDown, Search } from "lucide-react"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 import { athenaAPI } from "@/lib/athena-api"
 import { useAuth } from "@/hooks/use-auth"
 import { DateHelper } from "@/lib/date-helper"
 import { useGlobalFilters } from "@/lib/global-filters-context"
+import { Input } from "@/components/ui/input"
 
 /* -------------------------------------------------------------------------- */
 /*                               Data interfaces                               */
@@ -319,6 +320,8 @@ function generateDrilldownHTML(data: DrilldownData[], title: string, startDate?:
     .subtitle { font-size:14px; color:#6b7280; }
     .actions { display:flex; justify-content:space-between; align-items:center; padding:14px 24px; background:#f9fafb; border-bottom:1px solid #e5e7eb; }
     .count { font-size:14px; color:#6b7280; }
+    .search-box { padding:8px 12px; border:1px solid #d1d5db; border-radius:6px; font-size:14px; width:280px; outline:none; }
+    .search-box:focus { border-color:#3b82f6; box-shadow:0 0 0 2px rgba(59,130,246,.15); }
     .btn { padding:8px 16px; background:#3b82f6; color:white; border:none; border-radius:6px; font-size:14px; cursor:pointer; }
     .btn:hover { background:#2563eb; }
     .table-container { overflow:auto; height:calc(100vh - 200px); }
@@ -343,8 +346,11 @@ function generateDrilldownHTML(data: DrilldownData[], title: string, startDate?:
       <p class="subtitle">Contact-level details${dateRangeText ? " — " + dateRangeText : ""}</p>
     </div>
     <div class="actions">
-      <span class="count">Showing ${data.length} contact${data.length !== 1 ? "s" : ""}</span>
-      <button class="btn" onclick="exportCSV()">Export CSV</button>
+      <span class="count" id="rowCount">Showing ${data.length} contact${data.length !== 1 ? "s" : ""}</span>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input type="text" class="search-box" id="searchInput" placeholder="Search contacts..." oninput="filterTable()" />
+        <button class="btn" onclick="exportCSV()">Export CSV</button>
+      </div>
     </div>
     <div class="table-container">
       <table id="t">
@@ -428,6 +434,18 @@ function generateDrilldownHTML(data: DrilldownData[], title: string, startDate?:
       tr.after(cell)
       btn.innerHTML = '&#9724; Stop'
     }
+    function filterTable() {
+      var term = document.getElementById('searchInput').value.toLowerCase()
+      var rows = document.querySelectorAll('#t tbody tr:not(.audio-row)')
+      var visible = 0
+      rows.forEach(function(row) {
+        var text = row.textContent.toLowerCase()
+        var show = !term || text.indexOf(term) > -1
+        row.style.display = show ? '' : 'none'
+        if (show) visible++
+      })
+      document.getElementById('rowCount').textContent = 'Showing ' + visible + ' contact' + (visible !== 1 ? 's' : '')
+    }
   </script>
 </body></html>`
 }
@@ -475,6 +493,7 @@ export default function QueueDistributionPage() {
 
   const [isLoading, setIsLoading] = useState(false)
   const [loadingItemId, setLoadingItemId] = useState<string | null>(null)
+  const [localSearch, setLocalSearch] = useState("")
 
   // ── per-tab loading flags (avoid re-fetching already loaded) ─────────────────
   const [loaded, setLoaded] = useState<Record<string, boolean>>({})
@@ -592,60 +611,61 @@ export default function QueueDistributionPage() {
   }
 
   // ── filtering ────────────────────────────────────────────────────────────────
+  const search = localSearch || searchTerm || ""
 
   const filteredQueues = useMemo(() => {
     let rows = queueData
     if (selectedQueues.length > 0) rows = rows.filter((q) => selectedQueues.includes(q.queue_name || q.queue_id))
-    if (searchTerm) rows = rows.filter((q) => (q.queue_name || q.queue_id).toLowerCase().includes(searchTerm.toLowerCase()))
+    if (search) rows = rows.filter((q) => (q.queue_name || q.queue_id || q.channel || "").toLowerCase().includes(search.toLowerCase()))
     return rows
-  }, [queueData, selectedQueues, searchTerm])
+  }, [queueData, selectedQueues, search])
 
   const filteredDIDs = useMemo(
-    () => (searchTerm ? didData.filter((d) => d.did?.toLowerCase().includes(searchTerm.toLowerCase())) : didData),
-    [didData, searchTerm]
+    () => search ? didData.filter((d) => (d.did || d.channel || "").toLowerCase().includes(search.toLowerCase())) : didData,
+    [didData, search]
   )
 
   const filteredHours = useMemo(
     () =>
-      searchTerm
+      search
         ? hourData.filter(
             (h) =>
-              h.interval_date?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-              h.interval_hour?.toLowerCase().includes(searchTerm.toLowerCase())
+              h.interval_date?.toLowerCase().includes(search.toLowerCase()) ||
+              h.interval_hour?.toLowerCase().includes(search.toLowerCase())
           )
         : hourData,
-    [hourData, searchTerm]
+    [hourData, search]
   )
 
   const filteredDays = useMemo(
-    () => (searchTerm ? dayData.filter((d) => d.interval_date?.toLowerCase().includes(searchTerm.toLowerCase())) : dayData),
-    [dayData, searchTerm]
+    () => (search ? dayData.filter((d) => d.interval_date?.toLowerCase().includes(search.toLowerCase())) : dayData),
+    [dayData, search]
   )
 
   const filteredWeeks = useMemo(
-    () => (searchTerm ? weekData.filter((w) => (w.interval_weeknum || "").toLowerCase().includes(searchTerm.toLowerCase())) : weekData),
-    [weekData, searchTerm]
+    () => (search ? weekData.filter((w) => (w.interval_weeknum || "").toLowerCase().includes(search.toLowerCase())) : weekData),
+    [weekData, search]
   )
 
   const filteredMonths = useMemo(
-    () => (searchTerm ? monthData.filter((m) => (m.month || m.interval_month || "").toLowerCase().includes(searchTerm.toLowerCase())) : monthData),
-    [monthData, searchTerm]
+    () => (search ? monthData.filter((m) => (m.month || m.interval_month || "").toLowerCase().includes(search.toLowerCase())) : monthData),
+    [monthData, search]
   )
 
   const filteredAgents = useMemo(
     () =>
-      searchTerm
-        ? agentData.filter((a) => a.agent_name?.toLowerCase().includes(searchTerm.toLowerCase()))
+      search
+        ? agentData.filter((a) => a.agent_name?.toLowerCase().includes(search.toLowerCase()))
         : agentData,
-    [agentData, searchTerm]
+    [agentData, search]
   )
 
   const filteredStates = useMemo(
     () =>
-      searchTerm
-        ? stateData.filter((s) => s.state?.toLowerCase().includes(searchTerm.toLowerCase()))
+      search
+        ? stateData.filter((s) => s.state?.toLowerCase().includes(search.toLowerCase()))
         : stateData,
-    [stateData, searchTerm]
+    [stateData, search]
   )
 
   // ── sortable hooks per tab ────────────────────────────────────────────────────
@@ -727,6 +747,18 @@ export default function QueueDistributionPage() {
                   >
                     <Download className="h-4 w-4" />
                   </Button>
+                </div>
+
+                <div className="mb-4">
+                  <div className="relative">
+                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search by queue, DID, agent, date..."
+                      value={localSearch}
+                      onChange={(e) => setLocalSearch(e.target.value)}
+                      className="pl-8 max-w-sm"
+                    />
+                  </div>
                 </div>
 
                 {/* ── BY QUEUE ─────────────────────────────────────────── */}

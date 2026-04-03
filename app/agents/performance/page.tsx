@@ -191,6 +191,8 @@ export default function AgentPerformancePage() {
       font-size: 14px;
       color: #6b7280;
     }
+    .search-box { padding:8px 12px; border:1px solid #d1d5db; border-radius:6px; font-size:14px; width:280px; outline:none; }
+    .search-box:focus { border-color:#3b82f6; box-shadow:0 0 0 2px rgba(59,130,246,.15); }
     .btn {
       padding: 8px 16px;
       background-color: #3b82f6;
@@ -261,15 +263,18 @@ export default function AgentPerformancePage() {
     </div>
     
     <div class="actions">
-      <div class="count">Showing ${data.length} call${data.length !== 1 ? 's' : ''}</div>
-      <button class="btn" onclick="exportToCSV()">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-          <polyline points="7 10 12 15 17 10"></polyline>
-          <line x1="12" y1="15" x2="12" y2="3"></line>
-        </svg>
-        Export CSV
-      </button>
+      <div class="count" id="rowCount">Showing ${data.length} call${data.length !== 1 ? 's' : ''}</div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input type="text" class="search-box" id="searchInput" placeholder="Search contacts..." oninput="filterTable()" />
+        <button class="btn" onclick="exportToCSV()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          Export CSV
+        </button>
+      </div>
     </div>
     
     <div class="table-container">
@@ -342,6 +347,18 @@ export default function AgentPerformancePage() {
       a.download = 'agent-calls-${new Date().toISOString().slice(0, 10)}.csv';
       a.click();
       window.URL.revokeObjectURL(url);
+    }
+    function filterTable() {
+      var term = document.getElementById('searchInput').value.toLowerCase()
+      var rows = document.querySelectorAll('#dataTable tbody tr')
+      var visible = 0
+      rows.forEach(function(row) {
+        var text = row.textContent.toLowerCase()
+        var show = !term || text.indexOf(term) > -1
+        row.style.display = show ? '' : 'none'
+        if (show) visible++
+      })
+      document.getElementById('rowCount').textContent = 'Showing ' + visible + ' call' + (visible !== 1 ? 's' : '')
     }
   </script>
 </body>

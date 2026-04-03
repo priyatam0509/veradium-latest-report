@@ -393,7 +393,6 @@ export default function AgentPerformanceAnalysis() {
                     <TableHeader className="sticky top-0 bg-background z-10">
                       <TableRow>
                         <TableHead>Agent Name</TableHead>
-                        <TableHead className="text-right">Username</TableHead>
                         <TableHead className="text-right">Region</TableHead>
                         <TableHead className="text-right">Received</TableHead>
                         <TableHead className="text-right">Completed</TableHead>
@@ -402,7 +401,6 @@ export default function AgentPerformanceAnalysis() {
                         <TableHead className="text-right">Failed</TableHead>
                         <TableHead className="text-right">Missed/Rejected</TableHead>
                         <TableHead className="text-right">Completion Rate</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -415,8 +413,13 @@ export default function AgentPerformanceAnalysis() {
                         
                         return (
                           <TableRow key={index}>
-                            <TableCell className="font-medium">{agent.agent_name}</TableCell>
-                            <TableCell className="text-right font-mono text-gray-600">{agent.username}</TableCell>
+                            <TableCell
+                              className="font-medium cursor-pointer text-primary hover:underline"
+                              onClick={() => handleViewDrilldown(agent)}
+                            >
+                              {loadingDrilldownId === agent.user_id ? <Loader2 className="h-4 w-4 animate-spin inline mr-1" /> : null}
+                              {agent.agent_name}
+                            </TableCell>
                             <TableCell className="text-right">{agent.region || '—'}</TableCell>
                             <TableCell className="text-right font-mono">{agent.received}</TableCell>
                             <TableCell className="text-right font-mono text-green-600">{agent.completed_by_agent}</TableCell>
@@ -431,18 +434,6 @@ export default function AgentPerformanceAnalysis() {
                               >
                                 {completionRate}%
                               </Badge>
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleViewDrilldown(agent)}
-                                disabled={loadingDrilldownId === agent.user_id}
-                              >
-                                {loadingDrilldownId === agent.user_id ? (
-                                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Loading...</>
-                                ) : 'View Details'}
-                              </Button>
                             </TableCell>
                           </TableRow>
                         )

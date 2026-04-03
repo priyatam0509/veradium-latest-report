@@ -1,16 +1,17 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useMemo } from "react"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { AuthGuard } from "@/components/auth-guard"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useAuth } from "@/hooks/use-auth"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, TrendingUp, Clock, RefreshCw, Activity, Pause, Coffee, User } from "lucide-react"
+import { Loader2, TrendingUp, Clock, RefreshCw, Activity, Pause, Coffee, User, Search } from "lucide-react"
 import { athenaAPI } from "@/lib/athena-api"
 import { DateHelper } from "@/lib/date-helper"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { useGlobalFilters } from "@/lib/global-filters-context"
 
 interface AgentPauseDetail {
@@ -28,6 +29,7 @@ export default function AgentActivityAnalysis() {
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date())
+  const [localSearch, setLocalSearch] = useState("")
   const { user, isLoading: authLoading } = useAuth()
 
   const {
@@ -109,6 +111,22 @@ export default function AgentActivityAnalysis() {
     if (isNaN(d.getTime())) return ts
     return d.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })
   }
+
+  const filteredAgentData = useMemo(() => {
+    const search = localSearch.trim().toLowerCase()
+    if (!search) return agentData
+    return agentData.filter((agent) => {
+      const values = [
+        agent.agent_name,
+        agent.agent_region,
+        agent.max_interval_start_time,
+        agent.max_interval_end_time,
+        agent.on_custom_status,
+        agent.number_of_holds,
+      ]
+      return values.some((v) => (v || '').toString().toLowerCase().includes(search))
+    })
+  }, [agentData, localSearch])
 
   return (
     <AuthGuard>
@@ -223,13 +241,22 @@ export default function AgentActivityAnalysis() {
                 </div>
                 {isRefreshing && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
               </div>
+              <div className="relative mt-4">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by agent name, region..."
+                  value={localSearch}
+                  onChange={(e) => setLocalSearch(e.target.value)}
+                  className="pl-9 max-w-sm"
+                />
+              </div>
             </CardHeader>
             <CardContent>
               {isLoading ? (
                 <div className="flex justify-center py-8">
                   <Loader2 className="h-8 w-8 animate-spin" />
                 </div>
-              ) : agentData.length > 0 ? (
+              ) : filteredAgentData.length > 0 ? (
                 <div className="scrollable-table">
                   <Table>
                     <TableHeader className="sticky top-0 bg-background z-10">
@@ -243,7 +270,7 @@ export default function AgentActivityAnalysis() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {agentData.map((agent, index) => (
+                      {filteredAgentData.map((agent, index) => (
                         <TableRow key={index}>
                           <TableCell className="font-medium">{agent.agent_name}</TableCell>
                           <TableCell>{agent.agent_region || '—'}</TableCell>
@@ -260,7 +287,9 @@ export default function AgentActivityAnalysis() {
                 </div>
               ) : (
                 <p className="text-center text-muted-foreground py-8">
-                  No agent activity data available for the selected period
+                  {localSearch
+                    ? `No results found for "${localSearch}"`
+                    : 'No agent activity data available for the selected period'}
                 </p>
               )}
             </CardContent>
