@@ -114,8 +114,7 @@ interface MonthData {
 }
 
 interface WeekData {
-  week: string
-  year: string
+  interval_weeknum: string
   channel: string
   initiation_method: string
   region: string
@@ -126,9 +125,6 @@ interface WeekData {
   transferred: string
   avg_wait: string
   avg_talk: string
-  "%_answered": string
-  "%_unanswered": string
-  sla: string
   [key: string]: string
 }
 
@@ -627,7 +623,7 @@ export default function QueueDistributionPage() {
   )
 
   const filteredWeeks = useMemo(
-    () => (searchTerm ? weekData.filter((w) => (w.week || "").toLowerCase().includes(searchTerm.toLowerCase())) : weekData),
+    () => (searchTerm ? weekData.filter((w) => (w.interval_weeknum || "").toLowerCase().includes(searchTerm.toLowerCase())) : weekData),
     [weekData, searchTerm]
   )
 
@@ -1053,11 +1049,10 @@ export default function QueueDistributionPage() {
                       <TableHeader className="sticky top-0 bg-background z-10">
                         <TableRow>
                           {[
-                            ["week","Week"],["year","Year"],["channel","Channel"],["initiation_method","Method"],
+                            ["interval_weeknum","Week"],["channel","Channel"],["initiation_method","Method"],
                             ["region","Region"],["received","Received"],["answered","Answered"],
                             ["unanswered","Unanswered"],["abandoned","Abandoned"],["transferred","Transferred"],
                             ["avg_wait","Avg Wait"],["avg_talk","Avg Talk"],
-                            ["%_answered","% Ans"],["%_unanswered","% Unans"],["sla","SLA"],
                           ].map(([col, label]) => (
                             <SortHead key={col} col={col} label={label} sortKey={weekSort.sortKey} sortDir={weekSort.sortDir} onSort={weekSort.handleSort} />
                           ))}
@@ -1065,14 +1060,14 @@ export default function QueueDistributionPage() {
                       </TableHeader>
                       <TableBody>
                         {isLoading && activeTab === "week" ? (
-                          <LoadingRow cols={15} />
+                          <LoadingRow cols={11} />
                         ) : weekSort.sorted.length === 0 ? (
-                          <EmptyRow cols={15} label="No weekly data found." />
+                          <EmptyRow cols={11} label="No weekly data found." />
                         ) : (
                           <>
                             {weekSort.sorted.map((w, i) => {
-                              const weekVal = w.week || w.interval_week || ""
-                              const yearVal = w.year || ""
+                              const weekVal = w.interval_weeknum || ""
+                              const yearVal = startDate ? format(startDate, "yyyy") : format(new Date(), "yyyy")
                               const weekItemId = `week-${weekVal}-${yearVal}-${i}`
                               return (
                               <TableRow key={weekVal + yearVal + i}>
@@ -1082,17 +1077,16 @@ export default function QueueDistributionPage() {
                                     const rangeResult = await athenaAPI.getWeekDateRange(weekVal, yearVal)
                                     if (rangeResult?.status === "SUCCEEDED" && rangeResult.data?.length > 0) {
                                       const range = rangeResult.data[0]
-                                      const weekStart = range.start_date || range.start_datetime || `${yearVal}-01-01 00:00:00`
-                                      const weekEnd = range.end_date || range.end_datetime || `${yearVal}-12-31 23:59:59`
+                                      const weekStart = range.start_datetime || `${yearVal}-01-01 00:00:00`
+                                      const weekEnd = range.end_datetime || `${yearVal}-12-31 23:59:59`
                                       await fetchDrilldown({ startOverride: weekStart, endOverride: weekEnd }, `Contact Details — Week ${weekVal}, ${yearVal}`, weekItemId)
                                     }
                                   } catch (err) { console.error("Week drilldown error:", err) }
                                   finally { setLoadingItemId(null) }
                                 }}>
                                   {loadingItemId === weekItemId ? <Loader2 className="h-4 w-4 animate-spin inline mr-1" /> : null}
-                                  {weekVal || "—"}
+                                  Week {weekVal || "—"}
                                 </TableCell>
-                                <TableCell>{yearVal || "—"}</TableCell>
                                 <TableCell>{w.channel}</TableCell>
                                 <TableCell>{w.initiation_method}</TableCell>
                                 <TableCell>{w.region || "—"}</TableCell>
@@ -1103,19 +1097,13 @@ export default function QueueDistributionPage() {
                                 <TableCell>{w.transferred}</TableCell>
                                 <TableCell>{w.avg_wait || "—"}</TableCell>
                                 <TableCell>{w.avg_talk || "—"}</TableCell>
-                                <TableCell>{w["%_answered"]}</TableCell>
-                                <TableCell>{w["%_unanswered"]}</TableCell>
-                                <TableCell className="font-medium">{w.sla}</TableCell>
                               </TableRow>
                             )})}
                             <TableRow className="bg-muted/50 font-semibold">
-                              <TableCell colSpan={5}>TOTAL</TableCell>
+                              <TableCell colSpan={4}>TOTAL</TableCell>
                               {numericCols.map((c) => <TableCell key={c}>{sumNumeric(weekSort.sorted, c)}</TableCell>)}
                               <TableCell>{avgNumeric(weekSort.sorted, "avg_wait")}</TableCell>
                               <TableCell>{avgNumeric(weekSort.sorted, "avg_talk")}</TableCell>
-                              <TableCell>{avgNumeric(weekSort.sorted, "%_answered")}</TableCell>
-                              <TableCell>{avgNumeric(weekSort.sorted, "%_unanswered")}</TableCell>
-                              <TableCell>{avgNumeric(weekSort.sorted, "sla")}</TableCell>
                             </TableRow>
                           </>
                         )}
