@@ -2,14 +2,15 @@
 
 export const dynamic = "force-dynamic"
 
-import { useState, useEffect, useRef, useCallback } from "react"
+import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { AuthGuard } from "@/components/auth-guard"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Loader2, Download, X } from "lucide-react"
+import { Loader2, Download, X, Search } from "lucide-react"
 import { athenaAPI } from "@/lib/athena-api"
 import { useAuth } from "@/hooks/use-auth"
 import { DateHelper } from "@/lib/date-helper"
@@ -271,6 +272,7 @@ export default function ContactTracePage() {
   const [answeredData, setAnsweredData] = useState<AnsweredCallDetail[]>([])
   const [unansweredData, setUnansweredData] = useState<UnansweredCallDetail[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [localSearch, setLocalSearch] = useState("")
 
   // Drilldown state
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null)
@@ -358,8 +360,31 @@ export default function ContactTracePage() {
     if (t === "unanswered" && unansweredData.length === 0) fetchTab("unanswered")
   }
 
-  const displayedAnswered = answeredData
-  const displayedUnanswered = unansweredData
+  const displayedAnswered = useMemo(() => {
+    const search = localSearch.trim().toLowerCase()
+    if (!search) return answeredData
+    return answeredData.filter((row) => {
+      const values = [
+        row.contact_id, row.date, row.channel, row.queue_name, row.agent_name,
+        row.customer_number, row.interaction_status, row.ring_time, row.wait_time,
+        row.talk_time, row.did, row.region, row.state,
+      ]
+      return values.some((v) => (v || '').toLowerCase().includes(search))
+    })
+  }, [answeredData, localSearch])
+
+  const displayedUnanswered = useMemo(() => {
+    const search = localSearch.trim().toLowerCase()
+    if (!search) return unansweredData
+    return unansweredData.filter((row) => {
+      const values = [
+        row.contact_id, row.date, row.channel, row.queue_name,
+        row.customer_number, row.interaction_status, row.ring_time, row.wait_time,
+        row.did, row.region,
+      ]
+      return values.some((v) => (v || '').toLowerCase().includes(search))
+    })
+  }, [unansweredData, localSearch])
 
   return (
     <AuthGuard>
@@ -394,6 +419,18 @@ export default function ContactTracePage() {
                   </Button>
                 </div>
 
+                <div className="px-4 pt-3">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search by contact ID, queue, agent, number, status..."
+                      value={localSearch}
+                      onChange={(e) => setLocalSearch(e.target.value)}
+                      className="pl-9 max-w-sm"
+                    />
+                  </div>
+                </div>
+
                 {/* ── Answered Calls Tab ── */}
                 <TabsContent value="answered" className="mt-0 px-4 pb-4">
                   {isLoading ? (
@@ -402,7 +439,9 @@ export default function ContactTracePage() {
                     </div>
                   ) : displayedAnswered.length === 0 ? (
                     <div className="flex items-center justify-center h-48 text-sm text-muted-foreground">
-                      No answered call data for the selected period
+                      {localSearch
+                        ? `No results found for "${localSearch}"`
+                        : 'No answered call data for the selected period'}
                     </div>
                   ) : (
                     <div className="scrollable-table mt-3">
@@ -468,7 +507,9 @@ export default function ContactTracePage() {
                     </div>
                   ) : displayedUnanswered.length === 0 ? (
                     <div className="flex items-center justify-center h-48 text-sm text-muted-foreground">
-                      No unanswered call data for the selected period
+                      {localSearch
+                        ? `No results found for "${localSearch}"`
+                        : 'No unanswered call data for the selected period'}
                     </div>
                   ) : (
                     <div className="scrollable-table mt-3">
