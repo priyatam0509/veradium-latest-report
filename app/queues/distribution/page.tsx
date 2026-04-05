@@ -115,7 +115,9 @@ interface MonthData {
 }
 
 interface WeekData {
+  interval_year: string
   interval_weeknum: string
+  week_serial: string
   channel: string
   initiation_method: string
   region: string
@@ -643,7 +645,12 @@ export default function QueueDistributionPage() {
   )
 
   const filteredWeeks = useMemo(
-    () => (search ? weekData.filter((w) => (w.interval_weeknum || "").toLowerCase().includes(search.toLowerCase())) : weekData),
+    () => (search ? weekData.filter((w) => {
+      const s = search.toLowerCase()
+      return (w.week_serial || w.interval_weeknum || "").toLowerCase().includes(s)
+        || (w.interval_year || "").toLowerCase().includes(s)
+        || (w.region || "").toLowerCase().includes(s)
+    }) : weekData),
     [weekData, search]
   )
 
@@ -1081,7 +1088,7 @@ export default function QueueDistributionPage() {
                       <TableHeader className="sticky top-0 bg-background z-10">
                         <TableRow>
                           {[
-                            ["interval_weeknum","Week"],["channel","Channel"],["initiation_method","Method"],
+                            ["week_serial","Week"],["interval_year","Year"],["channel","Channel"],["initiation_method","Method"],
                             ["region","Region"],["received","Received"],["answered","Answered"],
                             ["unanswered","Unanswered"],["abandoned","Abandoned"],["transferred","Transferred"],
                             ["avg_wait","Avg Wait"],["avg_talk","Avg Talk"],
@@ -1092,14 +1099,15 @@ export default function QueueDistributionPage() {
                       </TableHeader>
                       <TableBody>
                         {isLoading && activeTab === "week" ? (
-                          <LoadingRow cols={11} />
+                          <LoadingRow cols={12} />
                         ) : weekSort.sorted.length === 0 ? (
-                          <EmptyRow cols={11} label="No weekly data found." />
+                          <EmptyRow cols={12} label="No weekly data found." />
                         ) : (
                           <>
                             {weekSort.sorted.map((w, i) => {
                               const weekVal = w.interval_weeknum || ""
-                              const yearVal = startDate ? format(startDate, "yyyy") : format(new Date(), "yyyy")
+                              const yearVal = w.interval_year || (startDate ? format(startDate, "yyyy") : format(new Date(), "yyyy"))
+                              const displayLabel = w.week_serial || `Week ${weekVal}`
                               const weekItemId = `week-${weekVal}-${yearVal}-${i}`
                               return (
                               <TableRow key={weekVal + yearVal + i}>
@@ -1111,14 +1119,15 @@ export default function QueueDistributionPage() {
                                       const range = rangeResult.data[0]
                                       const weekStart = range.start_datetime || `${yearVal}-01-01 00:00:00`
                                       const weekEnd = range.end_datetime || `${yearVal}-12-31 23:59:59`
-                                      await fetchDrilldown({ startOverride: weekStart, endOverride: weekEnd }, `Contact Details — Week ${weekVal}, ${yearVal}`, weekItemId)
+                                      await fetchDrilldown({ startOverride: weekStart, endOverride: weekEnd }, `Contact Details — ${displayLabel}`, weekItemId)
                                     }
                                   } catch (err) { console.error("Week drilldown error:", err) }
                                   finally { setLoadingItemId(null) }
                                 }}>
                                   {loadingItemId === weekItemId ? <Loader2 className="h-4 w-4 animate-spin inline mr-1" /> : null}
-                                  Week {weekVal || "—"}
+                                  {displayLabel}
                                 </TableCell>
+                                <TableCell>{yearVal}</TableCell>
                                 <TableCell>{w.channel}</TableCell>
                                 <TableCell>{w.initiation_method}</TableCell>
                                 <TableCell>{w.region || "—"}</TableCell>
@@ -1132,7 +1141,7 @@ export default function QueueDistributionPage() {
                               </TableRow>
                             )})}
                             <TableRow className="bg-muted/50 font-semibold">
-                              <TableCell colSpan={4}>TOTAL</TableCell>
+                              <TableCell colSpan={5}>TOTAL</TableCell>
                               {numericCols.map((c) => <TableCell key={c}>{sumNumeric(weekSort.sorted, c)}</TableCell>)}
                               <TableCell>{avgNumeric(weekSort.sorted, "avg_wait")}</TableCell>
                               <TableCell>{avgNumeric(weekSort.sorted, "avg_talk")}</TableCell>
