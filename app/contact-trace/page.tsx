@@ -63,6 +63,7 @@ interface CallFlowStep {
   resource_name: string
   outcome: string
   resource_id: string
+  queue_name: string | null
 }
 
 /* -------------------------------------------------------------------------- */
@@ -146,6 +147,16 @@ function exportToCSV(data: any[], filename: string) {
   window.URL.revokeObjectURL(url)
 }
 
+function getStatusColor(status: string) {
+  switch (status) {
+    case "Transferred to External": return "text-purple-600"
+    case "Transferred": return "text-blue-600"
+    case "Completed by Agent":
+    case "Completed by Caller": return "text-green-600"
+    default: return "text-foreground"
+  }
+}
+
 function getBadgeStyle(resourceType: string) {
   switch (resourceType) {
     case "CONTACT_FLOW": return "bg-blue-100 text-blue-800"
@@ -217,7 +228,10 @@ function CallFlowModal({
             </div>
           ) : (
             <div className="space-y-1">
-              {steps.map((step, i) => (
+              {steps.map((step, i) => {
+                const originalContactId = steps[0].contact_id
+                const contactIdChanged = step.contact_id !== originalContactId
+                return (
                 <div key={i}>
                   {/* Elapsed time connector (not shown for first step) */}
                   {i > 0 && step.elapsed_time && (
@@ -235,19 +249,31 @@ function CallFlowModal({
                           <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase ${getBadgeStyle(step.resource_type)}`}>
                             {getResourceLabel(step.resource_type)}
                           </span>
+                          {step.queue_name && (
+                            <span className="text-xs text-amber-700 font-medium">
+                              Queue: {step.queue_name}
+                            </span>
+                          )}
                         </div>
                         <p className="text-sm font-medium truncate">{step.resource_name}</p>
                         <p className="text-xs text-muted-foreground mt-1">
                           Outcome: <span className="font-medium text-foreground">{step.outcome}</span>
                         </p>
+                        {contactIdChanged && (
+                          <p className="text-xs text-muted-foreground mt-1 font-mono truncate">{step.contact_id}</p>
+                        )}
                       </div>
                       <div className="text-right shrink-0">
                         <p className="text-xs text-muted-foreground font-mono whitespace-nowrap">{step.start_timestamp}</p>
+                        <p className="text-xs text-muted-foreground mt-1 whitespace-nowrap">
+                          Initiation: <span className="font-medium text-foreground">{step.initiation_method}</span>
+                        </p>
                       </div>
                     </div>
                   </div>
                 </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </div>
@@ -480,7 +506,7 @@ export default function ContactTracePage() {
                               <TableCell className="text-xs whitespace-nowrap">{row.queue_name ?? "—"}</TableCell>
                               <TableCell className="text-xs whitespace-nowrap">{row.agent_name ?? "—"}</TableCell>
                               <TableCell className="text-xs whitespace-nowrap font-mono">{row.customer_number ?? "—"}</TableCell>
-                              <TableCell className="text-xs whitespace-nowrap">{row.interaction_status ?? "—"}</TableCell>
+                              <TableCell className={`text-xs whitespace-nowrap font-medium ${getStatusColor(row.interaction_status)}`}>{row.interaction_status ?? "—"}</TableCell>
                               <TableCell className="text-xs text-right font-mono">{row.ring_time ?? "—"}</TableCell>
                               <TableCell className="text-xs text-right font-mono">{row.wait_time ?? "—"}</TableCell>
                               <TableCell className="text-xs text-right font-mono">{row.talk_time ?? "—"}</TableCell>
