@@ -4,7 +4,8 @@ import { useState, useEffect, useRef, useMemo } from "react"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { AuthGuard } from "@/components/auth-guard"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components/ui/table"
+import { useSortable, SortHead } from "@/lib/sort-table"
 import { useAuth } from "@/hooks/use-auth"
 import { Loader2, RefreshCw, Users, Phone, Clock, Search } from "lucide-react"
 import { format } from "date-fns"
@@ -152,7 +153,10 @@ export default function AgentAvailabilityPage() {
     .btn:hover { background: #2563eb; }
     .table-container { overflow: auto; height: calc(100vh - 200px); }
     table { width: 100%; border-collapse: collapse; }
-    th { background: #f9fafb; padding: 11px 16px; text-align: left; font-size: 11px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #e5e7eb; white-space: nowrap; }
+    th { background: #f9fafb; padding: 11px 16px; text-align: left; font-size: 11px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #e5e7eb; white-space: nowrap; cursor: pointer; user-select: none; }
+    th:hover { background: #f3f4f6; }
+    th.sort-asc::after { content: ' ▲'; font-size: 9px; }
+    th.sort-desc::after { content: ' ▼'; font-size: 9px; }
     td { padding: 11px 16px; font-size: 13px; border-bottom: 1px solid #e5e7eb; white-space: nowrap; }
     tr:hover { background: #f9fafb; }
     .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
@@ -184,14 +188,14 @@ export default function AgentAvailabilityPage() {
     <div class="table-container">
       <table id="t">
         <thead style="position:sticky;top:0;z-index:1;"><tr>
-          <th>Event Timestamp</th>
-          <th>Event Type</th>
-          <th>Status Timestamp</th>
-          <th>Status</th>
-          <th>State Timestamp</th>
-          <th>State</th>
-          <th>Contact ID</th>
-          <th>Queues</th>
+          <th onclick="sortTable(0)">Event Timestamp</th>
+          <th onclick="sortTable(1)">Event Type</th>
+          <th onclick="sortTable(2)">Status Timestamp</th>
+          <th onclick="sortTable(3)">Status</th>
+          <th onclick="sortTable(4)">State Timestamp</th>
+          <th onclick="sortTable(5)">State</th>
+          <th onclick="sortTable(6)">Contact ID</th>
+          <th onclick="sortTable(7)">Queues</th>
           <th>Recording</th>
         </tr></thead>
         <tbody>
@@ -227,6 +231,24 @@ export default function AgentAvailabilityPage() {
     </div>
   </div>
   <script>
+    var _sortCol = -1, _sortAsc = true;
+    function sortTable(col) {
+      var tbody = document.querySelector('#t tbody');
+      var rows = Array.from(tbody.querySelectorAll('tr:not(.audio-row)'));
+      if (_sortCol === col) { _sortAsc = !_sortAsc; } else { _sortCol = col; _sortAsc = true; }
+      rows.sort(function(a, b) {
+        var av = a.cells[col] ? a.cells[col].textContent.trim() : '';
+        var bv = b.cells[col] ? b.cells[col].textContent.trim() : '';
+        var an = parseFloat(av), bn = parseFloat(bv);
+        var cmp = (!isNaN(an) && !isNaN(bn)) ? an - bn : av.localeCompare(bv);
+        return _sortAsc ? cmp : -cmp;
+      });
+      rows.forEach(function(r) { tbody.appendChild(r); });
+      document.querySelectorAll('#t thead th').forEach(function(th, i) {
+        th.classList.remove('sort-asc','sort-desc');
+        if (i === col) th.classList.add(_sortAsc ? 'sort-asc' : 'sort-desc');
+      });
+    }
     function exportCSV() {
       const rows = Array.from(document.querySelectorAll('#t tr'))
       const csv = rows.map(r => Array.from(r.querySelectorAll('th,td')).map(c => {
@@ -302,6 +324,8 @@ export default function AgentAvailabilityPage() {
       return values.some((v) => (v || '').toString().toLowerCase().includes(search))
     })
   }, [agentData, localSearch])
+
+  const sort = useSortable(filteredAgentData)
 
   return (
     <AuthGuard>
@@ -417,24 +441,24 @@ export default function AgentAvailabilityPage() {
                   <Table>
                     <TableHeader className="sticky top-0 bg-background z-10">
                       <TableRow>
-                        <TableHead>Agent</TableHead>
-                        <TableHead>Region</TableHead>
-                        <TableHead className="text-right">Answered</TableHead>
-                        <TableHead className="text-right">Failed</TableHead>
-                        <TableHead className="text-right">Missed/Rejected</TableHead>
-                        <TableHead className="text-right">Online Time</TableHead>
-                        <TableHead className="text-right">Pause Time</TableHead>
-                        <TableHead className="text-right">% Pauses</TableHead>
-                        <TableHead className="text-right">Pauses</TableHead>
-                        <TableHead className="text-right">Talk Time</TableHead>
-                        <TableHead className="text-right">Hold Time</TableHead>
-                        <TableHead className="text-right">Wrap-up Time</TableHead>
-                        <TableHead className="text-right">Idle Time</TableHead>
-                        <TableHead className="text-right">AHT</TableHead>
+                        <SortHead col="agent" label="Agent" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
+                        <SortHead col="agent_region" label="Region" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
+                        <SortHead col="answered" label="Answered" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="failed" label="Failed" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="missed_rejected" label="Missed/Rejected" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="online_time" label="Online Time" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="pause_time" label="Pause Time" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="%_pauses" label="% Pauses" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="pauses" label="Pauses" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="talk_time" label="Talk Time" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="hold_time" label="Hold Time" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="wrap_up_time" label="Wrap-up Time" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="idle_time" label="Idle Time" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="aht" label="AHT" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredAgentData.map((agent, index) => (
+                      {sort.sorted.map((agent, index) => (
                         <TableRow key={index}>
                           <TableCell className="font-medium cursor-pointer text-primary hover:underline" onClick={() => handleViewDrilldown(agent)}>
                             {loadingAgentId === agent.agent_id ? <Loader2 className="h-4 w-4 animate-spin inline mr-1" /> : null}

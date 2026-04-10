@@ -4,7 +4,8 @@ import { useState, useEffect, useMemo, useRef } from "react"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { AuthGuard } from "@/components/auth-guard"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components/ui/table"
+import { useSortable, SortHead } from "@/lib/sort-table"
 import { useAuth } from "@/hooks/use-auth"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -150,7 +151,10 @@ export default function AgentPerformanceAnalysis() {
     .btn:hover { background: #2563eb; }
     .table-container { overflow: auto; height: calc(100vh - 200px); }
     table { width: 100%; border-collapse: collapse; }
-    th { background: #f9fafb; padding: 10px 12px; text-align: left; font-size: 11px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #e5e7eb; white-space: nowrap; }
+    th { background: #f9fafb; padding: 10px 12px; text-align: left; font-size: 11px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #e5e7eb; white-space: nowrap; cursor: pointer; user-select: none; }
+    th:hover { background: #f3f4f6; }
+    th.sort-asc::after { content: ' ▲'; font-size: 9px; }
+    th.sort-desc::after { content: ' ▼'; font-size: 9px; }
     td { padding: 10px 12px; font-size: 12px; border-bottom: 1px solid #e5e7eb; white-space: nowrap; }
     tr:hover { background: #f9fafb; }
     .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
@@ -179,22 +183,22 @@ export default function AgentPerformanceAnalysis() {
     <div class="table-container">
       <table id="t">
         <thead style="position:sticky;top:0;z-index:1;"><tr>
-          <th>#</th>
-          <th>Contact ID</th>
-          <th>Date</th>
-          <th>Queue</th>
-          <th>Agent</th>
-          <th>Customer Number</th>
-          <th>Channel</th>
-          <th>Initiation Method</th>
-          <th>Status</th>
-          <th>Agent Attempts</th>
-          <th>Event</th>
-          <th>Ring Time</th>
-          <th>Wait Time</th>
-          <th>Talk Time</th>
-          <th>DID</th>
-          <th>Region</th>
+          <th onclick="sortTable(0)">#</th>
+          <th onclick="sortTable(1)">Contact ID</th>
+          <th onclick="sortTable(2)">Date</th>
+          <th onclick="sortTable(3)">Queue</th>
+          <th onclick="sortTable(4)">Agent</th>
+          <th onclick="sortTable(5)">Customer Number</th>
+          <th onclick="sortTable(6)">Channel</th>
+          <th onclick="sortTable(7)">Initiation Method</th>
+          <th onclick="sortTable(8)">Status</th>
+          <th onclick="sortTable(9)">Agent Attempts</th>
+          <th onclick="sortTable(10)">Event</th>
+          <th onclick="sortTable(11)">Ring Time</th>
+          <th onclick="sortTable(12)">Wait Time</th>
+          <th onclick="sortTable(13)">Talk Time</th>
+          <th onclick="sortTable(14)">DID</th>
+          <th onclick="sortTable(15)">Region</th>
           <th>Recording</th>
         </tr></thead>
         <tbody>
@@ -239,6 +243,24 @@ export default function AgentPerformanceAnalysis() {
     </div>
   </div>
   <script>
+    var _sortCol = -1, _sortAsc = true;
+    function sortTable(col) {
+      var tbody = document.querySelector('#t tbody');
+      var rows = Array.from(tbody.querySelectorAll('tr:not(.audio-row)'));
+      if (_sortCol === col) { _sortAsc = !_sortAsc; } else { _sortCol = col; _sortAsc = true; }
+      rows.sort(function(a, b) {
+        var av = a.cells[col] ? a.cells[col].textContent.trim() : '';
+        var bv = b.cells[col] ? b.cells[col].textContent.trim() : '';
+        var an = parseFloat(av), bn = parseFloat(bv);
+        var cmp = (!isNaN(an) && !isNaN(bn)) ? an - bn : av.localeCompare(bv);
+        return _sortAsc ? cmp : -cmp;
+      });
+      rows.forEach(function(r) { tbody.appendChild(r); });
+      document.querySelectorAll('#t thead th').forEach(function(th, i) {
+        th.classList.remove('sort-asc','sort-desc');
+        if (i === col) th.classList.add(_sortAsc ? 'sort-asc' : 'sort-desc');
+      });
+    }
     function exportCSV() {
       const rows = Array.from(document.querySelectorAll('#t tr'))
       const csv = rows.map(r => Array.from(r.querySelectorAll('th,td')).map(c => {
@@ -289,6 +311,8 @@ export default function AgentPerformanceAnalysis() {
   const topAgent = displayedAgents.length > 0
     ? displayedAgents.reduce((max, a) => parseInt(a.completed_by_agent || '0') > parseInt(max.completed_by_agent || '0') ? a : max)
     : null
+
+  const sort = useSortable(displayedAgents)
 
   return (
     <AuthGuard>
@@ -397,19 +421,19 @@ export default function AgentPerformanceAnalysis() {
                   <Table>
                     <TableHeader className="sticky top-0 bg-background z-10">
                       <TableRow>
-                        <TableHead>Agent Name</TableHead>
-                        <TableHead className="text-right">Region</TableHead>
-                        <TableHead className="text-right">Received</TableHead>
-                        <TableHead className="text-right">Completed</TableHead>
-                        <TableHead className="text-right">Caller Completed</TableHead>
-                        <TableHead className="text-right">Transferred</TableHead>
-                        <TableHead className="text-right">Failed</TableHead>
-                        <TableHead className="text-right">Missed/Rejected</TableHead>
-                        <TableHead className="text-right">Completion Rate</TableHead>
+                        <SortHead col="agent_name" label="Agent Name" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
+                        <SortHead col="region" label="Region" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="received" label="Received" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="completed_by_agent" label="Completed" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="completed_by_caller" label="Caller Completed" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="transferred_out" label="Transferred" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="failed" label="Failed" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="missed_rejected" label="Missed/Rejected" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="completion_rate" label="Completion Rate" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {displayedAgents.map((agent, index) => {
+                      {sort.sorted.map((agent, index) => {
                         const completed = parseInt(agent.completed_by_agent || '0')
                         const failed = parseInt(agent.failed || '0')
                         const completionRate = (completed + failed) > 0 
