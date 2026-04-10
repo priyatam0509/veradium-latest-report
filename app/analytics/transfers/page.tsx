@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { AuthGuard } from "@/components/auth-guard"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components/ui/table"
 import { useAuth } from "@/hooks/use-auth"
 import { Badge } from "@/components/ui/badge"
 import { Loader2, TrendingUp, Phone, User, RefreshCw } from "lucide-react"
@@ -12,6 +12,7 @@ import { athenaAPI } from "@/lib/athena-api"
 import { DateHelper } from "@/lib/date-helper"
 import { Button } from "@/components/ui/button"
 import { useGlobalFilters } from "@/lib/global-filters-context"
+import { useSortable, SortHead } from "@/lib/sort-table"
 
 interface TransferData {
   agent_id: string
@@ -107,6 +108,8 @@ export default function TransferAnalysis() {
 
   const totalTransfers = transferData.reduce((sum, t) => sum + parseInt(t.total || '0'), 0)
   const uniqueAgents = new Set(transferData.map(t => t.agent_name)).size
+
+  const sort = useSortable(transferData)
   const topDestination = transferData.length > 0 
     ? transferData.reduce((max, t) => parseInt(t.total) > parseInt(max.total) ? t : max)
     : null
@@ -223,16 +226,16 @@ export default function TransferAnalysis() {
                   <Table>
                     <TableHeader className="sticky top-0 bg-background z-10">
                       <TableRow>
-                        <TableHead>Agent Name</TableHead>
-                        <TableHead>Region</TableHead>
-                        <TableHead className="text-right">Transfer Type</TableHead>
-                        <TableHead className="text-right">Destination</TableHead>
-                        <TableHead className="text-right">Total Transfers</TableHead>
-                        <TableHead className="text-right">Volume</TableHead>
+                        <SortHead col="agent_name" label="Agent Name" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
+                        <SortHead col="region" label="Region" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
+                        <SortHead col="type" label="Transfer Type" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="destination" label="Destination" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="total" label="Total Transfers" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="total" label="Volume" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {transferData.map((transfer, index) => (
+                      {sort.sorted.map((transfer, index) => (
                         <TableRow key={index}>
                           <TableCell className="font-medium">{transfer.agent_name}</TableCell>
                           <TableCell>{transfer.region || '—'}</TableCell>

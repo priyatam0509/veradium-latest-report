@@ -6,7 +6,7 @@ import { AuthGuard } from "@/components/auth-guard"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Loader2, Search, Calendar, RefreshCw, Download } from "lucide-react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -16,6 +16,8 @@ import { cn } from "@/lib/utils"
 import { athenaAPI } from "@/lib/athena-api"
 import { useAuth } from "@/hooks/use-auth"
 import { DateHelper } from "@/lib/date-helper"
+import { exportToCSV } from "@/lib/csv-export"
+import { useSortable, SortHead } from "@/lib/sort-table"
 
 interface AgentData {
   agent_id: string
@@ -331,16 +333,18 @@ export default function AgentPerformancePage() {
     function exportToCSV() {
       const table = document.getElementById('dataTable');
       const rows = Array.from(table.querySelectorAll('tr'));
-      
+
       const csv = rows.map(row => {
         const cells = Array.from(row.querySelectorAll('th, td'));
         return cells.map(cell => {
-          const text = cell.textContent.trim();
-          return '"' + text.replace(/"/g, '""') + '"';
+          const v = cell.textContent.trim();
+          if (v === '—' || v === '') return '""';
+          if (/^\\d{4}-\\d{2}-\\d{2}/.test(v) || v.startsWith('+')) return '="' + v.replace(/"/g, '""') + '"';
+          return '"' + v.replace(/"/g, '""') + '"';
         }).join(',');
       }).join('\\n');
-      
-      const blob = new Blob([csv], { type: 'text/csv' });
+
+      const blob = new Blob(['\\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -386,25 +390,13 @@ export default function AgentPerformancePage() {
     fetchAgentData(value)
   }
 
-  const exportToCSV = (data: any[], filename: string) => {
-    if (data.length === 0) return
-    
-    const headers = Object.keys(data[0]).join(',')
-    const rows = data.map(row => Object.values(row).join(','))
-    const csv = [headers, ...rows].join('\n')
-    
-    const blob = new Blob([csv], { type: 'text/csv' })
-    const url = window.URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = filename
-    a.click()
-  }
 
-  const filteredAgents = agentData.filter((agent) => 
+  const filteredAgents = agentData.filter((agent) =>
     agent.agent_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     agent.agent_id?.toLowerCase().includes(searchTerm.toLowerCase())
   )
+
+  const sort = useSortable(filteredAgents)
 
   return (
     <AuthGuard>
@@ -520,19 +512,19 @@ export default function AgentPerformancePage() {
                   <Table>
                     <TableHeader className="sticky top-0 bg-background z-10">
                       <TableRow>
-                        <TableHead>Agent Name</TableHead>
-                        <TableHead className="text-right">Region</TableHead>
-                        <TableHead className="text-right">Channel</TableHead>
-                        <TableHead className="text-right">Initiation Method</TableHead>
-                        <TableHead className="text-right">Received</TableHead>
-                        <TableHead className="text-right">Completed</TableHead>
-                        <TableHead className="text-right">Transferred</TableHead>
-                        <TableHead className="text-right">% Calls</TableHead>
-                        <TableHead className="text-right">Talk Time</TableHead>
+                        <SortHead col="agent_name" label="Agent Name" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
+                        <SortHead col="region" label="Region" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="channel" label="Channel" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="initiation_method" label="Initiation Method" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="received" label="Received" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="completed" label="Completed" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="transferred" label="Transferred" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="%_calls" label="% Calls" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="talk_time" label="Talk Time" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredAgents.map((agent, index) => (
+                      {sort.sorted.map((agent, index) => (
                         <TableRow key={index}>
                           <TableCell
                             className="font-medium cursor-pointer text-primary hover:underline"

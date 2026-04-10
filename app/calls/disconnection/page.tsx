@@ -4,13 +4,14 @@ import { useState, useEffect } from "react"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { AuthGuard } from "@/components/auth-guard"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components/ui/table"
 import { useAuth } from "@/hooks/use-auth"
 import { Badge } from "@/components/ui/badge"
 import { Loader2, RefreshCw, Activity, WifiOff, LayoutList } from "lucide-react"
 import { athenaAPI } from "@/lib/athena-api"
 import { DateHelper } from "@/lib/date-helper"
 import { Button } from "@/components/ui/button"
+import { useSortable, SortHead } from "@/lib/sort-table"
 
 interface DisconnectionRow {
   queue_id: string
@@ -66,6 +67,8 @@ export default function DisconnectionCausePage() {
   const totalQueues = [...new Set(data.map(r => r.queue_id))].length
   const totalCalls = data.reduce((sum, r) => sum + parseInt(r.total || '0'), 0)
   const abandonedTotal = data.filter(r => r.disconnect_reason === 'Abandoned').reduce((sum, r) => sum + parseInt(r.total || '0'), 0)
+
+  const sort = useSortable(data)
   const unansweredTotal = data.filter(r => r.disconnect_reason === 'Unanswered').reduce((sum, r) => sum + parseInt(r.total || '0'), 0)
 
   return (
@@ -201,15 +204,15 @@ export default function DisconnectionCausePage() {
                   <Table>
                     <TableHeader className="sticky top-0 bg-background z-10">
                       <TableRow>
-                        <TableHead>Queue Name</TableHead>
-                        <TableHead>Region</TableHead>
-                        <TableHead>Disconnect Reason</TableHead>
-                        <TableHead className="text-right">Total</TableHead>
-                        <TableHead className="text-right">% of Calls</TableHead>
+                        <SortHead col="queue_name" label="Queue Name" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
+                        <SortHead col="region" label="Region" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
+                        <SortHead col="disconnect_reason" label="Disconnect Reason" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
+                        <SortHead col="total" label="Total" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="%_calls" label="% of Calls" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {data.map((row, index) => (
+                      {sort.sorted.map((row, index) => (
                         <TableRow key={index}>
                           <TableCell className="font-medium">{row.queue_name || '—'}</TableCell>
                           <TableCell>{row.region || '—'}</TableCell>

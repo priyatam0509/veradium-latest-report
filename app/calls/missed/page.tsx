@@ -365,16 +365,18 @@ export default function MissedCallsPage() {
     function exportToCSV() {
       const table = document.getElementById('dataTable');
       const rows = Array.from(table.querySelectorAll('tr'));
-      
+
       const csv = rows.map(row => {
         const cells = Array.from(row.querySelectorAll('th, td'));
         return cells.map(cell => {
-          const text = cell.textContent.trim();
-          return '"' + text.replace(/"/g, '""') + '"';
+          const v = cell.textContent.trim();
+          if (v === '—' || v === '') return '""';
+          if (/^\\d{4}-\\d{2}-\\d{2}/.test(v) || v.startsWith('+')) return '="' + v.replace(/"/g, '""') + '"';
+          return '"' + v.replace(/"/g, '""') + '"';
         }).join(',');
       }).join('\\n');
-      
-      const blob = new Blob([csv], { type: 'text/csv' });
+
+      const blob = new Blob(['\\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;

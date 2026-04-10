@@ -4,7 +4,8 @@ import { useState, useEffect } from "react"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { AuthGuard } from "@/components/auth-guard"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components/ui/table"
+import { useSortable, SortHead } from "@/lib/sort-table"
 import { Button } from "@/components/ui/button"
 import { Loader2, RefreshCw, List, Calendar } from "lucide-react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -64,6 +65,8 @@ export default function AgentDrilldownPage() {
       setIsLoading(false)
     }
   }
+
+  const sort = useSortable(rows)
 
   return (
     <AuthGuard>
@@ -148,16 +151,16 @@ export default function AgentDrilldownPage() {
                   <Table>
                     <TableHeader className="sticky top-0 bg-background z-10">
                       <TableRow>
-                        <TableHead>Agent</TableHead>
-                        <TableHead>Event Type</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Max Event Timestamp</TableHead>
-                        <TableHead>Status Timestamp</TableHead>
-                        <TableHead>User ID</TableHead>
+                        <SortHead col="first_name" label="Agent" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
+                        <SortHead col="event_type" label="Event Type" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
+                        <SortHead col="status_name" label="Status" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
+                        <SortHead col="maxof_eventtimestamp" label="Max Event Timestamp" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
+                        <SortHead col="status_timestamp" label="Status Timestamp" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
+                        <SortHead col="user_id" label="User ID" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {rows.map((row, index) => (
+                      {sort.sorted.map((row, index) => (
                         <TableRow key={index}>
                           <TableCell className="font-medium">{row.first_name || '—'}</TableCell>
                           <TableCell>

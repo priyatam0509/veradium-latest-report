@@ -229,8 +229,13 @@ export default function AgentAvailabilityPage() {
   <script>
     function exportCSV() {
       const rows = Array.from(document.querySelectorAll('#t tr'))
-      const csv = rows.map(r => Array.from(r.querySelectorAll('th,td')).map(c => '"' + c.textContent.trim().replace(/"/g,'""') + '"').join(',')).join('\\n')
-      const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(new Blob([csv], {type:'text/csv'})), download: 'agent-availability-details.csv' })
+      const csv = rows.map(r => Array.from(r.querySelectorAll('th,td')).map(c => {
+        const v = c.textContent.trim();
+        if (v === '—' || v === '') return '""';
+        if (/^\\d{4}-\\d{2}-\\d{2}/.test(v) || v.startsWith('+')) return '="' + v.replace(/"/g,'""') + '"';
+        return '"' + v.replace(/"/g,'""') + '"';
+      }).join(',')).join('\\n')
+      const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(new Blob(['\\uFEFF' + csv], {type:'text/csv;charset=utf-8;'})), download: 'agent-availability-details.csv' })
       a.click()
     }
     function playRec(btn) {

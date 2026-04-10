@@ -4,13 +4,14 @@ import { useState, useEffect } from "react"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { AuthGuard } from "@/components/auth-guard"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components/ui/table"
 import { useAuth } from "@/hooks/use-auth"
 import { Badge } from "@/components/ui/badge"
 import { Loader2, RefreshCw, Activity, Phone, Hash } from "lucide-react"
 import { athenaAPI } from "@/lib/athena-api"
 import { DateHelper } from "@/lib/date-helper"
 import { Button } from "@/components/ui/button"
+import { useSortable, SortHead } from "@/lib/sort-table"
 
 interface AnsweredByDIDRow {
   did: string
@@ -68,6 +69,8 @@ export default function AnsweredByDIDPage() {
   const totalReceived = data.reduce((sum, r) => sum + parseInt(r.received || '0'), 0)
   const totalCompleted = data.reduce((sum, r) => sum + parseInt(r.completed || '0'), 0)
   const totalTransferred = data.reduce((sum, r) => sum + parseInt(r.transferred || '0'), 0)
+
+  const sort = useSortable(data)
 
   return (
     <AuthGuard>
@@ -202,21 +205,21 @@ export default function AnsweredByDIDPage() {
                   <Table>
                     <TableHeader className="sticky top-0 bg-background z-10">
                       <TableRow>
-                        <TableHead>DID</TableHead>
-                        <TableHead>Region</TableHead>
-                        <TableHead>Channel</TableHead>
-                        <TableHead>Initiation</TableHead>
-                        <TableHead className="text-right">Received</TableHead>
-                        <TableHead className="text-right">Completed</TableHead>
-                        <TableHead className="text-right">Transferred</TableHead>
-                        <TableHead className="text-right">% Calls</TableHead>
-                        <TableHead className="text-right">Talk Time</TableHead>
-                        <TableHead className="text-right">Avg Talk</TableHead>
-                        <TableHead className="text-right">Ring Time</TableHead>
+                        <SortHead col="did" label="DID" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
+                        <SortHead col="region" label="Region" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
+                        <SortHead col="channel" label="Channel" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
+                        <SortHead col="initiation_method" label="Initiation" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
+                        <SortHead col="received" label="Received" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="completed" label="Completed" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="transferred" label="Transferred" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="%_calls" label="% Calls" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="talk_time" label="Talk Time" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="avg_talk" label="Avg Talk" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="ring_time" label="Ring Time" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {data.map((row, index) => (
+                      {sort.sorted.map((row, index) => (
                         <TableRow key={index}>
                           <TableCell className="font-mono font-medium">{row.did}</TableCell>
                           <TableCell>{row.region || '—'}</TableCell>

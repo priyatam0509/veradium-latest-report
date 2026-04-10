@@ -17,6 +17,7 @@ import { useAuth } from "@/hooks/use-auth"
 import { DateHelper } from "@/lib/date-helper"
 import { useGlobalFilters } from "@/lib/global-filters-context"
 import { Input } from "@/components/ui/input"
+import { exportToCSV } from "@/lib/csv-export"
 
 /* -------------------------------------------------------------------------- */
 /*                               Data interfaces                               */
@@ -186,24 +187,6 @@ interface DrilldownData {
 /* -------------------------------------------------------------------------- */
 /*                                  Helpers                                    */
 /* -------------------------------------------------------------------------- */
-
-function exportToCSV(data: any[], filename: string) {
-  if (!data || data.length === 0) return
-  const headers = Object.keys(data[0]).join(",")
-  const rows = data.map((row) =>
-    Object.values(row)
-      .map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`)
-      .join(",")
-  )
-  const csv = [headers, ...rows].join("\n")
-  const blob = new Blob([csv], { type: "text/csv" })
-  const url = window.URL.createObjectURL(blob)
-  const a = document.createElement("a")
-  a.href = url
-  a.download = filename
-  a.click()
-  window.URL.revokeObjectURL(url)
-}
 
 type SortDir = "asc" | "desc" | null
 

@@ -5,7 +5,7 @@ import { DashboardLayout } from "@/components/dashboard-layout"
 import { AuthGuard } from "@/components/auth-guard"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Loader2, Calendar, Download } from "lucide-react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -15,6 +15,8 @@ import { cn } from "@/lib/utils"
 import { athenaAPI } from "@/lib/athena-api"
 import { useAuth } from "@/hooks/use-auth"
 import { DateHelper } from "@/lib/date-helper"
+import { exportToCSV } from "@/lib/csv-export"
+import { useSortable, SortHead } from "@/lib/sort-table"
 
 interface ReportData {
   period: string
@@ -101,20 +103,11 @@ export default function TimeAnalysisReportsPage() {
     }
   }, [authLoading, user?.email, reportType])
 
-  const exportToCSV = () => {
-    if (reportData.length === 0) return
-    
-    const headers = Object.keys(reportData[0]).join(',')
-    const rows = reportData.map(row => Object.values(row).join(','))
-    const csv = [headers, ...rows].join('\n')
-    
-    const blob = new Blob([csv], { type: 'text/csv' })
-    const url = window.URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `${reportType}-report-${format(new Date(), 'yyyy-MM-dd')}.csv`
-    a.click()
+  const handleExportCSV = () => {
+    exportToCSV(reportData, `${reportType}-report-${format(new Date(), 'yyyy-MM-dd')}.csv`)
   }
+
+  const sort = useSortable(reportData)
 
   const getReportTitle = () => {
     switch (reportType) {
@@ -141,7 +134,7 @@ export default function TimeAnalysisReportsPage() {
               <h1 className="text-3xl font-bold tracking-tight">Time Analysis Reports</h1>
               <p className="text-muted-foreground">Generate daily, weekly, and monthly performance reports</p>
             </div>
-            <Button onClick={exportToCSV} variant="outline" size="sm" disabled={reportData.length === 0}>
+            <Button onClick={handleExportCSV} variant="outline" size="sm" disabled={reportData.length === 0}>
               <Download className="h-4 w-4 mr-2" />
               Export Report
             </Button>
@@ -225,24 +218,24 @@ export default function TimeAnalysisReportsPage() {
                   <Table>
                     <TableHeader className="sticky top-0 bg-background z-10">
                       <TableRow>
-                        <TableHead>{getPeriodLabel()}</TableHead>
-                        <TableHead>Region</TableHead>
-                        <TableHead className="text-right">Channel</TableHead>
-                        <TableHead className="text-right">Initiation Method</TableHead>
-                        <TableHead className="text-right">Received</TableHead>
-                        <TableHead className="text-right">Answered</TableHead>
-                        <TableHead className="text-right">Unanswered</TableHead>
-                        <TableHead className="text-right">Abandoned</TableHead>
-                        <TableHead className="text-right">Transferred</TableHead>
-                        <TableHead className="text-right">Avg Wait</TableHead>
-                        <TableHead className="text-right">Avg Talk</TableHead>
-                        <TableHead className="text-right">% Answered</TableHead>
-                        <TableHead className="text-right">% Unanswered</TableHead>
-                        <TableHead className="text-right">SLA %</TableHead>
+                        <SortHead col="period" label={getPeriodLabel()} sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
+                        <SortHead col="region" label="Region" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
+                        <SortHead col="channel" label="Channel" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="initiation_method" label="Initiation Method" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="received" label="Received" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="answered" label="Answered" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="unanswered" label="Unanswered" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="abandoned" label="Abandoned" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="transferred" label="Transferred" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="avg_wait" label="Avg Wait" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="avg_talk" label="Avg Talk" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="%_answered" label="% Answered" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="%_unanswered" label="% Unanswered" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="sla" label="SLA %" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {reportData.map((row, index) => (
+                      {sort.sorted.map((row, index) => (
                         <TableRow key={index}>
                           <TableCell className="font-medium">{row.period}</TableCell>
                           <TableCell>{row.region || '—'}</TableCell>

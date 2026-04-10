@@ -4,13 +4,14 @@ import { useState, useEffect } from "react"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { AuthGuard } from "@/components/auth-guard"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components/ui/table"
 import { useAuth } from "@/hooks/use-auth"
 import { Badge } from "@/components/ui/badge"
 import { Loader2, RefreshCw, Activity, Phone, LayoutList } from "lucide-react"
 import { athenaAPI } from "@/lib/athena-api"
 import { DateHelper } from "@/lib/date-helper"
 import { Button } from "@/components/ui/button"
+import { useSortable, SortHead } from "@/lib/sort-table"
 
 interface AnsweredByQueueRow {
   queue_id: string
@@ -63,6 +64,8 @@ export default function AnsweredByQueuePage() {
 
   const totalQueues = data.length
   const totalAnswered = data.reduce((sum, r) => sum + parseInt(r.answered || r.count || '0'), 0)
+
+  const sort = useSortable(data)
 
   return (
     <AuthGuard>
@@ -171,16 +174,16 @@ export default function AnsweredByQueuePage() {
                   <Table>
                     <TableHeader className="sticky top-0 bg-background z-10">
                       <TableRow>
-                        <TableHead>Queue Name</TableHead>
-                        <TableHead>Region</TableHead>
-                        <TableHead>Channel</TableHead>
-                        <TableHead>Initiation Method</TableHead>
-                        <TableHead className="text-right">Answered</TableHead>
-                        <TableHead className="text-right">% of Calls</TableHead>
+                        <SortHead col="queue_name" label="Queue Name" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
+                        <SortHead col="region" label="Region" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
+                        <SortHead col="channel" label="Channel" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
+                        <SortHead col="initiation_method" label="Initiation Method" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
+                        <SortHead col="answered" label="Answered" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="%_calls" label="% of Calls" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {data.map((row, index) => (
+                      {sort.sorted.map((row, index) => (
                         <TableRow key={index}>
                           <TableCell className="font-medium">{row.queue_name}</TableCell>
                           <TableCell>{row.region || '—'}</TableCell>

@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useMemo } from "react"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { AuthGuard } from "@/components/auth-guard"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components/ui/table"
 import { useAuth } from "@/hooks/use-auth"
 import { Badge } from "@/components/ui/badge"
 import { Loader2, TrendingUp, Clock, RefreshCw, Activity, Pause, Coffee, User, Search } from "lucide-react"
@@ -13,6 +13,7 @@ import { DateHelper } from "@/lib/date-helper"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useGlobalFilters } from "@/lib/global-filters-context"
+import { useSortable, SortHead } from "@/lib/sort-table"
 
 interface AgentPauseDetail {
   user_id: string
@@ -127,6 +128,8 @@ export default function AgentActivityAnalysis() {
       return values.some((v) => (v || '').toString().toLowerCase().includes(search))
     })
   }, [agentData, localSearch])
+
+  const sort = useSortable(filteredAgentData)
 
   return (
     <AuthGuard>
@@ -261,16 +264,16 @@ export default function AgentActivityAnalysis() {
                   <Table>
                     <TableHeader className="sticky top-0 bg-background z-10">
                       <TableRow>
-                        <TableHead>Agent Name</TableHead>
-                        <TableHead>Region</TableHead>
-                        <TableHead>Interval Start</TableHead>
-                        <TableHead>Interval End</TableHead>
-                        <TableHead className="text-right">Custom Status Events</TableHead>
-                        <TableHead className="text-right">Number of Holds</TableHead>
+                        <SortHead col="agent_name" label="Agent Name" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
+                        <SortHead col="agent_region" label="Region" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
+                        <SortHead col="max_interval_start_time" label="Interval Start" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
+                        <SortHead col="max_interval_end_time" label="Interval End" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
+                        <SortHead col="on_custom_status" label="Custom Status Events" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="number_of_holds" label="Number of Holds" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredAgentData.map((agent, index) => (
+                      {sort.sorted.map((agent, index) => (
                         <TableRow key={index}>
                           <TableCell className="font-medium">{agent.agent_name}</TableCell>
                           <TableCell>{agent.agent_region || '—'}</TableCell>

@@ -8,13 +8,15 @@ import { AuthGuard } from "@/components/auth-guard"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components/ui/table"
+import { useSortable, SortHead } from "@/lib/sort-table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Loader2, Download, X, Search } from "lucide-react"
 import { athenaAPI } from "@/lib/athena-api"
 import { useAuth } from "@/hooks/use-auth"
 import { DateHelper } from "@/lib/date-helper"
 import { useGlobalFilters } from "@/lib/global-filters-context"
+import { exportToCSV } from "@/lib/csv-export"
 
 /* -------------------------------------------------------------------------- */
 /*                              Data interfaces                                */
@@ -131,21 +133,6 @@ function RecordingCell({ recording }: { recording?: string }) {
   )
 }
 
-function exportToCSV(data: any[], filename: string) {
-  if (!data || data.length === 0) return
-  const headers = Object.keys(data[0]).join(",")
-  const rows = data.map((row) =>
-    Object.values(row).map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`).join(",")
-  )
-  const csv = [headers, ...rows].join("\n")
-  const blob = new Blob([csv], { type: "text/csv" })
-  const url = window.URL.createObjectURL(blob)
-  const a = document.createElement("a")
-  a.href = url
-  a.download = filename
-  a.click()
-  window.URL.revokeObjectURL(url)
-}
 
 function getStatusColor(status: string) {
   switch (status) {
@@ -412,6 +399,9 @@ export default function ContactTracePage() {
     })
   }, [unansweredData, localSearch])
 
+  const answeredSort = useSortable(displayedAnswered)
+  const unansweredSort = useSortable(displayedUnanswered)
+
   return (
     <AuthGuard>
       <DashboardLayout>
@@ -474,24 +464,24 @@ export default function ContactTracePage() {
                       <Table>
                         <TableHeader className="sticky top-0 bg-background z-10">
                           <TableRow>
-                            <TableHead className="whitespace-nowrap">Contact ID</TableHead>
-                            <TableHead className="whitespace-nowrap">Date</TableHead>
-                            <TableHead className="whitespace-nowrap">Channel</TableHead>
-                            <TableHead className="whitespace-nowrap">Queue</TableHead>
-                            <TableHead className="whitespace-nowrap">Agent</TableHead>
-                            <TableHead className="whitespace-nowrap">Number</TableHead>
-                            <TableHead className="whitespace-nowrap">Status</TableHead>
-                            <TableHead className="whitespace-nowrap text-right">Ring Time</TableHead>
-                            <TableHead className="whitespace-nowrap text-right">Wait Time</TableHead>
-                            <TableHead className="whitespace-nowrap text-right">Talk Time</TableHead>
-                            <TableHead className="whitespace-nowrap">DID</TableHead>
-                            <TableHead className="whitespace-nowrap">Region</TableHead>
-                            <TableHead className="whitespace-nowrap">State</TableHead>
-                            <TableHead className="whitespace-nowrap">Recording</TableHead>
+                            <SortHead col="contact_id" label="Contact ID" sortKey={answeredSort.sortKey} sortDir={answeredSort.sortDir} onSort={answeredSort.handleSort} className="whitespace-nowrap" />
+                            <SortHead col="date" label="Date" sortKey={answeredSort.sortKey} sortDir={answeredSort.sortDir} onSort={answeredSort.handleSort} className="whitespace-nowrap" />
+                            <SortHead col="channel" label="Channel" sortKey={answeredSort.sortKey} sortDir={answeredSort.sortDir} onSort={answeredSort.handleSort} className="whitespace-nowrap" />
+                            <SortHead col="queue_name" label="Queue" sortKey={answeredSort.sortKey} sortDir={answeredSort.sortDir} onSort={answeredSort.handleSort} className="whitespace-nowrap" />
+                            <SortHead col="agent_name" label="Agent" sortKey={answeredSort.sortKey} sortDir={answeredSort.sortDir} onSort={answeredSort.handleSort} className="whitespace-nowrap" />
+                            <SortHead col="customer_number" label="Number" sortKey={answeredSort.sortKey} sortDir={answeredSort.sortDir} onSort={answeredSort.handleSort} className="whitespace-nowrap" />
+                            <SortHead col="interaction_status" label="Status" sortKey={answeredSort.sortKey} sortDir={answeredSort.sortDir} onSort={answeredSort.handleSort} className="whitespace-nowrap" />
+                            <SortHead col="ring_time" label="Ring Time" sortKey={answeredSort.sortKey} sortDir={answeredSort.sortDir} onSort={answeredSort.handleSort} className="whitespace-nowrap text-right" />
+                            <SortHead col="wait_time" label="Wait Time" sortKey={answeredSort.sortKey} sortDir={answeredSort.sortDir} onSort={answeredSort.handleSort} className="whitespace-nowrap text-right" />
+                            <SortHead col="talk_time" label="Talk Time" sortKey={answeredSort.sortKey} sortDir={answeredSort.sortDir} onSort={answeredSort.handleSort} className="whitespace-nowrap text-right" />
+                            <SortHead col="did" label="DID" sortKey={answeredSort.sortKey} sortDir={answeredSort.sortDir} onSort={answeredSort.handleSort} className="whitespace-nowrap" />
+                            <SortHead col="region" label="Region" sortKey={answeredSort.sortKey} sortDir={answeredSort.sortDir} onSort={answeredSort.handleSort} className="whitespace-nowrap" />
+                            <SortHead col="state" label="State" sortKey={answeredSort.sortKey} sortDir={answeredSort.sortDir} onSort={answeredSort.handleSort} className="whitespace-nowrap" />
+                            <SortHead col="recording" label="Recording" sortKey={answeredSort.sortKey} sortDir={answeredSort.sortDir} onSort={answeredSort.handleSort} className="whitespace-nowrap" />
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {displayedAnswered.map((row, i) => (
+                          {answeredSort.sorted.map((row, i) => (
                             <TableRow key={i}>
                               <TableCell className="text-xs whitespace-nowrap font-mono">
                                 <button
@@ -542,21 +532,21 @@ export default function ContactTracePage() {
                       <Table>
                         <TableHeader className="sticky top-0 bg-background z-10">
                           <TableRow>
-                            <TableHead className="whitespace-nowrap">Contact ID</TableHead>
-                            <TableHead className="whitespace-nowrap">Date</TableHead>
-                            <TableHead className="whitespace-nowrap">Channel</TableHead>
-                            <TableHead className="whitespace-nowrap">Queue</TableHead>
-                            <TableHead className="whitespace-nowrap">Number</TableHead>
-                            <TableHead className="whitespace-nowrap">Status</TableHead>
-                            <TableHead className="whitespace-nowrap text-right">Ring Time</TableHead>
-                            <TableHead className="whitespace-nowrap text-right">Wait Time</TableHead>
-                            <TableHead className="whitespace-nowrap">DID</TableHead>
-                            <TableHead className="whitespace-nowrap">Region</TableHead>
-                            <TableHead className="whitespace-nowrap">Recording</TableHead>
+                            <SortHead col="contact_id" label="Contact ID" sortKey={unansweredSort.sortKey} sortDir={unansweredSort.sortDir} onSort={unansweredSort.handleSort} className="whitespace-nowrap" />
+                            <SortHead col="date" label="Date" sortKey={unansweredSort.sortKey} sortDir={unansweredSort.sortDir} onSort={unansweredSort.handleSort} className="whitespace-nowrap" />
+                            <SortHead col="channel" label="Channel" sortKey={unansweredSort.sortKey} sortDir={unansweredSort.sortDir} onSort={unansweredSort.handleSort} className="whitespace-nowrap" />
+                            <SortHead col="queue_name" label="Queue" sortKey={unansweredSort.sortKey} sortDir={unansweredSort.sortDir} onSort={unansweredSort.handleSort} className="whitespace-nowrap" />
+                            <SortHead col="customer_number" label="Number" sortKey={unansweredSort.sortKey} sortDir={unansweredSort.sortDir} onSort={unansweredSort.handleSort} className="whitespace-nowrap" />
+                            <SortHead col="interaction_status" label="Status" sortKey={unansweredSort.sortKey} sortDir={unansweredSort.sortDir} onSort={unansweredSort.handleSort} className="whitespace-nowrap" />
+                            <SortHead col="ring_time" label="Ring Time" sortKey={unansweredSort.sortKey} sortDir={unansweredSort.sortDir} onSort={unansweredSort.handleSort} className="whitespace-nowrap text-right" />
+                            <SortHead col="wait_time" label="Wait Time" sortKey={unansweredSort.sortKey} sortDir={unansweredSort.sortDir} onSort={unansweredSort.handleSort} className="whitespace-nowrap text-right" />
+                            <SortHead col="did" label="DID" sortKey={unansweredSort.sortKey} sortDir={unansweredSort.sortDir} onSort={unansweredSort.handleSort} className="whitespace-nowrap" />
+                            <SortHead col="region" label="Region" sortKey={unansweredSort.sortKey} sortDir={unansweredSort.sortDir} onSort={unansweredSort.handleSort} className="whitespace-nowrap" />
+                            <SortHead col="recording" label="Recording" sortKey={unansweredSort.sortKey} sortDir={unansweredSort.sortDir} onSort={unansweredSort.handleSort} className="whitespace-nowrap" />
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {displayedUnanswered.map((row, i) => (
+                          {unansweredSort.sorted.map((row, i) => (
                             <TableRow key={i}>
                               <TableCell className="text-xs whitespace-nowrap font-mono">
                                 <button
