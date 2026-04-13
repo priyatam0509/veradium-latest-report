@@ -195,7 +195,6 @@ export default function AgentAvailabilityPage() {
           <th onclick="sortTable(4)">State Timestamp</th>
           <th onclick="sortTable(5)">State</th>
           <th onclick="sortTable(6)">Contact ID</th>
-          <th onclick="sortTable(7)">Queues</th>
           <th>Recording</th>
         </tr></thead>
         <tbody>
@@ -222,10 +221,9 @@ export default function AgentAvailabilityPage() {
               <td>${r.state_timestamp || '—'}</td>
               <td>${r.state || '—'}</td>
               <td class="mono">${r.contact_id || '—'}</td>
-              <td>${r.queues || '—'}</td>
               <td>${recordingCell}</td>
             </tr>`
-          }).join('') : '<tr><td colspan="9" class="empty">No events found.</td></tr>'}
+          }).join('') : '<tr><td colspan="8" class="empty">No events found.</td></tr>'}
         </tbody>
       </table>
     </div>
