@@ -37,6 +37,7 @@ import {
   FileText,
   Calendar,
   RefreshCw,
+  ClipboardList,
 } from "lucide-react"
 
 /* -------------------------------------------------------------------------- */
@@ -302,6 +303,7 @@ const NAV_STRUCTURE: NavEntry[] = [
       { route: "/agents/activity-analysis", label: "Agent Activity", icon: Activity },
       { route: "/agents/performance-analysis", label: "Agent Performance", icon: TrendingUp },
       { route: "/agents/availability", label: "Agent Availability", icon: UserCheck },
+      { route: "/agents/drilldown", label: "Agent State Log", icon: ClipboardList },
     ],
   },
   {
@@ -360,6 +362,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       "/agents/activity-analysis",
       "/agents/performance-analysis",
       "/agents/availability",
+      "/agents/drilldown",
       "/contact-trace",
     ]
     if (alwaysAccessible.includes(route)) return true

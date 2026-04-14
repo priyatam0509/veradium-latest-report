@@ -8,7 +8,7 @@ import { DashboardLayout } from "@/components/dashboard-layout"
 import { AuthGuard } from "@/components/auth-guard"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Activity, TrendingUp, UserCheck, ArrowRight, Loader2 } from "lucide-react"
+import { Activity, TrendingUp, UserCheck, ClipboardList, ArrowRight, Loader2 } from "lucide-react"
 import { athenaAPI } from "@/lib/athena-api"
 import { useAuth } from "@/hooks/use-auth"
 import { DateHelper } from "@/lib/date-helper"
@@ -122,7 +122,7 @@ export default function AgentMatrixPage() {
           </Card>
 
           {/* Child page links */}
-          <div className="grid gap-6 md:grid-cols-3">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
             <Card className="hover:shadow-md transition-shadow">
               <CardHeader>
                 <div className="flex items-center gap-3">
@@ -180,6 +180,27 @@ export default function AgentMatrixPage() {
               <CardContent>
                 <Button asChild className="w-full" variant="outline">
                   <Link href="/agents/availability">
+                    Open Report <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-md transition-shadow">
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-orange-500/10">
+                    <ClipboardList className="h-5 w-5 text-orange-600" />
+                  </div>
+                  <CardTitle className="text-lg">Agent State Log</CardTitle>
+                </div>
+                <CardDescription>
+                  Agent login, logout, and state change events by date range.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button asChild className="w-full" variant="outline">
+                  <Link href="/agents/drilldown">
                     Open Report <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>
