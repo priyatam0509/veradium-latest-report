@@ -191,13 +191,15 @@ export default function AgentAvailabilityPage() {
     <div class="table-container">
       <table id="t">
         <thead style="position:sticky;top:0;z-index:1;"><tr>
-          <th onclick="sortTable(0)">Event Timestamp</th>
-          <th onclick="sortTable(1)">Event Type</th>
-          <th onclick="sortTable(2)">Agent Status Timestamp</th>
-          <th onclick="sortTable(3)">Agent Status</th>
-          <th onclick="sortTable(4)">Contact State Start</th>
-          <th onclick="sortTable(5)">Contact State</th>
-          <th onclick="sortTable(6)">Contact ID</th>
+          <th onclick="sortTable(0)">User ID</th>
+          <th onclick="sortTable(1)">Agent Name</th>
+          <th onclick="sortTable(2)">Event Timestamp</th>
+          <th onclick="sortTable(3)">Event Type</th>
+          <th onclick="sortTable(4)">Agent Status Timestamp</th>
+          <th onclick="sortTable(5)">Agent Status</th>
+          <th onclick="sortTable(6)">Contact State Start</th>
+          <th onclick="sortTable(7)">Contact State</th>
+          <th onclick="sortTable(8)">Contact ID</th>
           <th>Recording</th>
         </tr></thead>
         <tbody>
@@ -218,6 +220,8 @@ export default function AgentAvailabilityPage() {
               } catch(e) { recordingCell = r.recording }
             }
             return `<tr>
+              <td class="mono">${r.user_id || '—'}</td>
+              <td>${r.agent_name || '—'}</td>
               <td>${r.event_timestamp || '—'}</td>
               <td><span class="badge ${badgeClass}">${et || '—'}</span></td>
               <td>${r.agent_status_timestamp || '—'}</td>
@@ -227,7 +231,7 @@ export default function AgentAvailabilityPage() {
               <td class="mono">${r.contact_id || '—'}</td>
               <td>${recordingCell}</td>
             </tr>`
-          }).join('') : '<tr><td colspan="8" class="empty">No events found.</td></tr>'}
+          }).join('') : '<tr><td colspan="10" class="empty">No events found.</td></tr>'}
         </tbody>
       </table>
     </div>
