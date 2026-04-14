@@ -193,7 +193,7 @@ export default function AgentAvailabilityPage() {
         <thead style="position:sticky;top:0;z-index:1;"><tr>
           <th onclick="sortTable(0)">Event Timestamp</th>
           <th onclick="sortTable(1)">Event Type</th>
-          <th onclick="sortTable(2)">Status Timestamp</th>
+          <th onclick="sortTable(2)">Agent Status Timestamp</th>
           <th onclick="sortTable(3)">Agent Status</th>
           <th onclick="sortTable(4)">Contact State Start</th>
           <th onclick="sortTable(5)">Contact State</th>
