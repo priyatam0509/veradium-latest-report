@@ -163,6 +163,9 @@ export default function AgentAvailabilityPage() {
     .badge-login { background: #dcfce7; color: #166534; }
     .badge-logout { background: #fee2e2; color: #991b1b; }
     .badge-state { background: #dbeafe; color: #1e40af; }
+    .badge-inbound { background: #f3e8ff; color: #6b21a8; }
+    .badge-outbound { background: #ffedd5; color: #9a3412; }
+    .badge-status { background: #fef9c3; color: #854d0e; }
     .badge-default { background: #f3f4f6; color: #374151; }
     .mono { font-family: monospace; font-size: 11px; }
     .empty { padding: 48px; text-align: center; color: #9ca3af; }
@@ -191,15 +194,16 @@ export default function AgentAvailabilityPage() {
           <th onclick="sortTable(0)">Event Timestamp</th>
           <th onclick="sortTable(1)">Event Type</th>
           <th onclick="sortTable(2)">Status Timestamp</th>
-          <th onclick="sortTable(3)">Status</th>
-          <th onclick="sortTable(4)">State Timestamp</th>
-          <th onclick="sortTable(5)">State</th>
+          <th onclick="sortTable(3)">Agent Status</th>
+          <th onclick="sortTable(4)">Contact State Start</th>
+          <th onclick="sortTable(5)">Contact State</th>
           <th onclick="sortTable(6)">Contact ID</th>
           <th>Recording</th>
         </tr></thead>
         <tbody>
           ${data.length > 0 ? data.map(r => {
-            const badgeClass = r.event_type === 'LOGIN' ? 'badge-login' : r.event_type === 'LOGOUT' ? 'badge-logout' : r.event_type === 'STATE_CHANGE' ? 'badge-state' : 'badge-default'
+            const et = r.eventtype || ''
+            const badgeClass = et === 'LOGIN' ? 'badge-login' : et === 'LOGOUT' ? 'badge-logout' : et === 'STATE_CHANGE' ? 'badge-state' : et === 'CONTACT_INBOUND' || et === 'CONTACT_TRANSFERRED' ? 'badge-inbound' : et === 'CONTACT_OUTBOUND' ? 'badge-outbound' : et === 'AGENT_STATUS_CHANGED' ? 'badge-status' : 'badge-default'
             let recordingCell = '—'
             if (r.recording) {
               try {
@@ -215,11 +219,11 @@ export default function AgentAvailabilityPage() {
             }
             return `<tr>
               <td>${r.event_timestamp || '—'}</td>
-              <td><span class="badge ${badgeClass}">${r.event_type || '—'}</span></td>
-              <td>${r.status_timestamp || '—'}</td>
-              <td>${r.status || '—'}</td>
-              <td>${r.state_timestamp || '—'}</td>
-              <td>${r.state || '—'}</td>
+              <td><span class="badge ${badgeClass}">${et || '—'}</span></td>
+              <td>${r.agent_status_timestamp || '—'}</td>
+              <td>${r.agent_status || '—'}</td>
+              <td>${r.contact_state_start_timestamp || '—'}</td>
+              <td>${r.contact_state || '—'}</td>
               <td class="mono">${r.contact_id || '—'}</td>
               <td>${recordingCell}</td>
             </tr>`

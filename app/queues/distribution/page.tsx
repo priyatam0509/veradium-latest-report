@@ -168,7 +168,7 @@ interface DrilldownData {
   did: string
   contact_id: string
   agent_name: string
-  date: string
+  enqueue_timestamp: string
   queue_name: string
   region: string
   state: string
@@ -340,7 +340,7 @@ function generateDrilldownHTML(data: DrilldownData[], title: string, startDate?:
     <div class="table-container">
       <table id="t">
         <thead style="position:sticky;top:0;z-index:1;"><tr>
-          <th>DID</th><th>Contact ID</th><th>Agent</th><th>Date</th><th>Queue</th>
+          <th>DID</th><th>Contact ID</th><th>Agent</th><th>Enqueue Timestamp</th><th>Queue</th>
           <th>Region</th><th>State</th><th>Customer</th><th>Channel</th><th>Method</th><th>Status</th>
           <th>Agent Conn.</th><th>Event</th><th>Ring Time</th><th>Wait Time</th><th>Talk Time</th><th>Recording</th>
         </tr></thead>
@@ -367,7 +367,7 @@ function generateDrilldownHTML(data: DrilldownData[], title: string, startDate?:
               <td class="mono">${r.did || "—"}</td>
               <td class="mono">${r.contact_id || "—"}</td>
               <td>${r.agent_name || "—"}</td>
-              <td>${r.date || "—"}</td>
+              <td>${r.enqueue_timestamp || "—"}</td>
               <td>${r.queue_name || "—"}</td>
               <td>${r.region || "—"}</td>
               <td>${r.state || "—"}</td>

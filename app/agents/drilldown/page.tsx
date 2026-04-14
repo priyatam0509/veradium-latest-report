@@ -16,18 +16,26 @@ import { athenaAPI } from "@/lib/athena-api"
 import { DateHelper } from "@/lib/date-helper"
 
 interface AgentDrilldownRow {
-  maxof_eventtimestamp: string
-  event_type: string
-  status_name: string
-  status_timestamp: string
   user_id: string
-  first_name: string
+  agent_name: string
+  event_timestamp: string
+  eventtype: string
+  agent_status_timestamp: string
+  agent_status: string
+  contact_state_start_timestamp: string
+  contact_state: string
+  contact_id: string
+  recording: string
 }
 
 const EVENT_COLORS: Record<string, string> = {
   LOGIN: 'bg-green-100 text-green-800',
   LOGOUT: 'bg-red-100 text-red-800',
   STATE_CHANGE: 'bg-blue-100 text-blue-800',
+  CONTACT_INBOUND: 'bg-purple-100 text-purple-800',
+  CONTACT_OUTBOUND: 'bg-orange-100 text-orange-800',
+  CONTACT_TRANSFERRED: 'bg-purple-100 text-purple-800',
+  AGENT_STATUS_CHANGED: 'bg-yellow-100 text-yellow-800',
 }
 
 const formatTimestamp = (ts: string) => {
@@ -151,26 +159,32 @@ export default function AgentDrilldownPage() {
                   <Table>
                     <TableHeader className="sticky top-0 bg-background z-10">
                       <TableRow>
-                        <SortHead col="first_name" label="Agent" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
-                        <SortHead col="event_type" label="Event Type" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
-                        <SortHead col="status_name" label="Status" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
-                        <SortHead col="maxof_eventtimestamp" label="Max Event Timestamp" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
-                        <SortHead col="status_timestamp" label="Status Timestamp" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
+                        <SortHead col="agent_name" label="Agent" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
+                        <SortHead col="eventtype" label="Event Type" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
+                        <SortHead col="event_timestamp" label="Event Timestamp" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
+                        <SortHead col="agent_status_timestamp" label="Status Timestamp" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
+                        <SortHead col="agent_status" label="Agent Status" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
+                        <SortHead col="contact_state_start_timestamp" label="Contact State Start" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
+                        <SortHead col="contact_state" label="Contact State" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
+                        <SortHead col="contact_id" label="Contact ID" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
                         <SortHead col="user_id" label="User ID" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {sort.sorted.map((row, index) => (
                         <TableRow key={index}>
-                          <TableCell className="font-medium">{row.first_name || '—'}</TableCell>
+                          <TableCell className="font-medium">{row.agent_name || '—'}</TableCell>
                           <TableCell>
-                            <span className={cn("inline-block px-2 py-0.5 rounded text-xs font-medium", EVENT_COLORS[row.event_type] || 'bg-muted text-muted-foreground')}>
-                              {row.event_type || '—'}
+                            <span className={cn("inline-block px-2 py-0.5 rounded text-xs font-medium", EVENT_COLORS[row.eventtype] || 'bg-muted text-muted-foreground')}>
+                              {row.eventtype || '—'}
                             </span>
                           </TableCell>
-                          <TableCell>{row.status_name || '—'}</TableCell>
-                          <TableCell className="text-sm">{formatTimestamp(row.maxof_eventtimestamp)}</TableCell>
-                          <TableCell className="text-sm">{formatTimestamp(row.status_timestamp)}</TableCell>
+                          <TableCell className="text-sm">{formatTimestamp(row.event_timestamp)}</TableCell>
+                          <TableCell className="text-sm">{formatTimestamp(row.agent_status_timestamp)}</TableCell>
+                          <TableCell>{row.agent_status || '—'}</TableCell>
+                          <TableCell className="text-sm">{formatTimestamp(row.contact_state_start_timestamp)}</TableCell>
+                          <TableCell>{row.contact_state || '—'}</TableCell>
+                          <TableCell className="font-mono text-xs text-muted-foreground">{row.contact_id || '—'}</TableCell>
                           <TableCell className="font-mono text-xs text-muted-foreground">{row.user_id}</TableCell>
                         </TableRow>
                       ))}
