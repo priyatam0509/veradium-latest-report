@@ -17,7 +17,6 @@ import { useAuth } from "@/hooks/use-auth"
 import { DateHelper } from "@/lib/date-helper"
 import { useGlobalFilters } from "@/lib/global-filters-context"
 import { Input } from "@/components/ui/input"
-import { exportToCSV } from "@/lib/csv-export"
 
 /* -------------------------------------------------------------------------- */
 /*                               Data interfaces                               */
@@ -168,7 +167,7 @@ interface DrilldownData {
   did: string
   contact_id: string
   agent_name: string
-  enqueue_timestamp: string
+  date: string
   queue_name: string
   region: string
   state: string
@@ -187,6 +186,24 @@ interface DrilldownData {
 /* -------------------------------------------------------------------------- */
 /*                                  Helpers                                    */
 /* -------------------------------------------------------------------------- */
+
+function exportToCSV(data: any[], filename: string) {
+  if (!data || data.length === 0) return
+  const headers = Object.keys(data[0]).join(",")
+  const rows = data.map((row) =>
+    Object.values(row)
+      .map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`)
+      .join(",")
+  )
+  const csv = [headers, ...rows].join("\n")
+  const blob = new Blob([csv], { type: "text/csv" })
+  const url = window.URL.createObjectURL(blob)
+  const a = document.createElement("a")
+  a.href = url
+  a.download = filename
+  a.click()
+  window.URL.revokeObjectURL(url)
+}
 
 type SortDir = "asc" | "desc" | null
 
@@ -340,7 +357,7 @@ function generateDrilldownHTML(data: DrilldownData[], title: string, startDate?:
     <div class="table-container">
       <table id="t">
         <thead style="position:sticky;top:0;z-index:1;"><tr>
-          <th>DID</th><th>Contact ID</th><th>Agent</th><th>Enqueue Timestamp</th><th>Queue</th>
+          <th>DID</th><th>Contact ID</th><th>Agent</th><th>Date</th><th>Queue</th>
           <th>Region</th><th>State</th><th>Customer</th><th>Channel</th><th>Method</th><th>Status</th>
           <th>Agent Conn.</th><th>Event</th><th>Ring Time</th><th>Wait Time</th><th>Talk Time</th><th>Recording</th>
         </tr></thead>
@@ -367,7 +384,7 @@ function generateDrilldownHTML(data: DrilldownData[], title: string, startDate?:
               <td class="mono">${r.did || "—"}</td>
               <td class="mono">${r.contact_id || "—"}</td>
               <td>${r.agent_name || "—"}</td>
-              <td>${r.enqueue_timestamp || "—"}</td>
+              <td>${r.date || "—"}</td>
               <td>${r.queue_name || "—"}</td>
               <td>${r.region || "—"}</td>
               <td>${r.state || "—"}</td>
@@ -600,9 +617,10 @@ export default function QueueDistributionPage() {
 
   const filteredQueues = useMemo(() => {
     let rows = queueData
+    if (selectedQueues.length > 0) rows = rows.filter((q) => selectedQueues.includes(q.queue_name || q.queue_id))
     if (search) rows = rows.filter((q) => (q.queue_name || q.queue_id || q.channel || "").toLowerCase().includes(search.toLowerCase()))
     return rows
-  }, [queueData, search])
+  }, [queueData, selectedQueues, search])
 
   const filteredDIDs = useMemo(
     () => search ? didData.filter((d) => (d.did || d.channel || "").toLowerCase().includes(search.toLowerCase())) : didData,

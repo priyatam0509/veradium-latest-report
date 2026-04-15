@@ -20,17 +20,19 @@ interface AgentAvailData {
   agent: string
   agent_region: string
   answered: string
+  ended: string
   failed: string
+  missed: string
+  rejected: string
+  pauses: string
   online_time: string
   pause_time: string
-  pauses: string
   talk_time: string
   wrap_up_time: string
   hold_time: string
   idle_time: string
   aht: string
   '%_pauses': string
-  missed_rejected: string
 }
 
 export default function AgentAvailabilityPage() {
@@ -112,8 +114,14 @@ export default function AgentAvailabilityPage() {
   const handleViewDrilldown = async (agent: AgentAvailData) => {
     setLoadingAgentId(agent.agent_id)
     try {
-      const start = DateHelper.formatDateFromDate(startRef.current)
-      const end = DateHelper.formatDateFromDate(endRef.current, true)
+      // Expand range by 1 day on each side so Login/Logout events at
+      // the boundary of the selected period are never clipped
+      const startExpanded = new Date(startRef.current ?? new Date())
+      startExpanded.setDate(startExpanded.getDate() - 1)
+      const endExpanded = new Date(endRef.current ?? new Date())
+      endExpanded.setDate(endExpanded.getDate() + 1)
+      const start = DateHelper.formatDateFromDate(startExpanded)
+      const end = DateHelper.formatDateFromDate(endExpanded, true)
       const result = await athenaAPI.getAgentDrilldown(start, end, agent.agent_id, user?.email)
       if (result.status === 'SUCCEEDED') {
         const newWindow = window.open('', '_blank')
@@ -191,15 +199,18 @@ export default function AgentAvailabilityPage() {
     <div class="table-container">
       <table id="t">
         <thead style="position:sticky;top:0;z-index:1;"><tr>
-          <th onclick="sortTable(0)">User ID</th>
-          <th onclick="sortTable(1)">Agent Name</th>
-          <th onclick="sortTable(2)">Event Timestamp</th>
-          <th onclick="sortTable(3)">Event Type</th>
-          <th onclick="sortTable(4)">Agent Status Timestamp</th>
-          <th onclick="sortTable(5)">Agent Status</th>
+          <th onclick="sortTable(0)">Event Timestamp</th>
+          <th onclick="sortTable(1)">Event Type</th>
+          <th onclick="sortTable(2)">Agent Status Time</th>
+          <th onclick="sortTable(3)">Agent Status</th>
+          <th onclick="sortTable(4)">Queue Timestamp</th>
+          <th onclick="sortTable(5)">Queue</th>
           <th onclick="sortTable(6)">Contact State Start</th>
           <th onclick="sortTable(7)">Contact State</th>
-          <th onclick="sortTable(8)">Contact ID</th>
+          <th onclick="sortTable(8)">Channel</th>
+          <th onclick="sortTable(9)">Initiation Method</th>
+          <th onclick="sortTable(10)">Contact ID</th>
+          <th onclick="sortTable(11)">Initial Contact ID</th>
           <th>Recording</th>
         </tr></thead>
         <tbody>
@@ -220,18 +231,21 @@ export default function AgentAvailabilityPage() {
               } catch(e) { recordingCell = r.recording }
             }
             return `<tr>
-              <td class="mono">${r.user_id || '—'}</td>
-              <td>${r.agent_name || '—'}</td>
               <td>${r.event_timestamp || '—'}</td>
               <td><span class="badge ${badgeClass}">${et || '—'}</span></td>
               <td>${r.agent_status_timestamp || '—'}</td>
               <td>${r.agent_status || '—'}</td>
+              <td>${r.queue_timestamp || '—'}</td>
+              <td>${r.queue_name || '—'}</td>
               <td>${r.contact_state_start_timestamp || '—'}</td>
               <td>${r.contact_state || '—'}</td>
-              <td class="mono">${r.contact_id || '—'}</td>
+              <td>${r.channel || '—'}</td>
+              <td>${r.initiationmethod || '—'}</td>
+              <td class="mono">${r.contactid || r.contact_id || '—'}</td>
+              <td class="mono">${r.initialcontactid || '—'}</td>
               <td>${recordingCell}</td>
             </tr>`
-          }).join('') : '<tr><td colspan="10" class="empty">No events found.</td></tr>'}
+          }).join('') : '<tr><td colspan="13" class="empty">No events found.</td></tr>'}
         </tbody>
       </table>
     </div>
@@ -305,6 +319,8 @@ export default function AgentAvailabilityPage() {
   const totalAgents = agentData.length
   const totalAnswered = agentData.reduce((sum, a) => sum + parseInt(a.answered || '0'), 0)
   const totalFailed = agentData.reduce((sum, a) => sum + parseInt(a.failed || '0'), 0)
+  const totalMissed = agentData.reduce((sum, a) => sum + parseInt(a.missed || '0'), 0)
+  const totalRejected = agentData.reduce((sum, a) => sum + parseInt(a.rejected || '0'), 0)
   const totalPauses = agentData.reduce((sum, a) => sum + parseInt(a.pauses || '0'), 0)
 
   const filteredAgentData = useMemo(() => {
@@ -315,8 +331,10 @@ export default function AgentAvailabilityPage() {
         agent.agent,
         agent.agent_region,
         agent.answered,
+        agent.ended,
         agent.failed,
-        agent.missed_rejected,
+        agent.missed,
+        agent.rejected,
         agent.online_time,
         agent.pause_time,
         agent['%_pauses'],
@@ -363,7 +381,7 @@ export default function AgentAvailabilityPage() {
           </div>
 
           {/* KPI Cards */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-5">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total Agents</CardTitle>
@@ -392,14 +410,27 @@ export default function AgentAvailabilityPage() {
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Failed Calls</CardTitle>
+                <CardTitle className="text-sm font-medium">Missed Calls</CardTitle>
+                <Phone className="h-4 w-4 text-orange-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-orange-600">
+                  {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : totalMissed.toLocaleString()}
+                </div>
+                <p className="text-xs text-muted-foreground">Total missed</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Rejected Calls</CardTitle>
                 <Phone className="h-4 w-4 text-red-600" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-red-600">
-                  {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : totalFailed.toLocaleString()}
+                  {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : totalRejected.toLocaleString()}
                 </div>
-                <p className="text-xs text-muted-foreground">Total failed</p>
+                <p className="text-xs text-muted-foreground">Total rejected</p>
               </CardContent>
             </Card>
 
@@ -450,17 +481,19 @@ export default function AgentAvailabilityPage() {
                         <SortHead col="agent" label="Agent" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
                         <SortHead col="agent_region" label="Region" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
                         <SortHead col="answered" label="Answered" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="ended" label="Ended" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
                         <SortHead col="failed" label="Failed" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
-                        <SortHead col="missed_rejected" label="Missed/Rejected" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="missed" label="Missed" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="rejected" label="Rejected" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="pauses" label="Pauses" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
                         <SortHead col="online_time" label="Online Time" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
                         <SortHead col="pause_time" label="Pause Time" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
-                        <SortHead col="%_pauses" label="% Pauses" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
-                        <SortHead col="pauses" label="Pauses" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
                         <SortHead col="talk_time" label="Talk Time" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
-                        <SortHead col="hold_time" label="Hold Time" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
                         <SortHead col="wrap_up_time" label="Wrap-up Time" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="hold_time" label="Hold Time" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
                         <SortHead col="idle_time" label="Idle Time" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
                         <SortHead col="aht" label="AHT" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="%_pauses" label="% Pauses" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -472,17 +505,19 @@ export default function AgentAvailabilityPage() {
                           </TableCell>
                           <TableCell>{agent.agent_region || '—'}</TableCell>
                           <TableCell className="text-right text-green-600 font-mono">{agent.answered || '0'}</TableCell>
+                          <TableCell className="text-right font-mono">{agent.ended || '0'}</TableCell>
                           <TableCell className="text-right text-red-600 font-mono">{agent.failed || '0'}</TableCell>
-                          <TableCell className="text-right text-orange-600 font-mono">{agent.missed_rejected || '0'}</TableCell>
+                          <TableCell className="text-right text-orange-600 font-mono">{agent.missed || '0'}</TableCell>
+                          <TableCell className="text-right text-red-800 font-mono">{agent.rejected || '0'}</TableCell>
+                          <TableCell className="text-right font-mono">{agent.pauses || '0'}</TableCell>
                           <TableCell className="text-right font-mono">{agent.online_time || '—'}</TableCell>
                           <TableCell className="text-right font-mono">{agent.pause_time || '—'}</TableCell>
-                          <TableCell className="text-right font-mono">{agent['%_pauses'] || '—'}</TableCell>
-                          <TableCell className="text-right font-mono">{agent.pauses || '0'}</TableCell>
                           <TableCell className="text-right font-mono">{agent.talk_time || '—'}</TableCell>
-                          <TableCell className="text-right font-mono">{agent.hold_time || '—'}</TableCell>
                           <TableCell className="text-right font-mono">{agent.wrap_up_time || '—'}</TableCell>
+                          <TableCell className="text-right font-mono">{agent.hold_time || '—'}</TableCell>
                           <TableCell className="text-right font-mono">{agent.idle_time || '—'}</TableCell>
                           <TableCell className="text-right font-mono">{agent.aht || '—'}</TableCell>
+                          <TableCell className="text-right font-mono">{agent['%_pauses'] || '—'}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
