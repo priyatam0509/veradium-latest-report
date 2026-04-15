@@ -487,17 +487,15 @@ export default function AnsweredCallsPage() {
                         <TableRow>
                           {[
                             ["queue_name","Queue"],["channel","Channel"],["initiation_method","Method"],["region","Region"],
-                            ["received","Received"],["completed","Completed"],["transferred","Transferred"],["%_calls","% Calls"],
-                            ["talk_time","Talk Time"],["%_talk_time","% Talk Time"],["avg_talk","Avg Talk"],
-                            ["ring_time","Ring Time"],["wait_time","Wait Time"],["avg_wait","Avg Wait"],["max_wait_time","Max Wait"],
+                            ["answered","Answered"],["%_calls","% Calls"],
                           ].map(([col,label]) => (
                             <SortHead key={col} col={col} label={label} sortKey={queueSort.sortKey} sortDir={queueSort.sortDir} onSort={queueSort.handleSort} />
                           ))}
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {isLoading && activeTab === "queue" ? <LoadingRow cols={15} />
-                        : queueSort.sorted.length === 0 ? <EmptyRow cols={15} label="No queue data found." />
+                        {isLoading && activeTab === "queue" ? <LoadingRow cols={6} />
+                        : queueSort.sorted.length === 0 ? <EmptyRow cols={6} label="No queue data found." />
                         : <>
                           {queueSort.sorted.map((q) => (
                             <TableRow key={q.queue_id}>
@@ -508,26 +506,14 @@ export default function AnsweredCallsPage() {
                               <TableCell>{q.channel}</TableCell>
                               <TableCell>{q.initiation_method}</TableCell>
                               <TableCell>{q.region || "—"}</TableCell>
-                              <TableCell className="text-right font-mono">{q.received || q.answered || q.count || "—"}</TableCell>
-                              <TableCell className="text-right font-mono">{q.completed || q.answered || q.count || "—"}</TableCell>
-                              <TableCell className="text-right font-mono">{q.transferred || "—"}</TableCell>
+                              <TableCell className="text-right font-mono">{q.answered || q.count || "—"}</TableCell>
                               <TableCell className="text-right font-mono">{q["%_calls"] || "—"}</TableCell>
-                              <TableCell className="text-right font-mono">{q.talk_time || "—"}</TableCell>
-                              <TableCell className="text-right font-mono">{q["%_talk_time"] || "—"}</TableCell>
-                              <TableCell className="text-right font-mono">{q.avg_talk || "—"}</TableCell>
-                              <TableCell className="text-right font-mono">{q.ring_time || "—"}</TableCell>
-                              <TableCell className="text-right font-mono">{q.wait_time || "—"}</TableCell>
-                              <TableCell className="text-right font-mono">{q.avg_wait || "—"}</TableCell>
-                              <TableCell className="text-right font-mono">{q.max_wait_time || "—"}</TableCell>
                             </TableRow>
                           ))}
                           <TableRow className="bg-muted/50 font-semibold">
                             <TableCell colSpan={4}>TOTAL</TableCell>
-                            <TableCell className="text-right">{sumNumeric(queueSort.sorted, "received") !== "0" ? sumNumeric(queueSort.sorted, "received") : sumNumeric(queueSort.sorted, "answered") !== "0" ? sumNumeric(queueSort.sorted, "answered") : sumNumeric(queueSort.sorted, "count")}</TableCell>
-                            <TableCell className="text-right">{sumNumeric(queueSort.sorted, "completed") !== "0" ? sumNumeric(queueSort.sorted, "completed") : sumNumeric(queueSort.sorted, "answered") !== "0" ? sumNumeric(queueSort.sorted, "answered") : sumNumeric(queueSort.sorted, "count")}</TableCell>
-                            <TableCell className="text-right">{sumNumeric(queueSort.sorted, "transferred")}</TableCell>
+                            <TableCell className="text-right">{sumNumeric(queueSort.sorted, "answered") !== "0" ? sumNumeric(queueSort.sorted, "answered") : sumNumeric(queueSort.sorted, "count")}</TableCell>
                             <TableCell className="text-right">{avgNumeric(queueSort.sorted, "%_calls")}</TableCell>
-                            <TableCell colSpan={7} />
                           </TableRow>
                         </>}
                       </TableBody>
