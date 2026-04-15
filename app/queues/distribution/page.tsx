@@ -262,6 +262,24 @@ function avgNumeric(data: Record<string, any>[], key: string): string {
   return avg % 1 === 0 ? String(avg) : avg.toFixed(2)
 }
 
+// Averages HH:MM:SS time strings
+function avgTime(data: Record<string, any>[], key: string): string {
+  const toSecs = (t: string) => {
+    if (!t || t === "—") return null
+    const parts = t.replace(/[^\d:]/g, '').split(":").map(Number)
+    if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2]
+    if (parts.length === 2) return parts[0] * 60 + parts[1]
+    return null
+  }
+  const vals = data.map((r) => toSecs(r[key])).filter((v): v is number => v !== null)
+  if (!vals.length) return "—"
+  const avg = Math.round(vals.reduce((a, b) => a + b, 0) / vals.length)
+  const h = Math.floor(avg / 3600).toString().padStart(2, '0')
+  const m = Math.floor((avg % 3600) / 60).toString().padStart(2, '0')
+  const s = (avg % 60).toString().padStart(2, '0')
+  return `${h}:${m}:${s}`
+}
+
 /* -------------------------------------------------------------------------- */
 /*                        Sortable table head cell                             */
 /* -------------------------------------------------------------------------- */
@@ -819,8 +837,8 @@ export default function QueueDistributionPage() {
                               <TableCell>—</TableCell>
                               <TableCell>—</TableCell>
                               {numericCols.map((c) => <TableCell key={c}>{sumNumeric(queueSort.sorted, c)}</TableCell>)}
-                              <TableCell>{avgNumeric(queueSort.sorted, "avg_wait")}</TableCell>
-                              <TableCell>{avgNumeric(queueSort.sorted, "avg_talk")}</TableCell>
+                              <TableCell>{avgTime(queueSort.sorted, "avg_wait")}</TableCell>
+                              <TableCell>{avgTime(queueSort.sorted, "avg_talk")}</TableCell>
                               <TableCell>{avgNumeric(queueSort.sorted, "%_answered")}</TableCell>
                               <TableCell>{avgNumeric(queueSort.sorted, "%_unanswered")}</TableCell>
                               <TableCell>{avgNumeric(queueSort.sorted, "sla")}</TableCell>
@@ -881,8 +899,8 @@ export default function QueueDistributionPage() {
                               <TableCell>—</TableCell>
                               <TableCell>—</TableCell>
                               {numericCols.map((c) => <TableCell key={c}>{sumNumeric(didSort.sorted, c)}</TableCell>)}
-                              <TableCell>{avgNumeric(didSort.sorted, "avg_wait")}</TableCell>
-                              <TableCell>{avgNumeric(didSort.sorted, "avg_talk")}</TableCell>
+                              <TableCell>{avgTime(didSort.sorted, "avg_wait")}</TableCell>
+                              <TableCell>{avgTime(didSort.sorted, "avg_talk")}</TableCell>
                               <TableCell>{avgNumeric(didSort.sorted, "%_answered")}</TableCell>
                               <TableCell>{avgNumeric(didSort.sorted, "%_unanswered")}</TableCell>
                               <TableCell>{avgNumeric(didSort.sorted, "sla")}</TableCell>
@@ -1002,8 +1020,8 @@ export default function QueueDistributionPage() {
                             <TableRow className="bg-muted/50 font-semibold">
                               <TableCell colSpan={5}>TOTAL</TableCell>
                               {numericCols.map((c) => <TableCell key={c}>{sumNumeric(hourSort.sorted, c)}</TableCell>)}
-                              <TableCell>{avgNumeric(hourSort.sorted, "avg_wait")}</TableCell>
-                              <TableCell>{avgNumeric(hourSort.sorted, "avg_talk")}</TableCell>
+                              <TableCell>{avgTime(hourSort.sorted, "avg_wait")}</TableCell>
+                              <TableCell>{avgTime(hourSort.sorted, "avg_talk")}</TableCell>
                               <TableCell>{avgNumeric(hourSort.sorted, "%_answered")}</TableCell>
                               <TableCell>{avgNumeric(hourSort.sorted, "%_unanswered")}</TableCell>
                               <TableCell>{avgNumeric(hourSort.sorted, "sla")}</TableCell>
@@ -1068,8 +1086,8 @@ export default function QueueDistributionPage() {
                             <TableRow className="bg-muted/50 font-semibold">
                               <TableCell colSpan={4}>TOTAL</TableCell>
                               {numericCols.map((c) => <TableCell key={c}>{sumNumeric(daySort.sorted, c)}</TableCell>)}
-                              <TableCell>{avgNumeric(daySort.sorted, "avg_wait")}</TableCell>
-                              <TableCell>{avgNumeric(daySort.sorted, "avg_talk")}</TableCell>
+                              <TableCell>{avgTime(daySort.sorted, "avg_wait")}</TableCell>
+                              <TableCell>{avgTime(daySort.sorted, "avg_talk")}</TableCell>
                               <TableCell>{avgNumeric(daySort.sorted, "%_answered")}</TableCell>
                               <TableCell>{avgNumeric(daySort.sorted, "%_unanswered")}</TableCell>
                               <TableCell>{avgNumeric(daySort.sorted, "sla")}</TableCell>
@@ -1143,8 +1161,8 @@ export default function QueueDistributionPage() {
                             <TableRow className="bg-muted/50 font-semibold">
                               <TableCell colSpan={5}>TOTAL</TableCell>
                               {numericCols.map((c) => <TableCell key={c}>{sumNumeric(weekSort.sorted, c)}</TableCell>)}
-                              <TableCell>{avgNumeric(weekSort.sorted, "avg_wait")}</TableCell>
-                              <TableCell>{avgNumeric(weekSort.sorted, "avg_talk")}</TableCell>
+                              <TableCell>{avgTime(weekSort.sorted, "avg_wait")}</TableCell>
+                              <TableCell>{avgTime(weekSort.sorted, "avg_talk")}</TableCell>
                             </TableRow>
                           </>
                         )}
@@ -1211,8 +1229,8 @@ export default function QueueDistributionPage() {
                             <TableRow className="bg-muted/50 font-semibold">
                               <TableCell colSpan={4}>TOTAL</TableCell>
                               {numericCols.map((c) => <TableCell key={c}>{sumNumeric(monthSort.sorted, c)}</TableCell>)}
-                              <TableCell>{avgNumeric(monthSort.sorted, "avg_wait")}</TableCell>
-                              <TableCell>{avgNumeric(monthSort.sorted, "avg_talk")}</TableCell>
+                              <TableCell>{avgTime(monthSort.sorted, "avg_wait")}</TableCell>
+                              <TableCell>{avgTime(monthSort.sorted, "avg_talk")}</TableCell>
                               <TableCell>{avgNumeric(monthSort.sorted, "%_answered")}</TableCell>
                               <TableCell>{avgNumeric(monthSort.sorted, "%_unanswered")}</TableCell>
                               <TableCell>{avgNumeric(monthSort.sorted, "sla")}</TableCell>
@@ -1273,8 +1291,8 @@ export default function QueueDistributionPage() {
                             <TableRow className="bg-muted/50 font-semibold">
                               <TableCell colSpan={4}>TOTAL</TableCell>
                               {numericCols.map((c) => <TableCell key={c}>{sumNumeric(stateSort.sorted, c)}</TableCell>)}
-                              <TableCell>{avgNumeric(stateSort.sorted, "avg_wait")}</TableCell>
-                              <TableCell>{avgNumeric(stateSort.sorted, "avg_talk")}</TableCell>
+                              <TableCell>{avgTime(stateSort.sorted, "avg_wait")}</TableCell>
+                              <TableCell>{avgTime(stateSort.sorted, "avg_talk")}</TableCell>
                               <TableCell>{avgNumeric(stateSort.sorted, "%_answered")}</TableCell>
                               <TableCell>{avgNumeric(stateSort.sorted, "%_unanswered")}</TableCell>
                               <TableCell>{avgNumeric(stateSort.sorted, "sla")}</TableCell>

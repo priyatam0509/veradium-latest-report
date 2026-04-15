@@ -32,6 +32,16 @@ interface AnsweredByQueueRow {
   answered: string
   count: string
   "%_calls": string
+  received: string
+  completed: string
+  transferred: string
+  talk_time: string
+  "%_talk_time": string
+  avg_talk: string
+  ring_time: string
+  wait_time: string
+  avg_wait: string
+  max_wait_time: string
   [key: string]: string
 }
 
@@ -160,6 +170,23 @@ function avgNumeric(data: Record<string, any>[], key: string): string {
   if (!vals.length) return "—"
   const avg = vals.reduce((a, b) => a + b, 0) / vals.length
   return avg % 1 === 0 ? String(avg) : avg.toFixed(2)
+}
+
+function avgTime(data: Record<string, any>[], key: string): string {
+  const toSecs = (t: string) => {
+    if (!t || t === "—") return null
+    const parts = t.replace(/[^\d:]/g, '').split(":").map(Number)
+    if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2]
+    if (parts.length === 2) return parts[0] * 60 + parts[1]
+    return null
+  }
+  const vals = data.map((r) => toSecs(r[key])).filter((v): v is number => v !== null)
+  if (!vals.length) return "—"
+  const avg = Math.round(vals.reduce((a, b) => a + b, 0) / vals.length)
+  const h = Math.floor(avg / 3600).toString().padStart(2, '0')
+  const m = Math.floor((avg % 3600) / 60).toString().padStart(2, '0')
+  const s = (avg % 60).toString().padStart(2, '0')
+  return `${h}:${m}:${s}`
 }
 
 function generateDrilldownHTML(data: DrilldownData[], title: string, startDate?: Date, endDate?: Date) {
@@ -458,14 +485,19 @@ export default function AnsweredCallsPage() {
                     <Table>
                       <TableHeader className="sticky top-0 bg-background z-10">
                         <TableRow>
-                          {[["queue_name","Queue"],["channel","Channel"],["initiation_method","Method"],["region","Region"],["answered","Answered"],["%_calls","% Calls"]].map(([col,label]) => (
+                          {[
+                            ["queue_name","Queue"],["channel","Channel"],["initiation_method","Method"],["region","Region"],
+                            ["received","Received"],["completed","Completed"],["transferred","Transferred"],["%_calls","% Calls"],
+                            ["talk_time","Talk Time"],["%_talk_time","% Talk Time"],["avg_talk","Avg Talk"],
+                            ["ring_time","Ring Time"],["wait_time","Wait Time"],["avg_wait","Avg Wait"],["max_wait_time","Max Wait"],
+                          ].map(([col,label]) => (
                             <SortHead key={col} col={col} label={label} sortKey={queueSort.sortKey} sortDir={queueSort.sortDir} onSort={queueSort.handleSort} />
                           ))}
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {isLoading && activeTab === "queue" ? <LoadingRow cols={6} />
-                        : queueSort.sorted.length === 0 ? <EmptyRow cols={6} label="No queue data found." />
+                        {isLoading && activeTab === "queue" ? <LoadingRow cols={15} />
+                        : queueSort.sorted.length === 0 ? <EmptyRow cols={15} label="No queue data found." />
                         : <>
                           {queueSort.sorted.map((q) => (
                             <TableRow key={q.queue_id}>
@@ -476,14 +508,26 @@ export default function AnsweredCallsPage() {
                               <TableCell>{q.channel}</TableCell>
                               <TableCell>{q.initiation_method}</TableCell>
                               <TableCell>{q.region || "—"}</TableCell>
-                              <TableCell>{q.answered || q.count || "—"}</TableCell>
-                              <TableCell>{q["%_calls"]}</TableCell>
+                              <TableCell className="text-right font-mono">{q.received || q.answered || q.count || "—"}</TableCell>
+                              <TableCell className="text-right font-mono">{q.completed || q.answered || q.count || "—"}</TableCell>
+                              <TableCell className="text-right font-mono">{q.transferred || "—"}</TableCell>
+                              <TableCell className="text-right font-mono">{q["%_calls"] || "—"}</TableCell>
+                              <TableCell className="text-right font-mono">{q.talk_time || "—"}</TableCell>
+                              <TableCell className="text-right font-mono">{q["%_talk_time"] || "—"}</TableCell>
+                              <TableCell className="text-right font-mono">{q.avg_talk || "—"}</TableCell>
+                              <TableCell className="text-right font-mono">{q.ring_time || "—"}</TableCell>
+                              <TableCell className="text-right font-mono">{q.wait_time || "—"}</TableCell>
+                              <TableCell className="text-right font-mono">{q.avg_wait || "—"}</TableCell>
+                              <TableCell className="text-right font-mono">{q.max_wait_time || "—"}</TableCell>
                             </TableRow>
                           ))}
                           <TableRow className="bg-muted/50 font-semibold">
                             <TableCell colSpan={4}>TOTAL</TableCell>
-                            <TableCell>{sumNumeric(queueSort.sorted, "answered") !== "0" ? sumNumeric(queueSort.sorted, "answered") : sumNumeric(queueSort.sorted, "count")}</TableCell>
-                            <TableCell>{avgNumeric(queueSort.sorted, "%_calls")}</TableCell>
+                            <TableCell className="text-right">{sumNumeric(queueSort.sorted, "received") !== "0" ? sumNumeric(queueSort.sorted, "received") : sumNumeric(queueSort.sorted, "answered") !== "0" ? sumNumeric(queueSort.sorted, "answered") : sumNumeric(queueSort.sorted, "count")}</TableCell>
+                            <TableCell className="text-right">{sumNumeric(queueSort.sorted, "completed") !== "0" ? sumNumeric(queueSort.sorted, "completed") : sumNumeric(queueSort.sorted, "answered") !== "0" ? sumNumeric(queueSort.sorted, "answered") : sumNumeric(queueSort.sorted, "count")}</TableCell>
+                            <TableCell className="text-right">{sumNumeric(queueSort.sorted, "transferred")}</TableCell>
+                            <TableCell className="text-right">{avgNumeric(queueSort.sorted, "%_calls")}</TableCell>
+                            <TableCell colSpan={7} />
                           </TableRow>
                         </>}
                       </TableBody>
@@ -539,7 +583,13 @@ export default function AnsweredCallsPage() {
                             <TableCell className="text-right">{sumNumeric(didSort.sorted, "completed") !== "0" ? sumNumeric(didSort.sorted, "completed") : sumNumeric(didSort.sorted, "answered") !== "0" ? sumNumeric(didSort.sorted, "answered") : sumNumeric(didSort.sorted, "count")}</TableCell>
                             <TableCell className="text-right">{sumNumeric(didSort.sorted, "transferred")}</TableCell>
                             <TableCell className="text-right">{avgNumeric(didSort.sorted, "%_calls")}</TableCell>
-                            <TableCell colSpan={7} />
+                            <TableCell className="text-right">—</TableCell>
+                            <TableCell className="text-right">—</TableCell>
+                            <TableCell className="text-right">{avgTime(didSort.sorted, "avg_talk")}</TableCell>
+                            <TableCell className="text-right">—</TableCell>
+                            <TableCell className="text-right">—</TableCell>
+                            <TableCell className="text-right">{avgTime(didSort.sorted, "avg_wait")}</TableCell>
+                            <TableCell className="text-right">{avgTime(didSort.sorted, "max_wait_time")}</TableCell>
                           </TableRow>
                         </>}
                       </TableBody>
@@ -595,7 +645,13 @@ export default function AnsweredCallsPage() {
                             <TableCell className="text-right">{sumNumeric(agentSort.sorted, "completed")}</TableCell>
                             <TableCell className="text-right">{sumNumeric(agentSort.sorted, "transferred")}</TableCell>
                             <TableCell className="text-right">{avgNumeric(agentSort.sorted, "%_calls")}</TableCell>
-                            <TableCell colSpan={7} />
+                            <TableCell className="text-right">—</TableCell>
+                            <TableCell className="text-right">—</TableCell>
+                            <TableCell className="text-right">{avgTime(agentSort.sorted, "avg_talk")}</TableCell>
+                            <TableCell className="text-right">—</TableCell>
+                            <TableCell className="text-right">—</TableCell>
+                            <TableCell className="text-right">{avgTime(agentSort.sorted, "avg_wait")}</TableCell>
+                            <TableCell className="text-right">{avgTime(agentSort.sorted, "max_wait_time")}</TableCell>
                           </TableRow>
                         </>}
                       </TableBody>
