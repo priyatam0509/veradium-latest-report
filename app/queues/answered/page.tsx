@@ -485,12 +485,12 @@ export default function AnsweredCallsPage() {
                     <Table>
                       <TableHeader className="sticky top-0 bg-background z-10">
                         <TableRow>
-                          {[
-                            ["queue_name","Queue"],["channel","Channel"],["initiation_method","Method"],["region","Region"],
-                            ["answered","Answered"],["%_calls","% Calls"],
-                          ].map(([col,label]) => (
-                            <SortHead key={col} col={col} label={label} sortKey={queueSort.sortKey} sortDir={queueSort.sortDir} onSort={queueSort.handleSort} />
-                          ))}
+                          <SortHead col="queue_name" label="Queue" sortKey={queueSort.sortKey} sortDir={queueSort.sortDir} onSort={queueSort.handleSort} />
+                          <SortHead col="channel" label="Channel" sortKey={queueSort.sortKey} sortDir={queueSort.sortDir} onSort={queueSort.handleSort} />
+                          <SortHead col="initiation_method" label="Method" sortKey={queueSort.sortKey} sortDir={queueSort.sortDir} onSort={queueSort.handleSort} />
+                          <SortHead col="region" label="Region" sortKey={queueSort.sortKey} sortDir={queueSort.sortDir} onSort={queueSort.handleSort} />
+                          <SortHead col="answered" label="Answered" sortKey={queueSort.sortKey} sortDir={queueSort.sortDir} onSort={queueSort.handleSort} className="text-right" />
+                          <SortHead col="%_calls" label="% Calls" sortKey={queueSort.sortKey} sortDir={queueSort.sortDir} onSort={queueSort.handleSort} className="text-right" />
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -506,13 +506,13 @@ export default function AnsweredCallsPage() {
                               <TableCell>{q.channel}</TableCell>
                               <TableCell>{q.initiation_method}</TableCell>
                               <TableCell>{q.region || "—"}</TableCell>
-                              <TableCell className="text-right font-mono">{q.answered || q.count || "—"}</TableCell>
+                              <TableCell className="text-right font-mono">{q.answered || "—"}</TableCell>
                               <TableCell className="text-right font-mono">{q["%_calls"] || "—"}</TableCell>
                             </TableRow>
                           ))}
                           <TableRow className="bg-muted/50 font-semibold">
                             <TableCell colSpan={4}>TOTAL</TableCell>
-                            <TableCell className="text-right">{sumNumeric(queueSort.sorted, "answered") !== "0" ? sumNumeric(queueSort.sorted, "answered") : sumNumeric(queueSort.sorted, "count")}</TableCell>
+                            <TableCell className="text-right">{sumNumeric(queueSort.sorted, "answered")}</TableCell>
                             <TableCell className="text-right">{avgNumeric(queueSort.sorted, "%_calls")}</TableCell>
                           </TableRow>
                         </>}
