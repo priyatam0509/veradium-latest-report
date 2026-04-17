@@ -659,10 +659,9 @@ export default function QueueDistributionPage() {
 
   const filteredQueues = useMemo(() => {
     let rows = queueData
-    if (selectedQueues.length > 0) rows = rows.filter((q) => selectedQueues.includes(q.queue_name || q.queue_id))
     if (search) rows = rows.filter((q) => (q.queue_name || q.queue_id || q.channel || "").toLowerCase().includes(search.toLowerCase()))
     return rows
-  }, [queueData, selectedQueues, search])
+  }, [queueData, search])
 
   const filteredDIDs = useMemo(
     () => search ? didData.filter((d) => (d.did || d.channel || "").toLowerCase().includes(search.toLowerCase())) : didData,
