@@ -858,8 +858,8 @@ export default function QueueDistributionPage() {
                             {/* Task 8: totals row */}
                             <TableRow className="bg-muted/50 font-semibold">
                               <TableCell>TOTAL</TableCell>
-                              <TableCell>{uniqueVal(queueSort.sorted, "channel")}</TableCell>
-                              <TableCell>{uniqueVal(queueSort.sorted, "initiation_method")}</TableCell>
+                              <TableCell></TableCell>
+                              <TableCell></TableCell>
                               {numericCols.map((c) => <TableCell key={c}>{sumNumeric(queueSort.sorted, c)}</TableCell>)}
                               <TableCell>{avgTime(queueSort.sorted, "avg_wait")}</TableCell>
                               <TableCell>{avgTime(queueSort.sorted, "avg_talk")}</TableCell>
@@ -920,8 +920,8 @@ export default function QueueDistributionPage() {
                             ))}
                             <TableRow className="bg-muted/50 font-semibold">
                               <TableCell>TOTAL</TableCell>
-                              <TableCell>{uniqueVal(didSort.sorted, "channel")}</TableCell>
-                              <TableCell>{uniqueVal(didSort.sorted, "initiation_method")}</TableCell>
+                              <TableCell></TableCell>
+                              <TableCell></TableCell>
                               {numericCols.map((c) => <TableCell key={c}>{sumNumeric(didSort.sorted, c)}</TableCell>)}
                               <TableCell>{avgTime(didSort.sorted, "avg_wait")}</TableCell>
                               <TableCell>{avgTime(didSort.sorted, "avg_talk")}</TableCell>
@@ -976,9 +976,9 @@ export default function QueueDistributionPage() {
                             ))}
                             <TableRow className="bg-muted/50 font-semibold">
                               <TableCell>TOTAL</TableCell>
-                              <TableCell>{uniqueVal(agentSort.sorted, "region")}</TableCell>
-                              <TableCell>{uniqueVal(agentSort.sorted, "channel")}</TableCell>
-                              <TableCell>{uniqueVal(agentSort.sorted, "initiation_method")}</TableCell>
+                              <TableCell></TableCell>
+                              <TableCell></TableCell>
+                              <TableCell></TableCell>
                               <TableCell>{sumNumeric(agentSort.sorted, "received")}</TableCell>
                               <TableCell>{sumNumeric(agentSort.sorted, "completed")}</TableCell>
                               <TableCell>{sumNumeric(agentSort.sorted, "transferred")}</TableCell>
