@@ -189,6 +189,23 @@ function avgTime(data: Record<string, any>[], key: string): string {
   return `${h}:${m}:${s}`
 }
 
+function sumTime(data: Record<string, any>[], key: string): string {
+  const toSecs = (t: string) => {
+    if (!t || t === "—") return null
+    const parts = t.replace(/[^\d:]/g, '').split(":").map(Number)
+    if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2]
+    if (parts.length === 2) return parts[0] * 60 + parts[1]
+    return null
+  }
+  const vals = data.map((r) => toSecs(r[key])).filter((v): v is number => v !== null)
+  if (!vals.length) return "—"
+  const total = vals.reduce((a, b) => a + b, 0)
+  const h = Math.floor(total / 3600).toString().padStart(2, '0')
+  const m = Math.floor((total % 3600) / 60).toString().padStart(2, '0')
+  const s = (total % 60).toString().padStart(2, '0')
+  return `${h}:${m}:${s}`
+}
+
 function generateDrilldownHTML(data: DrilldownData[], title: string, startDate?: Date, endDate?: Date) {
   const dateRangeText = startDate && endDate
     ? `From ${format(startDate, "MMM dd, yyyy")} to ${format(endDate, "MMM dd, yyyy")}`
@@ -569,11 +586,11 @@ export default function AnsweredCallsPage() {
                             <TableCell className="text-right">{sumNumeric(didSort.sorted, "completed") !== "0" ? sumNumeric(didSort.sorted, "completed") : sumNumeric(didSort.sorted, "answered") !== "0" ? sumNumeric(didSort.sorted, "answered") : sumNumeric(didSort.sorted, "count")}</TableCell>
                             <TableCell className="text-right">{sumNumeric(didSort.sorted, "transferred")}</TableCell>
                             <TableCell className="text-right">{avgNumeric(didSort.sorted, "%_calls")}</TableCell>
-                            <TableCell className="text-right">—</TableCell>
-                            <TableCell className="text-right">—</TableCell>
+                            <TableCell className="text-right">{sumTime(didSort.sorted, "talk_time")}</TableCell>
+                            <TableCell className="text-right">{avgNumeric(didSort.sorted, "%_talk_time")}</TableCell>
                             <TableCell className="text-right">{avgTime(didSort.sorted, "avg_talk")}</TableCell>
-                            <TableCell className="text-right">—</TableCell>
-                            <TableCell className="text-right">—</TableCell>
+                            <TableCell className="text-right">{sumTime(didSort.sorted, "ring_time")}</TableCell>
+                            <TableCell className="text-right">{sumTime(didSort.sorted, "wait_time")}</TableCell>
                             <TableCell className="text-right">{avgTime(didSort.sorted, "avg_wait")}</TableCell>
                             <TableCell className="text-right">{avgTime(didSort.sorted, "max_wait_time")}</TableCell>
                           </TableRow>
@@ -631,11 +648,11 @@ export default function AnsweredCallsPage() {
                             <TableCell className="text-right">{sumNumeric(agentSort.sorted, "completed")}</TableCell>
                             <TableCell className="text-right">{sumNumeric(agentSort.sorted, "transferred")}</TableCell>
                             <TableCell className="text-right">{avgNumeric(agentSort.sorted, "%_calls")}</TableCell>
-                            <TableCell className="text-right">—</TableCell>
-                            <TableCell className="text-right">—</TableCell>
+                            <TableCell className="text-right">{sumTime(agentSort.sorted, "talk_time")}</TableCell>
+                            <TableCell className="text-right">{avgNumeric(agentSort.sorted, "%_talk_time")}</TableCell>
                             <TableCell className="text-right">{avgTime(agentSort.sorted, "avg_talk")}</TableCell>
-                            <TableCell className="text-right">—</TableCell>
-                            <TableCell className="text-right">—</TableCell>
+                            <TableCell className="text-right">{sumTime(agentSort.sorted, "ring_time")}</TableCell>
+                            <TableCell className="text-right">{sumTime(agentSort.sorted, "wait_time")}</TableCell>
                             <TableCell className="text-right">{avgTime(agentSort.sorted, "avg_wait")}</TableCell>
                             <TableCell className="text-right">{avgTime(agentSort.sorted, "max_wait_time")}</TableCell>
                           </TableRow>

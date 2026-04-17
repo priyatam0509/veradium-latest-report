@@ -262,6 +262,30 @@ function avgNumeric(data: Record<string, any>[], key: string): string {
   return avg % 1 === 0 ? String(avg) : avg.toFixed(2)
 }
 
+// Returns the single unique value for a column across all rows, or "" if mixed
+function uniqueVal(data: Record<string, any>[], key: string): string {
+  const vals = [...new Set(data.map((r) => r[key]).filter(Boolean))]
+  return vals.length === 1 ? vals[0] : ""
+}
+
+// Sums HH:MM:SS time strings
+function sumTime(data: Record<string, any>[], key: string): string {
+  const toSecs = (t: string) => {
+    if (!t || t === "—") return null
+    const parts = t.replace(/[^\d:]/g, '').split(":").map(Number)
+    if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2]
+    if (parts.length === 2) return parts[0] * 60 + parts[1]
+    return null
+  }
+  const vals = data.map((r) => toSecs(r[key])).filter((v): v is number => v !== null)
+  if (!vals.length) return "—"
+  const total = vals.reduce((a, b) => a + b, 0)
+  const h = Math.floor(total / 3600).toString().padStart(2, '0')
+  const m = Math.floor((total % 3600) / 60).toString().padStart(2, '0')
+  const s = (total % 60).toString().padStart(2, '0')
+  return `${h}:${m}:${s}`
+}
+
 // Averages HH:MM:SS time strings
 function avgTime(data: Record<string, any>[], key: string): string {
   const toSecs = (t: string) => {
@@ -834,8 +858,8 @@ export default function QueueDistributionPage() {
                             {/* Task 8: totals row */}
                             <TableRow className="bg-muted/50 font-semibold">
                               <TableCell>TOTAL</TableCell>
-                              <TableCell>—</TableCell>
-                              <TableCell>—</TableCell>
+                              <TableCell>{uniqueVal(queueSort.sorted, "channel")}</TableCell>
+                              <TableCell>{uniqueVal(queueSort.sorted, "initiation_method")}</TableCell>
                               {numericCols.map((c) => <TableCell key={c}>{sumNumeric(queueSort.sorted, c)}</TableCell>)}
                               <TableCell>{avgTime(queueSort.sorted, "avg_wait")}</TableCell>
                               <TableCell>{avgTime(queueSort.sorted, "avg_talk")}</TableCell>
@@ -896,8 +920,8 @@ export default function QueueDistributionPage() {
                             ))}
                             <TableRow className="bg-muted/50 font-semibold">
                               <TableCell>TOTAL</TableCell>
-                              <TableCell>—</TableCell>
-                              <TableCell>—</TableCell>
+                              <TableCell>{uniqueVal(didSort.sorted, "channel")}</TableCell>
+                              <TableCell>{uniqueVal(didSort.sorted, "initiation_method")}</TableCell>
                               {numericCols.map((c) => <TableCell key={c}>{sumNumeric(didSort.sorted, c)}</TableCell>)}
                               <TableCell>{avgTime(didSort.sorted, "avg_wait")}</TableCell>
                               <TableCell>{avgTime(didSort.sorted, "avg_talk")}</TableCell>
@@ -952,12 +976,14 @@ export default function QueueDistributionPage() {
                             ))}
                             <TableRow className="bg-muted/50 font-semibold">
                               <TableCell>TOTAL</TableCell>
-                              <TableCell>—</TableCell><TableCell>—</TableCell><TableCell>—</TableCell>
+                              <TableCell>{uniqueVal(agentSort.sorted, "region")}</TableCell>
+                              <TableCell>{uniqueVal(agentSort.sorted, "channel")}</TableCell>
+                              <TableCell>{uniqueVal(agentSort.sorted, "initiation_method")}</TableCell>
                               <TableCell>{sumNumeric(agentSort.sorted, "received")}</TableCell>
                               <TableCell>{sumNumeric(agentSort.sorted, "completed")}</TableCell>
                               <TableCell>{sumNumeric(agentSort.sorted, "transferred")}</TableCell>
                               <TableCell>{avgNumeric(agentSort.sorted, "%_calls")}</TableCell>
-                              <TableCell>—</TableCell>
+                              <TableCell>{sumTime(agentSort.sorted, "talk_time")}</TableCell>
                             </TableRow>
                           </>
                         )}
