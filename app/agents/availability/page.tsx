@@ -20,12 +20,13 @@ interface AgentAvailData {
   agent: string
   agent_region: string
   answered: string
-  ended: string
   failed: string
   missed: string
   rejected: string
   pauses: string
   online_time: string
+  available_time: string
+  offline_time: string
   pause_time: string
   talk_time: string
   wrap_up_time: string
@@ -371,24 +372,12 @@ export default function AgentAvailabilityPage() {
     if (!search) return agentData
     return agentData.filter((agent) => {
       const values = [
-        agent.agent,
-        agent.agent_region,
-        agent.answered,
-        agent.ended,
-        agent.failed,
-        agent.missed,
-        agent.rejected,
-        agent.online_time,
-        agent.pause_time,
-        agent['%_pauses'],
-        agent.pauses,
-        agent.talk_time,
-        agent.hold_time,
-        agent.wrap_up_time,
-        agent.idle_time,
-        agent.aht,
+        agent.agent, agent.agent_region, agent.answered, agent.failed,
+        agent.missed, agent.rejected, agent.online_time, agent.available_time,
+        agent.offline_time, agent.pause_time, agent['%_pauses'], agent.pauses,
+        agent.talk_time, agent.hold_time, agent.wrap_up_time, agent.idle_time, agent.aht,
       ]
-      return values.some((v) => (v || '').toString().toLowerCase().includes(search))
+      return values.some((v: any) => (v || '').toString().toLowerCase().includes(search))
     })
   }, [agentData, localSearch])
 
@@ -524,12 +513,13 @@ export default function AgentAvailabilityPage() {
                         <SortHead col="agent" label="Agent" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
                         <SortHead col="agent_region" label="Region" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
                         <SortHead col="answered" label="Answered" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
-                        <SortHead col="ended" label="Ended" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
                         <SortHead col="failed" label="Failed" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
                         <SortHead col="missed" label="Missed" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
                         <SortHead col="rejected" label="Rejected" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
                         <SortHead col="pauses" label="Pauses" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
                         <SortHead col="online_time" label="Online Time" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="available_time" label="Available Time" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="offline_time" label="Offline Time" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
                         <SortHead col="pause_time" label="Pause Time" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
                         <SortHead col="talk_time" label="Talk Time" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
                         <SortHead col="wrap_up_time" label="Wrap-up Time" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
@@ -548,12 +538,13 @@ export default function AgentAvailabilityPage() {
                           </TableCell>
                           <TableCell>{agent.agent_region || '—'}</TableCell>
                           <TableCell className="text-right text-green-600 font-mono">{agent.answered || '0'}</TableCell>
-                          <TableCell className="text-right font-mono">{agent.ended || '0'}</TableCell>
                           <TableCell className="text-right text-red-600 font-mono">{agent.failed || '0'}</TableCell>
                           <TableCell className="text-right text-orange-600 font-mono">{agent.missed || '0'}</TableCell>
                           <TableCell className="text-right text-red-800 font-mono">{agent.rejected || '0'}</TableCell>
                           <TableCell className="text-right font-mono">{agent.pauses || '0'}</TableCell>
                           <TableCell className="text-right font-mono">{agent.online_time || '—'}</TableCell>
+                          <TableCell className="text-right font-mono text-green-600">{agent.available_time || '—'}</TableCell>
+                          <TableCell className="text-right font-mono text-muted-foreground">{agent.offline_time || '—'}</TableCell>
                           <TableCell className="text-right font-mono">{agent.pause_time || '—'}</TableCell>
                           <TableCell className="text-right font-mono">{agent.talk_time || '—'}</TableCell>
                           <TableCell className="text-right font-mono">{agent.wrap_up_time || '—'}</TableCell>
@@ -567,12 +558,13 @@ export default function AgentAvailabilityPage() {
                         <TableCell>TOTAL</TableCell>
                         <TableCell></TableCell>
                         <TableCell className="text-right">{sumCol('answered')}</TableCell>
-                        <TableCell className="text-right">{sumCol('ended')}</TableCell>
                         <TableCell className="text-right">{sumCol('failed')}</TableCell>
                         <TableCell className="text-right">{sumCol('missed')}</TableCell>
                         <TableCell className="text-right">{sumCol('rejected')}</TableCell>
                         <TableCell className="text-right">{sumCol('pauses')}</TableCell>
                         <TableCell className="text-right">{sumTimeCol('online_time')}</TableCell>
+                        <TableCell className="text-right">{sumTimeCol('available_time')}</TableCell>
+                        <TableCell className="text-right">{sumTimeCol('offline_time')}</TableCell>
                         <TableCell className="text-right">{sumTimeCol('pause_time')}</TableCell>
                         <TableCell className="text-right">{sumTimeCol('talk_time')}</TableCell>
                         <TableCell className="text-right">{sumTimeCol('wrap_up_time')}</TableCell>

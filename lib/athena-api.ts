@@ -367,7 +367,7 @@ export class AthenaReportingAPI {
     if (agentIds && agentIds.length > 0) params.agent_id = agentIds
     if (queueIds && queueIds.length > 0) params.queue_id = queueIds
     if (region && region.length > 0) params.region = region
-    return this.executeQuery('agent_agent_avail', params, true, 60, username)
+    return this.executeQuery('agent_agent_avail', params, true, 90, username)
   }
 
   async getAgentCallDisposition(startDate: string, endDate: string, username?: string, agentIds?: string[], queueIds?: string[], region?: string[] | null) {
