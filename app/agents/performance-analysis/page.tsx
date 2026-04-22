@@ -27,7 +27,8 @@ interface AgentCallDisposition {
   completed_by_agent: string
   transferred_out: string
   failed: string
-  missed_rejected: string
+  missed: string
+  rejected: string
 }
 
 export default function AgentPerformanceAnalysis() {
@@ -428,7 +429,8 @@ export default function AgentPerformanceAnalysis() {
                         <SortHead col="completed_by_caller" label="Caller Completed" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
                         <SortHead col="transferred_out" label="Transferred" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
                         <SortHead col="failed" label="Failed" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
-                        <SortHead col="missed_rejected" label="Missed/Rejected" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="missed" label="Missed" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="rejected" label="Rejected" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
                         <SortHead col="completion_rate" label="Completion Rate" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
                       </TableRow>
                     </TableHeader>
@@ -455,7 +457,8 @@ export default function AgentPerformanceAnalysis() {
                             <TableCell className="text-right font-mono text-blue-600">{agent.completed_by_caller}</TableCell>
                             <TableCell className="text-right font-mono text-blue-600">{agent.transferred_out}</TableCell>
                             <TableCell className="text-right font-mono text-red-600">{agent.failed}</TableCell>
-                            <TableCell className="text-right font-mono text-orange-600">{agent.missed_rejected}</TableCell>
+                            <TableCell className="text-right font-mono text-orange-600">{agent.missed}</TableCell>
+                            <TableCell className="text-right font-mono text-red-800">{agent.rejected}</TableCell>
                             <TableCell className="text-right">
                               <Badge 
                                 variant={parseFloat(completionRate) >= 90 ? "default" : parseFloat(completionRate) >= 70 ? "secondary" : "destructive"}
