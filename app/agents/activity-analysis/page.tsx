@@ -19,9 +19,9 @@ interface AgentPauseDetail {
   user_id: string
   agent_name: string
   agent_region: string
-  max_interval_start_time: string
+  min_interval_start_time: string
   max_interval_end_time: string
-  on_custom_status: string
+  number_of_pauses: string
   number_of_holds: string
 }
 
@@ -98,7 +98,7 @@ export default function AgentActivityAnalysis() {
 
   const totalAgents = agentData.length
   const totalHolds = agentData.reduce((sum, a) => sum + parseInt(a.number_of_holds || '0'), 0)
-  const totalCustomStatus = agentData.reduce((sum, a) => sum + parseInt(a.on_custom_status || '0'), 0)
+  const totalCustomStatus = agentData.reduce((sum, a) => sum + parseInt(a.number_of_pauses || '0'), 0)
   const avgHoldsPerAgent = totalAgents > 0 ? (totalHolds / totalAgents).toFixed(1) : '0'
   const mostActiveAgent = agentData.length > 0
     ? agentData.reduce((max, a) => parseInt(a.number_of_holds || '0') > parseInt(max.number_of_holds || '0') ? a : max)
@@ -120,9 +120,9 @@ export default function AgentActivityAnalysis() {
       const values = [
         agent.agent_name,
         agent.agent_region,
-        agent.max_interval_start_time,
+        agent.min_interval_start_time,
         agent.max_interval_end_time,
-        agent.on_custom_status,
+        agent.number_of_pauses,
         agent.number_of_holds,
       ]
       return values.some((v) => (v || '').toString().toLowerCase().includes(search))
@@ -266,9 +266,9 @@ export default function AgentActivityAnalysis() {
                       <TableRow>
                         <SortHead col="agent_name" label="Agent Name" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
                         <SortHead col="agent_region" label="Region" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
-                        <SortHead col="max_interval_start_time" label="Interval Start" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
-                        <SortHead col="max_interval_end_time" label="Interval End" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
-                        <SortHead col="on_custom_status" label="Custom Status Events" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="min_interval_start_time" label="Period Start" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
+                        <SortHead col="max_interval_end_time" label="Period End" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
+                        <SortHead col="number_of_pauses" label="Number of Pauses" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
                         <SortHead col="number_of_holds" label="Number of Holds" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
                       </TableRow>
                     </TableHeader>
@@ -277,10 +277,10 @@ export default function AgentActivityAnalysis() {
                         <TableRow key={index}>
                           <TableCell className="font-medium">{agent.agent_name}</TableCell>
                           <TableCell>{agent.agent_region || '—'}</TableCell>
-                          <TableCell className="text-sm">{formatTimestamp(agent.max_interval_start_time)}</TableCell>
+                          <TableCell className="text-sm">{formatTimestamp(agent.min_interval_start_time)}</TableCell>
                           <TableCell className="text-sm">{formatTimestamp(agent.max_interval_end_time)}</TableCell>
                           <TableCell className="text-right font-mono">
-                            {agent.on_custom_status || '0'}
+                            {agent.number_of_pauses || '0'}
                           </TableCell>
                           <TableCell className="text-right font-mono">{agent.number_of_holds || '0'}</TableCell>
                         </TableRow>

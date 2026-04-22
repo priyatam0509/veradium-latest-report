@@ -23,13 +23,13 @@ interface AgentData {
   agent_id: string
   agent_name: string
   region: string
-  channel: string
-  initiation_method: string
   received: string
-  completed: string
-  transferred: string
-  '%_calls': string
-  talk_time: string
+  completed_by_caller: string
+  completed_by_agent: string
+  transferred_out: string
+  failed: string
+  missed: string
+  rejected: string
 }
 
 interface DrilldownData {
@@ -79,12 +79,13 @@ export default function AgentPerformancePage() {
         end: DateHelper.formatDateFromDate(endDate, true)
       }
 
-      const result = await athenaAPI.getAnsweredByAgent(
+      const result = await athenaAPI.getAgentCallDisposition(
         dateRange.start,
         dateRange.end,
-        queueFilter === "ALL" ? ["ALL"] : [queueFilter],
-        null,        // region
-        user?.email  // username
+        user?.email,
+        undefined,   // agentIds
+        queueFilter === "ALL" ? undefined : [queueFilter],
+        null         // region
       )
       
       if (result.status === 'SUCCEEDED') {
@@ -514,13 +515,13 @@ export default function AgentPerformancePage() {
                       <TableRow>
                         <SortHead col="agent_name" label="Agent Name" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
                         <SortHead col="region" label="Region" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
-                        <SortHead col="channel" label="Channel" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
-                        <SortHead col="initiation_method" label="Initiation Method" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
                         <SortHead col="received" label="Received" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
-                        <SortHead col="completed" label="Completed" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
-                        <SortHead col="transferred" label="Transferred" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
-                        <SortHead col="%_calls" label="% Calls" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
-                        <SortHead col="talk_time" label="Talk Time" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="completed_by_caller" label="Completed by Caller" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="completed_by_agent" label="Completed by Agent" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="transferred_out" label="Transferred Out" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="failed" label="Failed" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="missed" label="Missed" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="rejected" label="Rejected" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -534,13 +535,13 @@ export default function AgentPerformancePage() {
                             {agent.agent_name}
                           </TableCell>
                           <TableCell className="text-right">{agent.region || '—'}</TableCell>
-                          <TableCell className="text-right">{agent.channel}</TableCell>
-                          <TableCell className="text-right">{agent.initiation_method}</TableCell>
                           <TableCell className="text-right">{agent.received}</TableCell>
-                          <TableCell className="text-right">{agent.completed}</TableCell>
-                          <TableCell className="text-right">{agent.transferred}</TableCell>
-                          <TableCell className="text-right">{agent['%_calls']}</TableCell>
-                          <TableCell className="text-right">{agent.talk_time}</TableCell>
+                          <TableCell className="text-right">{agent.completed_by_caller}</TableCell>
+                          <TableCell className="text-right">{agent.completed_by_agent}</TableCell>
+                          <TableCell className="text-right">{agent.transferred_out}</TableCell>
+                          <TableCell className="text-right text-red-600">{agent.failed}</TableCell>
+                          <TableCell className="text-right text-orange-600">{agent.missed}</TableCell>
+                          <TableCell className="text-right text-red-800">{agent.rejected}</TableCell>
                         </TableRow>
                       ))}
                       {filteredAgents.length === 0 && (

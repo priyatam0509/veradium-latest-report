@@ -407,7 +407,7 @@ export default function ContactTracePage() {
       <DashboardLayout>
         <div className="space-y-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Contact Trace</h1>
+            <h1 className="text-3xl font-bold tracking-tight">Call Journey</h1>
             <p className="text-muted-foreground mt-1">
               Detailed call records — answered and unanswered call details
             </p>

@@ -311,7 +311,7 @@ const NAV_STRUCTURE: NavEntry[] = [
   },
   {
     route: "/contact-trace",
-    label: "Contact Traces",
+    label: "Call Journey",
     icon: FileText,
   },
 ]
