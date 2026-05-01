@@ -496,8 +496,8 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
           <img
             src="https://res.cloudinary.com/dnijbboek/image/upload/v1777654360/the_ticket_clinic_rzbfy6.png"
             alt="The Ticket Clinic Logo"
-            width={56}
-            height={56}
+            width={80}
+            height={80}
             style={{ objectFit: "contain" }}
           />
           <span className="font-semibold text-base leading-none">The Ticket Clinic Dashboard</span>
