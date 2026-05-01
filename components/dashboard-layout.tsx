@@ -496,8 +496,8 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
           <img
             src="https://res.cloudinary.com/dnijbboek/image/upload/v1777654360/the_ticket_clinic_rzbfy6.png"
             alt="The Ticket Clinic Logo"
-            width={36}
-            height={36}
+            width={56}
+            height={56}
             style={{ objectFit: "contain" }}
           />
           <span className="font-semibold text-base leading-none">The Ticket Clinic Dashboard</span>
@@ -513,8 +513,8 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
             <img
               src="https://res.cloudinary.com/dnijbboek/image/upload/v1770896884/veradium_xqy6gh.png"
               alt="Veradium Logo"
-              width={36}
-              height={36}
+              width={52}
+              height={52}
               style={{ objectFit: "contain" }}
             />
             <div className="flex flex-col min-w-0">
