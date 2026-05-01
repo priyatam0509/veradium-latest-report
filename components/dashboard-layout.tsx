@@ -492,14 +492,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       {/* ========================== Desktop Sidebar ========================== */}
       <aside className="hidden md:flex w-64 flex-col fixed inset-y-0 z-50 bg-card border-r">
         <div className="flex items-center gap-3 px-6 h-16 border-b">
-          <Image
-            src="https://res.cloudinary.com/dnijbboek/image/upload/v1770896884/veradium_xqy6gh.png"
-            alt="Veradium Logo"
-            width={42}
-            height={28}
-            priority
-          />
-          <span className="font-semibold text-base leading-none">Veradium Dashboard</span>
+          <span className="font-semibold text-base leading-none">The Ticket Clinic Dashboard</span>
         </div>
 
         <nav className="flex-1 overflow-y-auto p-4 space-y-1">
@@ -508,11 +501,14 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 
         <div className="p-4 border-t">
           <div className="flex items-center gap-3 px-3 py-2 mb-2">
-            <Avatar className="h-8 w-8">
-              <AvatarFallback className="bg-primary/10 text-primary">
-                {user?.email?.[0]?.toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="https://res.cloudinary.com/dnijbboek/image/upload/v1777654360/the_ticket_clinic_rzbfy6.png"
+              alt="The Ticket Clinic Logo"
+              width={36}
+              height={36}
+              style={{ objectFit: "contain", borderRadius: "50%" }}
+            />
             <div className="flex flex-col min-w-0">
               <span className="text-sm font-medium truncate">{user?.email}</span>
             </div>
@@ -561,7 +557,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
           />
           <div className="absolute inset-y-0 left-0 w-3/4 max-w-sm bg-card border-r shadow-xl flex flex-col">
             <div className="flex items-center justify-between px-6 h-16 border-b">
-              <span className="font-bold text-lg">Veradium Dashboard</span>
+              <span className="font-bold text-lg">The Ticket Clinic Dashboard</span>
               <Button variant="ghost" size="icon" onClick={() => setIsMobileMenuOpen(false)}>
                 <X className="h-5 w-5" />
               </Button>
