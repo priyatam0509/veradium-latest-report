@@ -492,6 +492,14 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       {/* ========================== Desktop Sidebar ========================== */}
       <aside className="hidden md:flex w-64 flex-col fixed inset-y-0 z-50 bg-card border-r">
         <div className="flex items-center gap-3 px-6 h-16 border-b">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="https://res.cloudinary.com/dnijbboek/image/upload/v1777654360/the_ticket_clinic_rzbfy6.png"
+            alt="The Ticket Clinic Logo"
+            width={36}
+            height={36}
+            style={{ objectFit: "contain" }}
+          />
           <span className="font-semibold text-base leading-none">The Ticket Clinic Dashboard</span>
         </div>
 
@@ -503,11 +511,11 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-3 px-3 py-2 mb-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="https://res.cloudinary.com/dnijbboek/image/upload/v1777654360/the_ticket_clinic_rzbfy6.png"
-              alt="The Ticket Clinic Logo"
+              src="https://res.cloudinary.com/dnijbboek/image/upload/v1770896884/veradium_xqy6gh.png"
+              alt="Veradium Logo"
               width={36}
               height={36}
-              style={{ objectFit: "contain", borderRadius: "50%" }}
+              style={{ objectFit: "contain" }}
             />
             <div className="flex flex-col min-w-0">
               <span className="text-sm font-medium truncate">{user?.email}</span>
