@@ -3,7 +3,6 @@
 import type React from "react"
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
-import Image from "next/image"
 
 import { useAuth } from "@/hooks/use-auth"
 import { Button } from "@/components/ui/button"
@@ -32,12 +31,13 @@ export default function LoginPage() {
         {/* ============================ Header ============================ */}
         <CardHeader className="space-y-2 flex flex-col items-center text-center">
           <div className="mb-2">
-            <Image
-              src="/ticket-clinic-logo.png"
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="https://res.cloudinary.com/dnijbboek/image/upload/v1777654360/the_ticket_clinic_rzbfy6.png"
               alt="The Ticket Clinic Logo"
               width={120}
               height={120}
-              priority
+              style={{ objectFit: "contain" }}
             />
           </div>
 
