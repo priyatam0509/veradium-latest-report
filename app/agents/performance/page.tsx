@@ -23,13 +23,14 @@ interface AgentData {
   agent_id: string
   agent_name: string
   region: string
-  received: string
+  answered: string
+  outbound: string
   completed_by_caller: string
   completed_by_agent: string
   transferred_out: string
-  failed: string
   missed: string
   rejected: string
+  failed: string
 }
 
 interface DrilldownData {
@@ -515,13 +516,14 @@ export default function AgentPerformancePage() {
                       <TableRow>
                         <SortHead col="agent_name" label="Agent Name" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
                         <SortHead col="region" label="Region" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
-                        <SortHead col="received" label="Received" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="answered" label="Answered" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="outbound" label="Outbound" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
                         <SortHead col="completed_by_caller" label="Completed by Caller" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
                         <SortHead col="completed_by_agent" label="Completed by Agent" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
                         <SortHead col="transferred_out" label="Transferred Out" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
-                        <SortHead col="failed" label="Failed" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
                         <SortHead col="missed" label="Missed" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
                         <SortHead col="rejected" label="Rejected" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="failed" label="Failed" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -535,18 +537,19 @@ export default function AgentPerformancePage() {
                             {agent.agent_name}
                           </TableCell>
                           <TableCell className="text-right">{agent.region || '—'}</TableCell>
-                          <TableCell className="text-right">{agent.received}</TableCell>
+                          <TableCell className="text-right text-green-600">{agent.answered}</TableCell>
+                          <TableCell className="text-right text-blue-600">{agent.outbound}</TableCell>
                           <TableCell className="text-right">{agent.completed_by_caller}</TableCell>
                           <TableCell className="text-right">{agent.completed_by_agent}</TableCell>
                           <TableCell className="text-right">{agent.transferred_out}</TableCell>
-                          <TableCell className="text-right text-red-600">{agent.failed}</TableCell>
                           <TableCell className="text-right text-orange-600">{agent.missed}</TableCell>
                           <TableCell className="text-right text-red-800">{agent.rejected}</TableCell>
+                          <TableCell className="text-right text-red-600">{agent.failed}</TableCell>
                         </TableRow>
                       ))}
                       {filteredAgents.length === 0 && (
                         <TableRow>
-                          <TableCell colSpan={9} className="text-center text-muted-foreground">
+                          <TableCell colSpan={10} className="text-center text-muted-foreground">
                             No agent data available
                           </TableCell>
                         </TableRow>
