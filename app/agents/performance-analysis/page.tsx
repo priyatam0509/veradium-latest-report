@@ -22,13 +22,14 @@ interface AgentCallDisposition {
   agent_name: string
   username: string
   region: string
-  received: string
+  answered: string
+  outbound: string
   completed_by_caller: string
   completed_by_agent: string
   transferred_out: string
-  failed: string
   missed: string
   rejected: string
+  failed: string
 }
 
 export default function AgentPerformanceAnalysis() {
@@ -184,22 +185,21 @@ export default function AgentPerformanceAnalysis() {
     <div class="table-container">
       <table id="t">
         <thead style="position:sticky;top:0;z-index:1;"><tr>
-          <th onclick="sortTable(0)">#</th>
-          <th onclick="sortTable(1)">Contact ID</th>
-          <th onclick="sortTable(2)">Date</th>
-          <th onclick="sortTable(3)">Queue</th>
-          <th onclick="sortTable(4)">Agent</th>
-          <th onclick="sortTable(5)">Customer Number</th>
-          <th onclick="sortTable(6)">Channel</th>
-          <th onclick="sortTable(7)">Initiation Method</th>
-          <th onclick="sortTable(8)">Status</th>
-          <th onclick="sortTable(9)">Agent Attempts</th>
-          <th onclick="sortTable(10)">Event</th>
-          <th onclick="sortTable(11)">Ring Time</th>
-          <th onclick="sortTable(12)">Wait Time</th>
-          <th onclick="sortTable(13)">Talk Time</th>
-          <th onclick="sortTable(14)">DID</th>
-          <th onclick="sortTable(15)">Region</th>
+          <th onclick="sortTable(0)">Contact ID</th>
+          <th onclick="sortTable(1)">Disconnect Timestamp</th>
+          <th onclick="sortTable(2)">Queue</th>
+          <th onclick="sortTable(3)">Agent</th>
+          <th onclick="sortTable(4)">Customer Number</th>
+          <th onclick="sortTable(5)">Channel</th>
+          <th onclick="sortTable(6)">Initiation Method</th>
+          <th onclick="sortTable(7)">Status</th>
+          <th onclick="sortTable(8)">Agent Attempts</th>
+          <th onclick="sortTable(9)">Disconnect Reason</th>
+          <th onclick="sortTable(10)">Ring Time</th>
+          <th onclick="sortTable(11)">Wait Time</th>
+          <th onclick="sortTable(12)">Talk Time</th>
+          <th onclick="sortTable(13)">DID</th>
+          <th onclick="sortTable(14)">Region</th>
           <th>Recording</th>
         </tr></thead>
         <tbody>
@@ -220,9 +220,8 @@ export default function AgentPerformanceAnalysis() {
               } catch(e) { recordingCell = r.recording }
             }
             return `<tr>
-              <td class="mono">${r.row_no || '—'}</td>
               <td class="mono">${r.contact_id || '—'}</td>
-              <td>${r.date || '—'}</td>
+              <td>${r.disconnect_timestamp || '—'}</td>
               <td>${r.queue_name || '—'}</td>
               <td>${r.agent_name || '—'}</td>
               <td class="mono">${r.customer_number || '—'}</td>
@@ -230,7 +229,7 @@ export default function AgentPerformanceAnalysis() {
               <td>${r.initiation_method || '—'}</td>
               <td><span class="badge ${badgeClass}">${r.interaction_status || '—'}</span></td>
               <td class="mono" style="text-align:center">${r.agent_connection_attempts || '—'}</td>
-              <td>${r.event || '—'}</td>
+              <td>${r.disconnect_reason || '—'}</td>
               <td class="mono">${r.ring_time || '—'}</td>
               <td class="mono">${r.wait_time || '—'}</td>
               <td class="mono">${r.talk_time || '—'}</td>
@@ -238,7 +237,7 @@ export default function AgentPerformanceAnalysis() {
               <td>${r.region || '—'}</td>
               <td>${recordingCell}</td>
             </tr>`
-          }).join('') : '<tr><td colspan="17" class="empty">No records found.</td></tr>'}
+          }).join('') : '<tr><td colspan="16" class="empty">No records found.</td></tr>'}
         </tbody>
       </table>
     </div>
@@ -304,7 +303,7 @@ export default function AgentPerformanceAnalysis() {
   }, [agentData, searchTerm])
 
   const totalAgents = displayedAgents.length
-  const totalReceived = displayedAgents.reduce((sum, a) => sum + parseInt(a.received || '0'), 0)
+  const totalReceived = displayedAgents.reduce((sum, a) => sum + parseInt(a.answered || '0'), 0)
   const totalCompleted = displayedAgents.reduce((sum, a) => sum + parseInt(a.completed_by_agent || '0'), 0)
   const totalTransferred = displayedAgents.reduce((sum, a) => sum + parseInt(a.transferred_out || '0'), 0)
   const totalFailed = displayedAgents.reduce((sum, a) => sum + parseInt(a.failed || '0'), 0)
@@ -424,24 +423,18 @@ export default function AgentPerformanceAnalysis() {
                       <TableRow>
                         <SortHead col="agent_name" label="Agent Name" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
                         <SortHead col="region" label="Region" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
-                        <SortHead col="received" label="Received" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
-                        <SortHead col="completed_by_agent" label="Completed" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
-                        <SortHead col="completed_by_caller" label="Caller Completed" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
-                        <SortHead col="transferred_out" label="Transferred" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
-                        <SortHead col="failed" label="Failed" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="answered" label="Answered" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="outbound" label="Outbound" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="completed_by_caller" label="Completed by Caller" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="completed_by_agent" label="Completed by Agent" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="transferred_out" label="Transferred Out" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
                         <SortHead col="missed" label="Missed" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
                         <SortHead col="rejected" label="Rejected" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
-                        <SortHead col="completion_rate" label="Completion Rate" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="failed" label="Failed" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {sort.sorted.map((agent, index) => {
-                        const completed = parseInt(agent.completed_by_agent || '0')
-                        const failed = parseInt(agent.failed || '0')
-                        const completionRate = (completed + failed) > 0 
-                          ? ((completed / (completed + failed)) * 100).toFixed(1)
-                          : '0'
-                        
                         return (
                           <TableRow key={index}>
                             <TableCell
@@ -452,21 +445,14 @@ export default function AgentPerformanceAnalysis() {
                               {agent.agent_name}
                             </TableCell>
                             <TableCell className="text-right">{agent.region || '—'}</TableCell>
-                            <TableCell className="text-right font-mono">{agent.received}</TableCell>
-                            <TableCell className="text-right font-mono text-green-600">{agent.completed_by_agent}</TableCell>
-                            <TableCell className="text-right font-mono text-blue-600">{agent.completed_by_caller}</TableCell>
-                            <TableCell className="text-right font-mono text-blue-600">{agent.transferred_out}</TableCell>
-                            <TableCell className="text-right font-mono text-red-600">{agent.failed}</TableCell>
+                            <TableCell className="text-right font-mono text-green-600">{agent.answered}</TableCell>
+                            <TableCell className="text-right font-mono text-blue-600">{agent.outbound}</TableCell>
+                            <TableCell className="text-right font-mono">{agent.completed_by_caller}</TableCell>
+                            <TableCell className="text-right font-mono">{agent.completed_by_agent}</TableCell>
+                            <TableCell className="text-right font-mono">{agent.transferred_out}</TableCell>
                             <TableCell className="text-right font-mono text-orange-600">{agent.missed}</TableCell>
                             <TableCell className="text-right font-mono text-red-800">{agent.rejected}</TableCell>
-                            <TableCell className="text-right">
-                              <Badge 
-                                variant={parseFloat(completionRate) >= 90 ? "default" : parseFloat(completionRate) >= 70 ? "secondary" : "destructive"}
-                                className="font-mono"
-                              >
-                                {completionRate}%
-                              </Badge>
-                            </TableCell>
+                            <TableCell className="text-right font-mono text-red-600">{agent.failed}</TableCell>
                           </TableRow>
                         )
                       })}
