@@ -42,9 +42,9 @@ interface ServiceLevelRow {
   interval: string
   answered?: string
   abandoned?: string
-  count: string
+  contacts: string
   delta: string
-  "% of count": string
+  "%_contacts": string
 }
 
 /* -------------------------------------------------------------------------- */
@@ -248,9 +248,9 @@ export default function QueueMatrixPage() {
                         {answeredSL.map((row, i) => (
                           <TableRow key={i}>
                             <TableCell className="text-sm whitespace-nowrap">{row.answered ?? `within ${row.interval} seconds`}</TableCell>
-                            <TableCell className="text-sm text-right">{row.count}</TableCell>
+                            <TableCell className="text-sm text-right">{row.contacts}</TableCell>
                             <TableCell className="text-sm text-right">{row.delta}</TableCell>
-                            <TableCell className="text-sm text-right">{row["% of count"]}</TableCell>
+                            <TableCell className="text-sm text-right">{row["%_contacts"]}</TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
@@ -287,9 +287,9 @@ export default function QueueMatrixPage() {
                         {abandonedSL.map((row, i) => (
                           <TableRow key={i}>
                             <TableCell className="text-sm whitespace-nowrap">{row.abandoned ?? `within ${row.interval} seconds`}</TableCell>
-                            <TableCell className="text-sm text-right">{row.count}</TableCell>
+                            <TableCell className="text-sm text-right">{row.contacts}</TableCell>
                             <TableCell className="text-sm text-right">{row.delta}</TableCell>
-                            <TableCell className="text-sm text-right">{row["% of count"]}</TableCell>
+                            <TableCell className="text-sm text-right">{row["%_contacts"]}</TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
