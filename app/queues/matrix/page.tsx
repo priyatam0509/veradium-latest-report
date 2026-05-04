@@ -20,7 +20,7 @@ import { DateHelper } from "@/lib/date-helper"
 /* -------------------------------------------------------------------------- */
 
 interface TotalAnsweredData {
-  received: string
+  contacts: string
   answered: string
   transferred: string
   avg_talk: string
@@ -29,10 +29,12 @@ interface TotalAnsweredData {
 }
 
 interface TotalUnansweredData {
-  total: string
+  contacts: string
   unanswered: string
   abandoned: string
-  avg_wait_before_disconnect: string
+  abandon_avg_wait_before_disconnect: string
+  outbound: string
+  outbound_avg_ring_before_disconnect: string
 }
 
 interface ServiceLevelRow {
@@ -49,7 +51,7 @@ interface ServiceLevelRow {
 /* -------------------------------------------------------------------------- */
 
 const ANSWERED_LABELS: Record<keyof TotalAnsweredData, string> = {
-  received: "Received Calls",
+  contacts: "Contacts",
   answered: "Answered Calls",
   transferred: "Transferred Calls",
   avg_talk: "Avg Talk",
@@ -58,10 +60,12 @@ const ANSWERED_LABELS: Record<keyof TotalAnsweredData, string> = {
 }
 
 const UNANSWERED_LABELS: Record<keyof TotalUnansweredData, string> = {
-  total: "Incompleted Calls",
+  contacts: "Contacts",
   abandoned: "Abandoned Calls",
   unanswered: "Unanswered Calls",
-  avg_wait_before_disconnect: "Abandon Avg Wait Before Disconnection",
+  abandon_avg_wait_before_disconnect: "Abandon Avg Wait Before Disconnection",
+  outbound: "Outbound Calls",
+  outbound_avg_ring_before_disconnect: "Outbound Avg Ring Before Disconnection",
 }
 
 /* ========================================================================== */
