@@ -40,7 +40,9 @@ export default function DashboardOverview() {
   const [kpis, setKpis] = useState({
     totalCalls: 0,
     answeredCalls: 0,
-    missedCalls: 0,
+    outboundCalls: 0,
+    abandonedCalls: 0,
+    unansweredCalls: 0,
     avgSLA: 0
   })
   const { user } = useAuth()
@@ -56,33 +58,44 @@ export default function DashboardOverview() {
     setIsLoading(true)
 
     try {
-      // Get yesterday's date range
       const yesterday = DateHelper.getYesterday()
 
-      // Fetch yesterday's queue data
-      const [queueResult] = await Promise.all([
+      const [queueResult, answeredResult, unansweredResult] = await Promise.all([
         athenaAPI.getDistributionByQueue(yesterday.start, yesterday.end, null, user?.email),
+        athenaAPI.getDashboardTotalAnswered(yesterday.start, yesterday.end, user?.email),
+        athenaAPI.getDashboardTotalUnanswered(yesterday.start, yesterday.end, user?.email),
       ])
-      
+
       if (queueResult.status === 'SUCCEEDED') {
         setQueueStats(queueResult.data)
         setAppliedRegion(queueResult.appliedRegion || null)
-        
-        // Calculate yesterday's KPIs
-        const totalReceived = queueResult.data.reduce((sum, q) => sum + parseInt(q.contacts || '0'), 0)
-        const totalAnswered = queueResult.data.reduce((sum, q) => sum + parseInt(q.answered || '0'), 0)
-        const totalAbandoned = queueResult.data.reduce((sum, q) => sum + parseInt(q.abandoned || '0'), 0)
-        const avgSLA = queueResult.data.length > 0
-          ? queueResult.data.reduce((sum, q) => sum + parseFloat(q.sla || '0'), 0) / queueResult.data.length
-          : 0
-
-        setKpis({
-          totalCalls: totalReceived,
-          answeredCalls: totalAnswered,
-          missedCalls: totalAbandoned,
-          avgSLA: Math.round(avgSLA)
-        })
       }
+
+      // Build KPIs from dedicated dashboard queries
+      const answeredRow = answeredResult?.status === 'SUCCEEDED' && answeredResult.data?.length > 0
+        ? answeredResult.data[0] : null
+      const unansweredRow = unansweredResult?.status === 'SUCCEEDED' && unansweredResult.data?.length > 0
+        ? unansweredResult.data[0] : null
+
+      const totalContacts = parseInt(answeredRow?.contacts || '0') + parseInt(unansweredRow?.contacts || '0')
+      const answeredCalls = parseInt(answeredRow?.answered || '0')
+      const outboundCalls = parseInt(answeredRow?.outbound || '0')
+      const abandonedCalls = parseInt(unansweredRow?.abandoned || '0')
+      const unansweredCalls = parseInt(unansweredRow?.unanswered || '0')
+
+      // Fallback SLA from queue distribution if answered query doesn't return it
+      const avgSLA = queueResult.status === 'SUCCEEDED' && queueResult.data.length > 0
+        ? Math.round(queueResult.data.reduce((sum: number, q: QueueData) => sum + parseFloat(q.sla || '0'), 0) / queueResult.data.length)
+        : 0
+
+      setKpis({
+        totalCalls: totalContacts,
+        answeredCalls,
+        outboundCalls,
+        abandonedCalls,
+        unansweredCalls,
+        avgSLA,
+      })
 
       setLastRefresh(new Date())
 
@@ -249,7 +262,7 @@ export default function DashboardOverview() {
           {/* Historical KPI Cards (Last 30 Days) */}
           <div>
             <h2 className="text-xl font-semibold mb-4">Yesterday's Performance</h2>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Total Calls</CardTitle>
@@ -280,15 +293,28 @@ export default function DashboardOverview() {
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Outbound Calls</CardTitle>
+                  <Phone className="h-4 w-4 text-blue-600" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-blue-600">
+                    {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : kpis.outboundCalls.toLocaleString()}
+                  </div>
+                  <p className="text-xs text-muted-foreground">Outbound + callback</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Abandoned Calls</CardTitle>
                   <PhoneOff className="h-4 w-4 text-red-600" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-red-600">
-                    {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : kpis.missedCalls.toLocaleString()}
+                    {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : kpis.abandonedCalls.toLocaleString()}
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    {kpis.totalCalls > 0 ? `${Math.round((kpis.missedCalls / kpis.totalCalls) * 100)}% of total` : '0%'}
+                    {kpis.unansweredCalls > 0 ? `+ ${kpis.unansweredCalls.toLocaleString()} unanswered` : '0%'}
                   </p>
                 </CardContent>
               </Card>

@@ -11,7 +11,7 @@ import { Phone, TrendingUp, PhoneMissed, PhoneCall, Loader2 } from "lucide-react
 import { athenaAPI } from "@/lib/athena-api"
 import { DateHelper } from "@/lib/date-helper"
 
-const getCallCount = (row: any): number => Number(row.received ?? 0)
+const getCallCount = (row: any): number => Number(row.contacts ?? row.received ?? 0)
 
 const getAnsweredCount = (row: any): number => Number(row.answered ?? 0)
 
