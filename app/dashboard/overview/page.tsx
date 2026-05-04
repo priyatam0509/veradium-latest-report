@@ -17,8 +17,9 @@ interface QueueData {
   queue_name: string
   channel: string
   initiation_method: string
-  received: string
+  contacts: string
   answered: string
+  outbound: string
   unanswered: string
   abandoned: string
   transferred: string
@@ -68,7 +69,7 @@ export default function DashboardOverview() {
         setAppliedRegion(queueResult.appliedRegion || null)
         
         // Calculate yesterday's KPIs
-        const totalReceived = queueResult.data.reduce((sum, q) => sum + parseInt(q.received || '0'), 0)
+        const totalReceived = queueResult.data.reduce((sum, q) => sum + parseInt(q.contacts || '0'), 0)
         const totalAnswered = queueResult.data.reduce((sum, q) => sum + parseInt(q.answered || '0'), 0)
         const totalAbandoned = queueResult.data.reduce((sum, q) => sum + parseInt(q.abandoned || '0'), 0)
         const avgSLA = queueResult.data.length > 0
@@ -331,8 +332,9 @@ export default function DashboardOverview() {
                         <TableHead>Queue Name</TableHead>
                         <TableHead className="text-right">Channel</TableHead>
                         <TableHead className="text-right">Method</TableHead>
-                        <TableHead className="text-right">Received</TableHead>
+                        <TableHead className="text-right">Contacts</TableHead>
                         <TableHead className="text-right">Answered</TableHead>
+                        <TableHead className="text-right">Outbound</TableHead>
                         <TableHead className="text-right">Unanswered</TableHead>
                         <TableHead className="text-right">Abandoned</TableHead>
                         <TableHead className="text-right">Transferred</TableHead>
@@ -348,8 +350,9 @@ export default function DashboardOverview() {
                           <TableCell className="font-medium">{queue.queue_name || queue.queue_id}</TableCell>
                           <TableCell className="text-right">{queue.channel || '-'}</TableCell>
                           <TableCell className="text-right">{queue.initiation_method || '-'}</TableCell>
-                          <TableCell className="text-right">{queue.received}</TableCell>
+                          <TableCell className="text-right">{queue.contacts}</TableCell>
                           <TableCell className="text-right text-green-600">{queue.answered}</TableCell>
+                          <TableCell className="text-right text-blue-600">{queue.outbound || '0'}</TableCell>
                           <TableCell className="text-right text-red-600">{queue.unanswered}</TableCell>
                           <TableCell className="text-right text-orange-600">{queue.abandoned || '0'}</TableCell>
                           <TableCell className="text-right text-blue-600">{queue.transferred || '0'}</TableCell>
@@ -368,7 +371,7 @@ export default function DashboardOverview() {
                       ))}
                       {queueStats.length === 0 && (
                         <TableRow>
-                          <TableCell colSpan={12} className="text-center text-muted-foreground">
+                          <TableCell colSpan={13} className="text-center text-muted-foreground">
                             No queue data available
                           </TableCell>
                         </TableRow>
