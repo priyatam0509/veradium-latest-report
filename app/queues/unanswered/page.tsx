@@ -29,11 +29,10 @@ interface UnansweredByQueueRow {
   channel: string
   initiation_method: string
   region: string
-  received: string
+  contacts: string
   unanswered: string
   abandoned: string
-  avg_ring_before_disconnect: string
-  "%_calls": string
+  "%_contacts": string
 }
 
 interface UnansweredByDIDRow {
@@ -41,27 +40,24 @@ interface UnansweredByDIDRow {
   channel: string
   initiation_method: string
   region: string
-  received: string
+  contacts: string
   unanswered: string
   abandoned: string
-  avg_ring_before_disconnect: string
-  "%_calls": string
+  "%_contacts": string
 }
 
 interface DrilldownData {
   row_no: string
-  did: string
   contact_id: string
-  date: string
+  disconnect_timestamp: string
   queue_name: string
   region: string
   customer_number: string
+  did: string
   channel: string
   initiation_method: string
-  interaction_status: string
-  agent_connection_attempts: string
-  event: string
-  ring_time: string
+  outcome: string
+  disconnect_reason: string
   wait_time: string
 }
 
@@ -174,28 +170,26 @@ function generateDrilldownHTML(data: DrilldownData[], title: string, startDate?:
     <div class="table-container">
       <table id="t">
         <thead style="position:sticky;top:0;z-index:1;"><tr>
-          <th>Contact ID</th><th>Date</th><th>Queue</th><th>Region</th>
+          <th>Contact ID</th><th>Disconnect Time</th><th>Queue</th><th>Region</th>
           <th>Customer</th><th>DID</th><th>Channel</th><th>Method</th>
-          <th>Status</th><th>Event</th><th>Agent Conn.</th><th>Ring Time</th><th>Wait Time</th>
+          <th>Outcome</th><th>Disconnect Reason</th><th>Wait Time</th>
         </tr></thead>
         <tbody>
           ${data.length > 0
             ? data.map((r) => `<tr>
               <td class="mono">${r.contact_id || "—"}</td>
-              <td>${r.date || "—"}</td>
+              <td>${r.disconnect_timestamp || "—"}</td>
               <td>${r.queue_name || "—"}</td>
               <td>${r.region || "—"}</td>
               <td class="mono">${r.customer_number || "—"}</td>
               <td class="mono">${r.did || "—"}</td>
               <td>${r.channel || "—"}</td>
               <td>${r.initiation_method || "—"}</td>
-              <td class="status-abandoned">${r.interaction_status || "—"}</td>
-              <td>${r.event || "—"}</td>
-              <td>${r.agent_connection_attempts || "—"}</td>
-              <td>${r.ring_time || "—"}</td>
+              <td class="status-abandoned">${r.outcome || "—"}</td>
+              <td>${r.disconnect_reason || "—"}</td>
               <td>${r.wait_time || "—"}</td>
             </tr>`).join("")
-            : '<tr><td colspan="13" class="empty">No unanswered calls found.</td></tr>'
+            : '<tr><td colspan="11" class="empty">No unanswered calls found.</td></tr>'
           }
         </tbody>
       </table>
@@ -401,14 +395,14 @@ export default function UnansweredCallsPage() {
                     <Table>
                       <TableHeader className="sticky top-0 bg-background z-10">
                         <TableRow>
-                          {[["queue_name","Queue"],["channel","Channel"],["initiation_method","Method"],["region","Region"],["received","Received"],["unanswered","Unanswered"],["abandoned","Abandoned"],["avg_ring_before_disconnect","Avg Ring"],["%_calls","% Calls"]].map(([col,label]) => (
+                          {[["queue_name","Queue"],["channel","Channel"],["initiation_method","Method"],["region","Region"],["contacts","Contacts"],["unanswered","Unanswered"],["abandoned","Abandoned"],["%_contacts","% Contacts"]].map(([col,label]) => (
                             <SortHead key={col} col={col} label={label} sortKey={queueSort.sortKey} sortDir={queueSort.sortDir} onSort={queueSort.handleSort} />
                           ))}
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {isLoading && activeTab === "queue" ? <LoadingRow cols={9} />
-                        : queueSort.sorted.length === 0 ? <EmptyRow cols={9} label="No queue data found." />
+                        {isLoading && activeTab === "queue" ? <LoadingRow cols={8} />
+                        : queueSort.sorted.length === 0 ? <EmptyRow cols={8} label="No queue data found." />
                         : <>
                           {queueSort.sorted.map((q) => (
                             <TableRow key={q.queue_id}>
@@ -419,20 +413,18 @@ export default function UnansweredCallsPage() {
                               <TableCell>{q.channel}</TableCell>
                               <TableCell>{q.initiation_method}</TableCell>
                               <TableCell>{q.region || "—"}</TableCell>
-                              <TableCell>{q.received}</TableCell>
+                              <TableCell>{q.contacts}</TableCell>
                               <TableCell className="text-red-600 font-mono">{q.unanswered}</TableCell>
                               <TableCell className="text-orange-600 font-mono">{q.abandoned}</TableCell>
-                              <TableCell className="font-mono">{q.avg_ring_before_disconnect || '—'}</TableCell>
-                              <TableCell>{q["%_calls"]}</TableCell>
+                              <TableCell>{q["%_contacts"]}</TableCell>
                             </TableRow>
                           ))}
                           <TableRow className="bg-muted/50 font-semibold">
                             <TableCell colSpan={4}>TOTAL</TableCell>
-                            <TableCell>{sumNumeric(queueSort.sorted, "received")}</TableCell>
+                            <TableCell>{sumNumeric(queueSort.sorted, "contacts")}</TableCell>
                             <TableCell>{sumNumeric(queueSort.sorted, "unanswered")}</TableCell>
                             <TableCell>{sumNumeric(queueSort.sorted, "abandoned")}</TableCell>
-                            <TableCell></TableCell>
-                            <TableCell>{avgNumeric(queueSort.sorted, "%_calls")}</TableCell>
+                            <TableCell>{avgNumeric(queueSort.sorted, "%_contacts")}</TableCell>
                           </TableRow>
                         </>}
                       </TableBody>
@@ -446,14 +438,14 @@ export default function UnansweredCallsPage() {
                     <Table>
                       <TableHeader className="sticky top-0 bg-background z-10">
                         <TableRow>
-                          {[["did","DID"],["channel","Channel"],["initiation_method","Method"],["region","Region"],["received","Received"],["unanswered","Unanswered"],["abandoned","Abandoned"],["avg_ring_before_disconnect","Avg Ring"],["%_calls","% Calls"]].map(([col,label]) => (
+                          {[["did","DID"],["channel","Channel"],["initiation_method","Method"],["region","Region"],["contacts","Contacts"],["unanswered","Unanswered"],["abandoned","Abandoned"],["%_contacts","% Contacts"]].map(([col,label]) => (
                             <SortHead key={col} col={col} label={label} sortKey={didSort.sortKey} sortDir={didSort.sortDir} onSort={didSort.handleSort} />
                           ))}
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {isLoading && activeTab === "did" ? <LoadingRow cols={9} />
-                        : didSort.sorted.length === 0 ? <EmptyRow cols={9} label="No DID data found." />
+                        {isLoading && activeTab === "did" ? <LoadingRow cols={8} />
+                        : didSort.sorted.length === 0 ? <EmptyRow cols={8} label="No DID data found." />
                         : <>
                           {didSort.sorted.map((d, i) => (
                             <TableRow key={d.did + i}>
@@ -464,20 +456,18 @@ export default function UnansweredCallsPage() {
                               <TableCell>{d.channel}</TableCell>
                               <TableCell>{d.initiation_method}</TableCell>
                               <TableCell>{d.region || "—"}</TableCell>
-                              <TableCell>{d.received}</TableCell>
+                              <TableCell>{d.contacts}</TableCell>
                               <TableCell className="text-red-600 font-mono">{d.unanswered}</TableCell>
                               <TableCell className="text-orange-600 font-mono">{d.abandoned}</TableCell>
-                              <TableCell className="font-mono">{d.avg_ring_before_disconnect || '—'}</TableCell>
-                              <TableCell>{d["%_calls"]}</TableCell>
+                              <TableCell>{d["%_contacts"]}</TableCell>
                             </TableRow>
                           ))}
                           <TableRow className="bg-muted/50 font-semibold">
                             <TableCell colSpan={4}>TOTAL</TableCell>
-                            <TableCell>{sumNumeric(didSort.sorted, "received")}</TableCell>
+                            <TableCell>{sumNumeric(didSort.sorted, "contacts")}</TableCell>
                             <TableCell>{sumNumeric(didSort.sorted, "unanswered")}</TableCell>
                             <TableCell>{sumNumeric(didSort.sorted, "abandoned")}</TableCell>
-                            <TableCell></TableCell>
-                            <TableCell>{avgNumeric(didSort.sorted, "%_calls")}</TableCell>
+                            <TableCell>{avgNumeric(didSort.sorted, "%_contacts")}</TableCell>
                           </TableRow>
                         </>}
                       </TableBody>

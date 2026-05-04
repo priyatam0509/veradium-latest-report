@@ -160,22 +160,22 @@ interface StateData {
 
 interface DrilldownData {
   row_no: string
-  did: string
   contact_id: string
-  agent_name: string
-  date: string
-  queue_name: string
-  region: string
-  state: string
-  customer_number: string
+  enqueue_timestamp: string
   channel: string
   initiation_method: string
-  interaction_status: string
-  agent_connection_attempts: string
-  event: string
+  queue_name: string
+  agent_name: string
+  customer_number: string
+  did: string
+  outcome: string
+  disconnect_reason: string
   ring_time: string
   wait_time: string
   talk_time: string
+  region: string
+  state: string
+  agent_connection_attempts: string
   recording: string
 }
 
@@ -395,9 +395,9 @@ function generateDrilldownHTML(data: DrilldownData[], title: string, startDate?:
     <div class="table-container">
       <table id="t">
         <thead style="position:sticky;top:0;z-index:1;"><tr>
-          <th>DID</th><th>Contact ID</th><th>Agent</th><th>Date</th><th>Queue</th>
-          <th>Region</th><th>State</th><th>Customer</th><th>Channel</th><th>Method</th><th>Status</th>
-          <th>Agent Conn.</th><th>Event</th><th>Ring Time</th><th>Wait Time</th><th>Talk Time</th><th>Recording</th>
+          <th>DID</th><th>Contact ID</th><th>Agent</th><th>Enqueue Time</th><th>Queue</th>
+          <th>Region</th><th>State</th><th>Customer</th><th>Channel</th><th>Method</th><th>Outcome</th>
+          <th>Agent Conn.</th><th>Disconnect Reason</th><th>Ring Time</th><th>Wait Time</th><th>Talk Time</th><th>Recording</th>
         </tr></thead>
         <tbody>
           ${
@@ -422,16 +422,16 @@ function generateDrilldownHTML(data: DrilldownData[], title: string, startDate?:
               <td class="mono">${r.did || "—"}</td>
               <td class="mono">${r.contact_id || "—"}</td>
               <td>${r.agent_name || "—"}</td>
-              <td>${r.date || "—"}</td>
+              <td>${r.enqueue_timestamp || "—"}</td>
               <td>${r.queue_name || "—"}</td>
               <td>${r.region || "—"}</td>
               <td>${r.state || "—"}</td>
               <td class="mono">${r.customer_number || "—"}</td>
               <td>${r.channel || "—"}</td>
               <td>${r.initiation_method || "—"}</td>
-              <td>${r.interaction_status || "—"}</td>
+              <td>${r.outcome || "—"}</td>
               <td>${r.agent_connection_attempts || "—"}</td>
-              <td>${r.event || "—"}</td>
+              <td>${r.disconnect_reason || "—"}</td>
               <td>${r.ring_time || "—"}</td>
               <td>${r.wait_time || "—"}</td>
               <td>${r.talk_time || "—"}</td>
