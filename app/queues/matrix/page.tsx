@@ -22,6 +22,7 @@ import { DateHelper } from "@/lib/date-helper"
 interface TotalAnsweredData {
   contacts: string
   answered: string
+  outbound: string
   transferred: string
   avg_talk: string
   total_duration: string
@@ -53,6 +54,7 @@ interface ServiceLevelRow {
 const ANSWERED_LABELS: Record<keyof TotalAnsweredData, string> = {
   contacts: "Contacts",
   answered: "Answered Calls",
+  outbound: "Outbound Calls",
   transferred: "Transferred Calls",
   avg_talk: "Avg Talk",
   total_duration: "Total Duration",
