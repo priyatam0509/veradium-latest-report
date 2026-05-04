@@ -27,14 +27,13 @@ interface QueueData {
   queue_name: string
   channel: string
   initiation_method: string
-  received: string
+  contacts: string
   answered: string
   unanswered: string
   abandoned: string
   transferred: string
   avg_wait: string
   avg_talk: string
-  max_callers: string
   "%_answered": string
   "%_unanswered": string
   sla: string
@@ -44,14 +43,13 @@ interface DIDData {
   did: string
   channel: string
   initiation_method: string
-  received: string
+  contacts: string
   answered: string
   unanswered: string
   abandoned: string
   transferred: string
   avg_wait: string
   avg_talk: string
-  max_callers: string
   "%_answered": string
   "%_unanswered": string
   sla: string
@@ -63,14 +61,13 @@ interface HourData {
   channel: string
   initiation_method: string
   region: string
-  received: string
+  contacts: string
   answered: string
   unanswered: string
   abandoned: string
   transferred: string
   avg_wait: string
   avg_talk: string
-  max_callers: string
   "%_answered": string
   "%_unanswered": string
   sla: string
@@ -82,14 +79,13 @@ interface DayData {
   channel: string
   initiation_method: string
   region: string
-  received: string
+  contacts: string
   answered: string
   unanswered: string
   abandoned: string
   transferred: string
   avg_wait: string
   avg_talk: string
-  max_callers: string
   "%_answered": string
   "%_unanswered": string
   sla: string
@@ -101,7 +97,7 @@ interface MonthData {
   channel: string
   initiation_method: string
   region: string
-  received: string
+  contacts: string
   answered: string
   unanswered: string
   abandoned: string
@@ -121,7 +117,7 @@ interface WeekData {
   channel: string
   initiation_method: string
   region: string
-  received: string
+  contacts: string
   answered: string
   unanswered: string
   abandoned: string
@@ -137,7 +133,7 @@ interface AgentAnsweredData {
   region: string
   channel: string
   initiation_method: string
-  received: string
+  contacts: string
   completed: string
   transferred: string
   "%_calls": string
@@ -149,7 +145,7 @@ interface StateData {
   region: string
   channel: string
   initiation_method: string
-  received: string
+  contacts: string
   answered: string
   unanswered: string
   abandoned: string
@@ -727,7 +723,7 @@ export default function QueueDistributionPage() {
   const stateSort = useSortable(filteredStates)
 
   // ── common numeric totals ─────────────────────────────────────────────────────
-  const numericCols = ["received", "answered", "unanswered", "abandoned", "transferred"]
+  const numericCols = ["contacts", "answered", "unanswered", "abandoned", "transferred"]
 
   const LoadingRow = ({ cols }: { cols: number }) => (
     <TableRow>
@@ -818,7 +814,7 @@ export default function QueueDistributionPage() {
                         <TableRow>
                           {[
                             ["queue_name","Queue Name"],["channel","Channel"],["initiation_method","Method"],
-                            ["received","Received"],["answered","Answered"],["unanswered","Unanswered"],
+                            ["contacts","Contacts"],["answered","Answered"],["unanswered","Unanswered"],
                             ["abandoned","Abandoned"],["transferred","Transferred"],["avg_wait","Avg Wait"],
                             ["avg_talk","Avg Talk"],["%_answered","% Ans"],
                             ["%_unanswered","% Unans"],["sla","SLA"],
@@ -842,7 +838,7 @@ export default function QueueDistributionPage() {
                                 </TableCell>
                                 <TableCell>{q.channel}</TableCell>
                                 <TableCell>{q.initiation_method}</TableCell>
-                                <TableCell>{q.received}</TableCell>
+                                <TableCell>{q.contacts}</TableCell>
                                 <TableCell>{q.answered}</TableCell>
                                 <TableCell>{q.unanswered}</TableCell>
                                 <TableCell>{q.abandoned}</TableCell>
@@ -881,7 +877,7 @@ export default function QueueDistributionPage() {
                         <TableRow>
                           {[
                             ["did","Phone (DID)"],["channel","Channel"],["initiation_method","Method"],
-                            ["received","Received"],["answered","Answered"],["unanswered","Unanswered"],
+                            ["contacts","Contacts"],["answered","Answered"],["unanswered","Unanswered"],
                             ["abandoned","Abandoned"],["transferred","Transferred"],["avg_wait","Avg Wait"],
                             ["avg_talk","Avg Talk"],["%_answered","% Ans"],
                             ["%_unanswered","% Unans"],["sla","SLA"],
@@ -905,7 +901,7 @@ export default function QueueDistributionPage() {
                                 </TableCell>
                                 <TableCell>{d.channel}</TableCell>
                                 <TableCell>{d.initiation_method}</TableCell>
-                                <TableCell>{d.received}</TableCell>
+                                <TableCell>{d.contacts}</TableCell>
                                 <TableCell>{d.answered}</TableCell>
                                 <TableCell>{d.unanswered}</TableCell>
                                 <TableCell>{d.abandoned}</TableCell>
@@ -943,7 +939,7 @@ export default function QueueDistributionPage() {
                         <TableRow>
                           {[
                             ["agent_name","Agent Name"],["region","Region"],["channel","Channel"],
-                            ["initiation_method","Method"],["received","Received"],["completed","Completed"],
+                            ["initiation_method","Method"],["contacts","Contacts"],["completed","Completed"],
                             ["transferred","Transferred"],["%_calls","% Calls"],["talk_time","Talk Time"],
                           ].map(([col, label]) => (
                             <SortHead key={col} col={col} label={label} sortKey={agentSort.sortKey} sortDir={agentSort.sortDir} onSort={agentSort.handleSort} />
@@ -966,7 +962,7 @@ export default function QueueDistributionPage() {
                                 <TableCell>{a.region || "—"}</TableCell>
                                 <TableCell>{a.channel}</TableCell>
                                 <TableCell>{a.initiation_method}</TableCell>
-                                <TableCell>{a.received}</TableCell>
+                                <TableCell>{a.contacts}</TableCell>
                                 <TableCell>{a.completed}</TableCell>
                                 <TableCell>{a.transferred}</TableCell>
                                 <TableCell>{a["%_calls"]}</TableCell>
@@ -978,7 +974,7 @@ export default function QueueDistributionPage() {
                               <TableCell></TableCell>
                               <TableCell></TableCell>
                               <TableCell></TableCell>
-                              <TableCell>{sumNumeric(agentSort.sorted, "received")}</TableCell>
+                              <TableCell>{sumNumeric(agentSort.sorted, "contacts")}</TableCell>
                               <TableCell>{sumNumeric(agentSort.sorted, "completed")}</TableCell>
                               <TableCell>{sumNumeric(agentSort.sorted, "transferred")}</TableCell>
                               <TableCell>{avgNumeric(agentSort.sorted, "%_calls")}</TableCell>
@@ -999,7 +995,7 @@ export default function QueueDistributionPage() {
                         <TableRow>
                           {[
                             ["interval_date","Date"],["interval_hour","Hour"],["channel","Channel"],
-                            ["initiation_method","Method"],["region","Region"],["received","Received"],
+                            ["initiation_method","Method"],["region","Region"],["contacts","Contacts"],
                             ["answered","Answered"],["unanswered","Unanswered"],["abandoned","Abandoned"],
                             ["transferred","Transferred"],["avg_wait","Avg Wait"],["avg_talk","Avg Talk"],
                             ["%_answered","% Ans"],["%_unanswered","% Unans"],["sla","SLA"],
@@ -1030,7 +1026,7 @@ export default function QueueDistributionPage() {
                                 <TableCell>{h.channel}</TableCell>
                                 <TableCell>{h.initiation_method}</TableCell>
                                 <TableCell>{h.region || "—"}</TableCell>
-                                <TableCell>{h.received}</TableCell>
+                                <TableCell>{h.contacts}</TableCell>
                                 <TableCell>{h.answered}</TableCell>
                                 <TableCell>{h.unanswered}</TableCell>
                                 <TableCell>{h.abandoned}</TableCell>
@@ -1066,7 +1062,7 @@ export default function QueueDistributionPage() {
                         <TableRow>
                           {[
                             ["interval_date","Date"],["channel","Channel"],["initiation_method","Method"],
-                            ["region","Region"],["received","Received"],["answered","Answered"],
+                            ["region","Region"],["contacts","Contacts"],["answered","Answered"],
                             ["unanswered","Unanswered"],["abandoned","Abandoned"],["transferred","Transferred"],
                             ["avg_wait","Avg Wait"],["avg_talk","Avg Talk"],
                             ["%_answered","% Ans"],["%_unanswered","% Unans"],["sla","SLA"],
@@ -1096,7 +1092,7 @@ export default function QueueDistributionPage() {
                                 <TableCell>{d.channel}</TableCell>
                                 <TableCell>{d.initiation_method}</TableCell>
                                 <TableCell>{d.region || "—"}</TableCell>
-                                <TableCell>{d.received}</TableCell>
+                                <TableCell>{d.contacts}</TableCell>
                                 <TableCell>{d.answered}</TableCell>
                                 <TableCell>{d.unanswered}</TableCell>
                                 <TableCell>{d.abandoned}</TableCell>
@@ -1132,7 +1128,7 @@ export default function QueueDistributionPage() {
                         <TableRow>
                           {[
                             ["week_serial","Week"],["interval_year","Year"],["channel","Channel"],["initiation_method","Method"],
-                            ["region","Region"],["received","Received"],["answered","Answered"],
+                            ["region","Region"],["contacts","Contacts"],["answered","Answered"],
                             ["unanswered","Unanswered"],["abandoned","Abandoned"],["transferred","Transferred"],
                             ["avg_wait","Avg Wait"],["avg_talk","Avg Talk"],
                           ].map(([col, label]) => (
@@ -1174,7 +1170,7 @@ export default function QueueDistributionPage() {
                                 <TableCell>{w.channel}</TableCell>
                                 <TableCell>{w.initiation_method}</TableCell>
                                 <TableCell>{w.region || "—"}</TableCell>
-                                <TableCell>{w.received}</TableCell>
+                                <TableCell>{w.contacts}</TableCell>
                                 <TableCell>{w.answered}</TableCell>
                                 <TableCell>{w.unanswered}</TableCell>
                                 <TableCell>{w.abandoned}</TableCell>
@@ -1204,7 +1200,7 @@ export default function QueueDistributionPage() {
                         <TableRow>
                           {[
                             ["month","Month"],["channel","Channel"],["initiation_method","Method"],
-                            ["region","Region"],["received","Received"],["answered","Answered"],
+                            ["region","Region"],["contacts","Contacts"],["answered","Answered"],
                             ["unanswered","Unanswered"],["abandoned","Abandoned"],["transferred","Transferred"],
                             ["avg_wait","Avg Wait"],["avg_talk","Avg Talk"],["%_answered","% Ans"],
                             ["%_unanswered","% Unans"],["sla","SLA"],
@@ -1239,7 +1235,7 @@ export default function QueueDistributionPage() {
                                 <TableCell>{m.channel}</TableCell>
                                 <TableCell>{m.initiation_method}</TableCell>
                                 <TableCell>{m.region || "—"}</TableCell>
-                                <TableCell>{m.received}</TableCell>
+                                <TableCell>{m.contacts}</TableCell>
                                 <TableCell>{m.answered}</TableCell>
                                 <TableCell>{m.unanswered}</TableCell>
                                 <TableCell>{m.abandoned}</TableCell>
@@ -1275,7 +1271,7 @@ export default function QueueDistributionPage() {
                         <TableRow>
                           {[
                             ["state","State"],["region","Region"],["channel","Channel"],["initiation_method","Method"],
-                            ["received","Received"],["answered","Answered"],["unanswered","Unanswered"],
+                            ["contacts","Contacts"],["answered","Answered"],["unanswered","Unanswered"],
                             ["abandoned","Abandoned"],["transferred","Transferred"],["avg_wait","Avg Wait"],
                             ["avg_talk","Avg Talk"],["%_answered","% Ans"],["%_unanswered","% Unans"],["sla","SLA"],
                           ].map(([col, label]) => (
@@ -1301,7 +1297,7 @@ export default function QueueDistributionPage() {
                                 <TableCell>{s.region || "—"}</TableCell>
                                 <TableCell>{s.channel}</TableCell>
                                 <TableCell>{s.initiation_method}</TableCell>
-                                <TableCell>{s.received}</TableCell>
+                                <TableCell>{s.contacts}</TableCell>
                                 <TableCell>{s.answered}</TableCell>
                                 <TableCell>{s.unanswered}</TableCell>
                                 <TableCell>{s.abandoned}</TableCell>
