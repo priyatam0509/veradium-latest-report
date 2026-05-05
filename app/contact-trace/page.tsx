@@ -53,6 +53,7 @@ interface UnansweredCallDetail {
   wait_time: string
   did: string
   region: string
+  state: string
   recording: string
   [key: string]: string
 }
@@ -395,7 +396,7 @@ export default function ContactTracePage() {
       const values = [
         row.contact_id, row.disconnect_timestamp, row.channel, row.initiation_method,
         row.queue_name, row.customer_number, row.outcome, row.ring_time, row.wait_time,
-        row.did, row.region,
+        row.did, row.region, row.state,
       ]
       return values.some((v) => (v || '').toLowerCase().includes(search))
     })
@@ -547,6 +548,7 @@ export default function ContactTracePage() {
                             <SortHead col="wait_time" label="Wait Time" sortKey={unansweredSort.sortKey} sortDir={unansweredSort.sortDir} onSort={unansweredSort.handleSort} className="whitespace-nowrap text-right" />
                             <SortHead col="did" label="DID" sortKey={unansweredSort.sortKey} sortDir={unansweredSort.sortDir} onSort={unansweredSort.handleSort} className="whitespace-nowrap" />
                             <SortHead col="region" label="Region" sortKey={unansweredSort.sortKey} sortDir={unansweredSort.sortDir} onSort={unansweredSort.handleSort} className="whitespace-nowrap" />
+                            <SortHead col="state" label="State" sortKey={unansweredSort.sortKey} sortDir={unansweredSort.sortDir} onSort={unansweredSort.handleSort} className="whitespace-nowrap" />
                             <SortHead col="recording" label="Recording" sortKey={unansweredSort.sortKey} sortDir={unansweredSort.sortDir} onSort={unansweredSort.handleSort} className="whitespace-nowrap" />
                           </TableRow>
                         </TableHeader>
@@ -571,6 +573,7 @@ export default function ContactTracePage() {
                               <TableCell className="text-xs text-right font-mono">{row.wait_time ?? "—"}</TableCell>
                               <TableCell className="text-xs whitespace-nowrap font-mono">{row.did ?? "—"}</TableCell>
                               <TableCell className="text-xs whitespace-nowrap">{row.region ?? "—"}</TableCell>
+                              <TableCell className="text-xs whitespace-nowrap">{row.state ?? "—"}</TableCell>
                               <TableCell className="text-xs whitespace-nowrap"><RecordingCell recording={row.recording} /></TableCell>
                             </TableRow>
                           ))}
