@@ -16,9 +16,9 @@ import { Input } from "@/components/ui/input"
 import { useGlobalFilters } from "@/lib/global-filters-context"
 
 interface AgentAvailData {
-  agent_id: string
-  agent: string
-  agent_region: string
+  user_id: string
+  agent_name: string
+  region: string
   answered: string
   outbound: string
   missed: string
@@ -114,15 +114,15 @@ export default function AgentAvailabilityPage() {
   }
 
   const handleViewDrilldown = async (agent: AgentAvailData) => {
-    setLoadingAgentId(agent.agent_id)
+    setLoadingAgentId(agent.user_id)
     try {
       const start = DateHelper.formatDateFromDate(startRef.current)
       const end = DateHelper.formatDateFromDate(endRef.current, true)
-      const result = await athenaAPI.getAgentDrilldown(start, end, agent.agent_id, user?.email)
+      const result = await athenaAPI.getAgentDrilldown(start, end, agent.user_id, user?.email)
       if (result.status === 'SUCCEEDED') {
         const newWindow = window.open('', '_blank')
         if (newWindow) {
-          newWindow.document.write(generateDrilldownHTML(result.data, agent.agent))
+          newWindow.document.write(generateDrilldownHTML(result.data, agent.agent_name))
           newWindow.document.close()
         }
       }
@@ -373,7 +373,7 @@ export default function AgentAvailabilityPage() {
     if (!search) return agentData
     return agentData.filter((agent) => {
       const values = [
-        agent.agent, agent.agent_region, agent.answered, agent.outbound, agent.failed,
+        agent.agent_name, agent.region, agent.answered, agent.outbound, agent.failed,
         agent.missed, agent.rejected, agent.online_time, agent.available_time,
         agent.offline_time, agent.pause_time, agent['%_pauses'], agent.pauses,
         agent.talk_time, agent.hold_time, agent.wrap_up_time, agent.idle_time, agent.aht,
@@ -511,8 +511,8 @@ export default function AgentAvailabilityPage() {
                   <Table>
                     <TableHeader className="sticky top-0 bg-background z-10">
                       <TableRow>
-                        <SortHead col="agent" label="Agent" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
-                        <SortHead col="agent_region" label="Region" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
+                        <SortHead col="agent_name" label="Agent" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
+                        <SortHead col="region" label="Region" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
                         <SortHead col="answered" label="Answered" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
                         <SortHead col="outbound" label="Outbound" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
                         <SortHead col="missed" label="Missed" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
@@ -535,10 +535,10 @@ export default function AgentAvailabilityPage() {
                       {sort.sorted.map((agent, index) => (
                         <TableRow key={index}>
                           <TableCell className="font-medium cursor-pointer text-primary hover:underline" onClick={() => handleViewDrilldown(agent)}>
-                            {loadingAgentId === agent.agent_id ? <Loader2 className="h-4 w-4 animate-spin inline mr-1" /> : null}
-                            {agent.agent}
+                            {loadingAgentId === agent.user_id ? <Loader2 className="h-4 w-4 animate-spin inline mr-1" /> : null}
+                            {agent.agent_name}
                           </TableCell>
-                          <TableCell>{agent.agent_region || '—'}</TableCell>
+                          <TableCell>{agent.region || '—'}</TableCell>
                           <TableCell className="text-right text-green-600 font-mono">{agent.answered || '0'}</TableCell>
                           <TableCell className="text-right text-blue-600 font-mono">{agent.outbound || '0'}</TableCell>
                           <TableCell className="text-right text-orange-600 font-mono">{agent.missed || '0'}</TableCell>
