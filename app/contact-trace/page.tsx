@@ -24,12 +24,13 @@ import { exportToCSV } from "@/lib/csv-export"
 
 interface AnsweredCallDetail {
   contact_id: string
-  date: string
+  disconnect_timestamp: string
   channel: string
+  initiation_method: string
   queue_name: string
   agent_name: string
   customer_number: string
-  interaction_status: string
+  outcome: string
   ring_time: string
   wait_time: string
   talk_time: string
@@ -42,11 +43,12 @@ interface AnsweredCallDetail {
 
 interface UnansweredCallDetail {
   contact_id: string
-  date: string
+  disconnect_timestamp: string
   channel: string
+  initiation_method: string
   queue_name: string
   customer_number: string
-  interaction_status: string
+  outcome: string
   ring_time: string
   wait_time: string
   did: string
@@ -134,8 +136,8 @@ function RecordingCell({ recording }: { recording?: string }) {
 }
 
 
-function getStatusColor(status: string) {
-  switch (status) {
+function getStatusColor(outcome: string) {
+  switch (outcome) {
     case "Transferred to External": return "text-purple-600"
     case "Transferred": return "text-blue-600"
     case "Completed by Agent":
@@ -378,9 +380,9 @@ export default function ContactTracePage() {
     if (!search) return answeredData
     return answeredData.filter((row) => {
       const values = [
-        row.contact_id, row.date, row.channel, row.queue_name, row.agent_name,
-        row.customer_number, row.interaction_status, row.ring_time, row.wait_time,
-        row.talk_time, row.did, row.region, row.state,
+        row.contact_id, row.disconnect_timestamp, row.channel, row.initiation_method,
+        row.queue_name, row.agent_name, row.customer_number, row.outcome,
+        row.ring_time, row.wait_time, row.talk_time, row.did, row.region, row.state,
       ]
       return values.some((v) => (v || '').toLowerCase().includes(search))
     })
@@ -391,8 +393,8 @@ export default function ContactTracePage() {
     if (!search) return unansweredData
     return unansweredData.filter((row) => {
       const values = [
-        row.contact_id, row.date, row.channel, row.queue_name,
-        row.customer_number, row.interaction_status, row.ring_time, row.wait_time,
+        row.contact_id, row.disconnect_timestamp, row.channel, row.initiation_method,
+        row.queue_name, row.customer_number, row.outcome, row.ring_time, row.wait_time,
         row.did, row.region,
       ]
       return values.some((v) => (v || '').toLowerCase().includes(search))
@@ -465,12 +467,13 @@ export default function ContactTracePage() {
                         <TableHeader className="sticky top-0 bg-background z-10">
                           <TableRow>
                             <SortHead col="contact_id" label="Contact ID" sortKey={answeredSort.sortKey} sortDir={answeredSort.sortDir} onSort={answeredSort.handleSort} className="whitespace-nowrap" />
-                            <SortHead col="date" label="Date" sortKey={answeredSort.sortKey} sortDir={answeredSort.sortDir} onSort={answeredSort.handleSort} className="whitespace-nowrap" />
+                            <SortHead col="disconnect_timestamp" label="Disconnect Time" sortKey={answeredSort.sortKey} sortDir={answeredSort.sortDir} onSort={answeredSort.handleSort} className="whitespace-nowrap" />
                             <SortHead col="channel" label="Channel" sortKey={answeredSort.sortKey} sortDir={answeredSort.sortDir} onSort={answeredSort.handleSort} className="whitespace-nowrap" />
+                            <SortHead col="initiation_method" label="Method" sortKey={answeredSort.sortKey} sortDir={answeredSort.sortDir} onSort={answeredSort.handleSort} className="whitespace-nowrap" />
                             <SortHead col="queue_name" label="Queue" sortKey={answeredSort.sortKey} sortDir={answeredSort.sortDir} onSort={answeredSort.handleSort} className="whitespace-nowrap" />
                             <SortHead col="agent_name" label="Agent" sortKey={answeredSort.sortKey} sortDir={answeredSort.sortDir} onSort={answeredSort.handleSort} className="whitespace-nowrap" />
                             <SortHead col="customer_number" label="Number" sortKey={answeredSort.sortKey} sortDir={answeredSort.sortDir} onSort={answeredSort.handleSort} className="whitespace-nowrap" />
-                            <SortHead col="interaction_status" label="Status" sortKey={answeredSort.sortKey} sortDir={answeredSort.sortDir} onSort={answeredSort.handleSort} className="whitespace-nowrap" />
+                            <SortHead col="outcome" label="Outcome" sortKey={answeredSort.sortKey} sortDir={answeredSort.sortDir} onSort={answeredSort.handleSort} className="whitespace-nowrap" />
                             <SortHead col="ring_time" label="Ring Time" sortKey={answeredSort.sortKey} sortDir={answeredSort.sortDir} onSort={answeredSort.handleSort} className="whitespace-nowrap text-right" />
                             <SortHead col="wait_time" label="Wait Time" sortKey={answeredSort.sortKey} sortDir={answeredSort.sortDir} onSort={answeredSort.handleSort} className="whitespace-nowrap text-right" />
                             <SortHead col="talk_time" label="Talk Time" sortKey={answeredSort.sortKey} sortDir={answeredSort.sortDir} onSort={answeredSort.handleSort} className="whitespace-nowrap text-right" />
@@ -491,12 +494,13 @@ export default function ContactTracePage() {
                                   {row.contact_id ?? "—"}
                                 </button>
                               </TableCell>
-                              <TableCell className="text-xs whitespace-nowrap">{row.date ?? "—"}</TableCell>
+                              <TableCell className="text-xs whitespace-nowrap">{row.disconnect_timestamp ?? "—"}</TableCell>
                               <TableCell className="text-xs whitespace-nowrap">{row.channel ?? "—"}</TableCell>
+                              <TableCell className="text-xs whitespace-nowrap">{row.initiation_method ?? "—"}</TableCell>
                               <TableCell className="text-xs whitespace-nowrap">{row.queue_name ?? "—"}</TableCell>
                               <TableCell className="text-xs whitespace-nowrap">{row.agent_name ?? "—"}</TableCell>
                               <TableCell className="text-xs whitespace-nowrap font-mono">{row.customer_number ?? "—"}</TableCell>
-                              <TableCell className={`text-xs whitespace-nowrap font-medium ${getStatusColor(row.interaction_status)}`}>{row.interaction_status ?? "—"}</TableCell>
+                              <TableCell className={`text-xs whitespace-nowrap font-medium ${getStatusColor(row.outcome)}`}>{row.outcome ?? "—"}</TableCell>
                               <TableCell className="text-xs text-right font-mono">{row.ring_time ?? "—"}</TableCell>
                               <TableCell className="text-xs text-right font-mono">{row.wait_time ?? "—"}</TableCell>
                               <TableCell className="text-xs text-right font-mono">{row.talk_time ?? "—"}</TableCell>
@@ -533,11 +537,12 @@ export default function ContactTracePage() {
                         <TableHeader className="sticky top-0 bg-background z-10">
                           <TableRow>
                             <SortHead col="contact_id" label="Contact ID" sortKey={unansweredSort.sortKey} sortDir={unansweredSort.sortDir} onSort={unansweredSort.handleSort} className="whitespace-nowrap" />
-                            <SortHead col="date" label="Date" sortKey={unansweredSort.sortKey} sortDir={unansweredSort.sortDir} onSort={unansweredSort.handleSort} className="whitespace-nowrap" />
+                            <SortHead col="disconnect_timestamp" label="Disconnect Time" sortKey={unansweredSort.sortKey} sortDir={unansweredSort.sortDir} onSort={unansweredSort.handleSort} className="whitespace-nowrap" />
                             <SortHead col="channel" label="Channel" sortKey={unansweredSort.sortKey} sortDir={unansweredSort.sortDir} onSort={unansweredSort.handleSort} className="whitespace-nowrap" />
+                            <SortHead col="initiation_method" label="Method" sortKey={unansweredSort.sortKey} sortDir={unansweredSort.sortDir} onSort={unansweredSort.handleSort} className="whitespace-nowrap" />
                             <SortHead col="queue_name" label="Queue" sortKey={unansweredSort.sortKey} sortDir={unansweredSort.sortDir} onSort={unansweredSort.handleSort} className="whitespace-nowrap" />
                             <SortHead col="customer_number" label="Number" sortKey={unansweredSort.sortKey} sortDir={unansweredSort.sortDir} onSort={unansweredSort.handleSort} className="whitespace-nowrap" />
-                            <SortHead col="interaction_status" label="Status" sortKey={unansweredSort.sortKey} sortDir={unansweredSort.sortDir} onSort={unansweredSort.handleSort} className="whitespace-nowrap" />
+                            <SortHead col="outcome" label="Outcome" sortKey={unansweredSort.sortKey} sortDir={unansweredSort.sortDir} onSort={unansweredSort.handleSort} className="whitespace-nowrap" />
                             <SortHead col="ring_time" label="Ring Time" sortKey={unansweredSort.sortKey} sortDir={unansweredSort.sortDir} onSort={unansweredSort.handleSort} className="whitespace-nowrap text-right" />
                             <SortHead col="wait_time" label="Wait Time" sortKey={unansweredSort.sortKey} sortDir={unansweredSort.sortDir} onSort={unansweredSort.handleSort} className="whitespace-nowrap text-right" />
                             <SortHead col="did" label="DID" sortKey={unansweredSort.sortKey} sortDir={unansweredSort.sortDir} onSort={unansweredSort.handleSort} className="whitespace-nowrap" />
@@ -556,11 +561,12 @@ export default function ContactTracePage() {
                                   {row.contact_id ?? "—"}
                                 </button>
                               </TableCell>
-                              <TableCell className="text-xs whitespace-nowrap">{row.date ?? "—"}</TableCell>
+                              <TableCell className="text-xs whitespace-nowrap">{row.disconnect_timestamp ?? "—"}</TableCell>
                               <TableCell className="text-xs whitespace-nowrap">{row.channel ?? "—"}</TableCell>
+                              <TableCell className="text-xs whitespace-nowrap">{row.initiation_method ?? "—"}</TableCell>
                               <TableCell className="text-xs whitespace-nowrap">{row.queue_name ?? "—"}</TableCell>
                               <TableCell className="text-xs whitespace-nowrap font-mono">{row.customer_number ?? "—"}</TableCell>
-                              <TableCell className="text-xs whitespace-nowrap">{row.interaction_status ?? "—"}</TableCell>
+                              <TableCell className="text-xs whitespace-nowrap">{row.outcome ?? "—"}</TableCell>
                               <TableCell className="text-xs text-right font-mono">{row.ring_time ?? "—"}</TableCell>
                               <TableCell className="text-xs text-right font-mono">{row.wait_time ?? "—"}</TableCell>
                               <TableCell className="text-xs whitespace-nowrap font-mono">{row.did ?? "—"}</TableCell>
