@@ -134,10 +134,15 @@ interface AgentAnsweredData {
   channel: string
   initiation_method: string
   contacts: string
-  completed: string
   transferred: string
-  "%_calls": string
+  "%_contacts": string
   talk_time: string
+  "%_talk_time": string
+  avg_talk: string
+  ring_time: string
+  wait_time: string
+  avg_wait: string
+  max_wait_time: string
 }
 
 interface StateData {
@@ -939,8 +944,10 @@ export default function QueueDistributionPage() {
                         <TableRow>
                           {[
                             ["agent_name","Agent Name"],["region","Region"],["channel","Channel"],
-                            ["initiation_method","Method"],["contacts","Contacts"],["completed","Completed"],
-                            ["transferred","Transferred"],["%_calls","% Calls"],["talk_time","Talk Time"],
+                            ["initiation_method","Method"],["contacts","Contacts"],["transferred","Transferred"],
+                            ["%_contacts","% Contacts"],["talk_time","Talk Time"],["%_talk_time","% Talk Time"],
+                            ["avg_talk","Avg Talk"],["ring_time","Ring Time"],["wait_time","Wait Time"],
+                            ["avg_wait","Avg Wait"],["max_wait_time","Max Wait"],
                           ].map(([col, label]) => (
                             <SortHead key={col} col={col} label={label} sortKey={agentSort.sortKey} sortDir={agentSort.sortDir} onSort={agentSort.handleSort} />
                           ))}
@@ -948,9 +955,9 @@ export default function QueueDistributionPage() {
                       </TableHeader>
                       <TableBody>
                         {isLoading && activeTab === "agent" ? (
-                          <LoadingRow cols={9} />
+                          <LoadingRow cols={14} />
                         ) : agentSort.sorted.length === 0 ? (
-                          <EmptyRow cols={9} label="No agent data found." />
+                          <EmptyRow cols={14} label="No agent data found." />
                         ) : (
                           <>
                             {agentSort.sorted.map((a, i) => (
@@ -963,22 +970,29 @@ export default function QueueDistributionPage() {
                                 <TableCell>{a.channel}</TableCell>
                                 <TableCell>{a.initiation_method}</TableCell>
                                 <TableCell>{a.contacts}</TableCell>
-                                <TableCell>{a.completed}</TableCell>
                                 <TableCell>{a.transferred}</TableCell>
-                                <TableCell>{a["%_calls"]}</TableCell>
-                                <TableCell>{a.talk_time}</TableCell>
+                                <TableCell>{a["%_contacts"]}</TableCell>
+                                <TableCell>{a.talk_time || "—"}</TableCell>
+                                <TableCell>{a["%_talk_time"] || "—"}</TableCell>
+                                <TableCell>{a.avg_talk || "—"}</TableCell>
+                                <TableCell>{a.ring_time || "—"}</TableCell>
+                                <TableCell>{a.wait_time || "—"}</TableCell>
+                                <TableCell>{a.avg_wait || "—"}</TableCell>
+                                <TableCell>{a.max_wait_time || "—"}</TableCell>
                               </TableRow>
                             ))}
                             <TableRow className="bg-muted/50 font-semibold">
-                              <TableCell>TOTAL</TableCell>
-                              <TableCell></TableCell>
-                              <TableCell></TableCell>
-                              <TableCell></TableCell>
+                              <TableCell colSpan={4}>TOTAL</TableCell>
                               <TableCell>{sumNumeric(agentSort.sorted, "contacts")}</TableCell>
-                              <TableCell>{sumNumeric(agentSort.sorted, "completed")}</TableCell>
                               <TableCell>{sumNumeric(agentSort.sorted, "transferred")}</TableCell>
-                              <TableCell>{avgNumeric(agentSort.sorted, "%_calls")}</TableCell>
+                              <TableCell>{avgNumeric(agentSort.sorted, "%_contacts")}</TableCell>
                               <TableCell>{sumTime(agentSort.sorted, "talk_time")}</TableCell>
+                              <TableCell>{avgNumeric(agentSort.sorted, "%_talk_time")}</TableCell>
+                              <TableCell>{avgTime(agentSort.sorted, "avg_talk")}</TableCell>
+                              <TableCell>{sumTime(agentSort.sorted, "ring_time")}</TableCell>
+                              <TableCell>{sumTime(agentSort.sorted, "wait_time")}</TableCell>
+                              <TableCell>{avgTime(agentSort.sorted, "avg_wait")}</TableCell>
+                              <TableCell>{avgTime(agentSort.sorted, "max_wait_time")}</TableCell>
                             </TableRow>
                           </>
                         )}
