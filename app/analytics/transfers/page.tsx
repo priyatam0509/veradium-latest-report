@@ -19,10 +19,10 @@ interface TransferData {
   agent_name: string
   initiation_method: string
   region: string
+  transfer_type: string
+  transfer_initiation_method: string
+  transfer_destination: string
   contacts: string
-  avg_talk: string
-  total_duration: string
-  total_transferred: string
 }
 
 export default function TransferAnalysis() {
@@ -108,12 +108,12 @@ export default function TransferAnalysis() {
     loadTransferData().finally(() => setIsRefreshing(false))
   }
 
-  const totalTransfers = transferData.reduce((sum, t) => sum + parseInt(t.total_transferred || '0'), 0)
+  const totalTransfers = transferData.reduce((sum, t) => sum + parseInt(t.contacts || '0'), 0)
   const uniqueAgents = new Set(transferData.map(t => t.agent_name)).size
 
   const sort = useSortable(transferData)
   const topAgent = transferData.length > 0 
-    ? transferData.reduce((max, t) => parseInt(t.total_transferred) > parseInt(max.total_transferred) ? t : max)
+    ? transferData.reduce((max, t) => parseInt(t.contacts) > parseInt(max.contacts) ? t : max)
     : null
 
   return (
@@ -198,7 +198,7 @@ export default function TransferAnalysis() {
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    {topAgent ? `${topAgent.total_transferred} transfers` : 'No data'}
+                    {topAgent ? `${topAgent.contacts} contacts` : 'No data'}
                   </p>
                 </CardContent>
               </Card>
@@ -229,12 +229,12 @@ export default function TransferAnalysis() {
                     <TableHeader className="sticky top-0 bg-background z-10">
                       <TableRow>
                         <SortHead col="agent_name" label="Agent Name" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
-                        <SortHead col="initiation_method" label="Method" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
+                        <SortHead col="initiation_method" label="Initiation Method" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
                         <SortHead col="region" label="Region" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
+                        <SortHead col="transfer_type" label="Transfer Type" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
+                        <SortHead col="transfer_initiation_method" label="Transfer Method" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
+                        <SortHead col="transfer_destination" label="Destination" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
                         <SortHead col="contacts" label="Contacts" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
-                        <SortHead col="avg_talk" label="Avg Talk" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
-                        <SortHead col="total_duration" label="Total Duration" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
-                        <SortHead col="total_transferred" label="Total Transferred" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -243,10 +243,10 @@ export default function TransferAnalysis() {
                           <TableCell className="font-medium">{transfer.agent_name}</TableCell>
                           <TableCell>{transfer.initiation_method || '—'}</TableCell>
                           <TableCell>{transfer.region || '—'}</TableCell>
+                          <TableCell>{transfer.transfer_type || '—'}</TableCell>
+                          <TableCell>{transfer.transfer_initiation_method || '—'}</TableCell>
+                          <TableCell>{transfer.transfer_destination || '—'}</TableCell>
                           <TableCell className="text-right font-mono">{transfer.contacts}</TableCell>
-                          <TableCell className="text-right font-mono">{transfer.avg_talk || '—'}</TableCell>
-                          <TableCell className="text-right font-mono">{transfer.total_duration || '—'}</TableCell>
-                          <TableCell className="text-right font-mono text-blue-600">{transfer.total_transferred}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
