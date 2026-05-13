@@ -127,22 +127,23 @@ interface WeekData {
   [key: string]: string
 }
 
-interface AgentAnsweredData {
+interface AgentDistributionData {
   agent_id: string
   agent_name: string
-  region: string
   channel: string
   initiation_method: string
+  region: string
   contacts: string
+  answered: string
+  unanswered: string
+  abandoned: string
   transferred: string
-  "%_contacts": string
-  talk_time: string
-  "%_talk_time": string
-  avg_talk: string
-  ring_time: string
-  wait_time: string
   avg_wait: string
-  max_wait_time: string
+  avg_talk: string
+  "%_answered": string
+  "%_unanswered": string
+  sla: string
+  [key: string]: string
 }
 
 interface StateData {
@@ -533,7 +534,7 @@ export default function QueueDistributionPage() {
   const [dayData, setDayData] = useState<DayData[]>([])
   const [weekData, setWeekData] = useState<WeekData[]>([])
   const [monthData, setMonthData] = useState<MonthData[]>([])
-  const [agentData, setAgentData] = useState<AgentAnsweredData[]>([])
+  const [agentData, setAgentData] = useState<AgentDistributionData[]>([])
   const [stateData, setStateData] = useState<StateData[]>([])
 
   const [isLoading, setIsLoading] = useState(false)
@@ -565,7 +566,7 @@ export default function QueueDistributionPage() {
       else if (tab === "day") result = await athenaAPI.getDistributionByDay(start, end, null, user?.email, queueFilter, agentFilter, didFilter)
       else if (tab === "week") result = await athenaAPI.getDistributionByWeek(start, end, null, user?.email, queueFilter, agentFilter, didFilter)
       else if (tab === "month") result = await athenaAPI.getDistributionByMonth(start, end, null, user?.email, queueFilter, agentFilter, didFilter)
-      else if (tab === "agent") result = await athenaAPI.getAnsweredByAgent(start, end, queueFilter, null, user?.email, agentFilter, didFilter)
+      else if (tab === "agent") result = await athenaAPI.getDistributionByAgent(start, end, null, user?.email, queueFilter, agentFilter, didFilter)
       else if (tab === "state") result = await athenaAPI.getDistributionByState(start, end, null, user?.email, queueFilter, agentFilter, didFilter)
       else return
 
@@ -943,11 +944,11 @@ export default function QueueDistributionPage() {
                       <TableHeader className="sticky top-0 bg-background z-10">
                         <TableRow>
                           {[
-                            ["agent_name","Agent Name"],["region","Region"],["channel","Channel"],
-                            ["initiation_method","Method"],["contacts","Contacts"],["transferred","Transferred"],
-                            ["%_contacts","% Contacts"],["talk_time","Talk Time"],["%_talk_time","% Talk Time"],
-                            ["avg_talk","Avg Talk"],["ring_time","Ring Time"],["wait_time","Wait Time"],
-                            ["avg_wait","Avg Wait"],["max_wait_time","Max Wait"],
+                            ["agent_name","Agent Name"],["channel","Channel"],
+                            ["initiation_method","Method"],["region","Region"],["contacts","Contacts"],
+                            ["answered","Answered"],["unanswered","Unanswered"],["abandoned","Abandoned"],
+                            ["transferred","Transferred"],["avg_wait","Avg Wait"],["avg_talk","Avg Talk"],
+                            ["%_answered","% Ans"],["%_unanswered","% Unans"],["sla","SLA"],
                           ].map(([col, label]) => (
                             <SortHead key={col} col={col} label={label} sortKey={agentSort.sortKey} sortDir={agentSort.sortDir} onSort={agentSort.handleSort} />
                           ))}
@@ -961,38 +962,38 @@ export default function QueueDistributionPage() {
                         ) : (
                           <>
                             {agentSort.sorted.map((a, i) => (
-                              <TableRow key={a.agent_id + i}>
-                                <TableCell className="font-medium cursor-pointer text-primary hover:underline whitespace-nowrap" onClick={() => fetchDrilldown({ agentId: a.agent_id }, `Contact Details — ${a.agent_name}`, a.agent_id)}>
-                                  {loadingItemId === a.agent_id ? <Loader2 className="h-4 w-4 animate-spin inline mr-1" /> : null}
+                              <TableRow key={a.agent_name + i}>
+                                <TableCell className="font-medium cursor-pointer text-primary hover:underline whitespace-nowrap" onClick={() => fetchDrilldown({ agentId: a.agent_name }, `Contact Details — ${a.agent_name}`, a.agent_name)}>
+                                  {loadingItemId === a.agent_name ? <Loader2 className="h-4 w-4 animate-spin inline mr-1" /> : null}
                                   {a.agent_name}
                                 </TableCell>
-                                <TableCell>{a.region || "—"}</TableCell>
                                 <TableCell>{a.channel}</TableCell>
                                 <TableCell>{a.initiation_method}</TableCell>
+                                <TableCell>{a.region || "—"}</TableCell>
                                 <TableCell>{a.contacts}</TableCell>
+                                <TableCell>{a.answered}</TableCell>
+                                <TableCell>{a.unanswered}</TableCell>
+                                <TableCell>{a.abandoned}</TableCell>
                                 <TableCell>{a.transferred}</TableCell>
-                                <TableCell>{a["%_contacts"]}</TableCell>
-                                <TableCell>{a.talk_time || "—"}</TableCell>
-                                <TableCell>{a["%_talk_time"] || "—"}</TableCell>
-                                <TableCell>{a.avg_talk || "—"}</TableCell>
-                                <TableCell>{a.ring_time || "—"}</TableCell>
-                                <TableCell>{a.wait_time || "—"}</TableCell>
                                 <TableCell>{a.avg_wait || "—"}</TableCell>
-                                <TableCell>{a.max_wait_time || "—"}</TableCell>
+                                <TableCell>{a.avg_talk || "—"}</TableCell>
+                                <TableCell>{a["%_answered"]}</TableCell>
+                                <TableCell>{a["%_unanswered"]}</TableCell>
+                                <TableCell>{a.sla}</TableCell>
                               </TableRow>
                             ))}
                             <TableRow className="bg-muted/50 font-semibold">
                               <TableCell colSpan={4}>TOTAL</TableCell>
                               <TableCell>{sumNumeric(agentSort.sorted, "contacts")}</TableCell>
+                              <TableCell>{sumNumeric(agentSort.sorted, "answered")}</TableCell>
+                              <TableCell>{sumNumeric(agentSort.sorted, "unanswered")}</TableCell>
+                              <TableCell>{sumNumeric(agentSort.sorted, "abandoned")}</TableCell>
                               <TableCell>{sumNumeric(agentSort.sorted, "transferred")}</TableCell>
-                              <TableCell>{avgNumeric(agentSort.sorted, "%_contacts")}</TableCell>
-                              <TableCell>{sumTime(agentSort.sorted, "talk_time")}</TableCell>
-                              <TableCell>{avgNumeric(agentSort.sorted, "%_talk_time")}</TableCell>
-                              <TableCell>{avgTime(agentSort.sorted, "avg_talk")}</TableCell>
-                              <TableCell>{sumTime(agentSort.sorted, "ring_time")}</TableCell>
-                              <TableCell>{sumTime(agentSort.sorted, "wait_time")}</TableCell>
                               <TableCell>{avgTime(agentSort.sorted, "avg_wait")}</TableCell>
-                              <TableCell>{avgTime(agentSort.sorted, "max_wait_time")}</TableCell>
+                              <TableCell>{avgTime(agentSort.sorted, "avg_talk")}</TableCell>
+                              <TableCell>{avgNumeric(agentSort.sorted, "%_answered")}</TableCell>
+                              <TableCell>{avgNumeric(agentSort.sorted, "%_unanswered")}</TableCell>
+                              <TableCell>{avgNumeric(agentSort.sorted, "sla")}</TableCell>
                             </TableRow>
                           </>
                         )}

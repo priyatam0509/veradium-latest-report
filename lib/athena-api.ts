@@ -202,6 +202,20 @@ export class AthenaReportingAPI {
   return this.executeQuery('distribution_distbyhour', params, true, 60, username)
   }
 
+  async getDistributionByAgent(startDate: string, endDate: string, region?: string[] | null, username?: string, queueIds?: string[], agentIds?: string[], dids?: string[]) {
+  const params: any = {
+    start_datetime: startDate,
+    end_datetime: endDate,
+    sla_threshold: '30',
+    true_abandon_threshold: '30'
+  }
+  if (queueIds && queueIds.length > 0) params.queue_id = queueIds
+  if (agentIds && agentIds.length > 0) params.agent_id = agentIds
+  if (dids && dids.length > 0) params.did = dids
+  if (region && region.length > 0) params.region = region
+  return this.executeQuery('distribution_distbyagent', params, true, 60, username)
+  }
+
   /**
    * FIXED: Drilldown now omits ["ALL"] parameters instead of sending them
    * The SQL queries don't handle ["ALL"] - they need specific values or omitted parameters
