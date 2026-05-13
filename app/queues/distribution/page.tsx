@@ -962,9 +962,9 @@ export default function QueueDistributionPage() {
                         ) : (
                           <>
                             {agentSort.sorted.map((a, i) => (
-                              <TableRow key={a.agent_name + i}>
-                                <TableCell className="font-medium cursor-pointer text-primary hover:underline whitespace-nowrap" onClick={() => fetchDrilldown({ agentId: a.agent_name }, `Contact Details — ${a.agent_name}`, a.agent_name)}>
-                                  {loadingItemId === a.agent_name ? <Loader2 className="h-4 w-4 animate-spin inline mr-1" /> : null}
+                              <TableRow key={a.agent_id + i}>
+                                <TableCell className="font-medium cursor-pointer text-primary hover:underline whitespace-nowrap" onClick={() => fetchDrilldown({ agentId: a.agent_id }, `Contact Details — ${a.agent_name}`, a.agent_id)}>
+                                  {loadingItemId === a.agent_id ? <Loader2 className="h-4 w-4 animate-spin inline mr-1" /> : null}
                                   {a.agent_name}
                                 </TableCell>
                                 <TableCell>{a.channel}</TableCell>
