@@ -12,6 +12,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar as CalendarComponent } from "@/components/ui/calendar"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Input } from "@/components/ui/input"
 import { format } from "date-fns"
 import Image from "next/image"
 import { useGlobalFilters } from "@/lib/global-filters-context"
@@ -88,6 +89,10 @@ function GlobalFiltersBar({ config }: { config: FilterConfig }) {
     handleApply, handleReset,
   } = useGlobalFilters()
 
+  const [queueSearch, setQueueSearch] = useState("")
+  const [agentSearch, setAgentSearch] = useState("")
+  const [didSearch, setDidSearch] = useState("")
+
   // Toggle item_value in/out of selection list
   const toggleValue = (list: string[], value: string, setter: (v: string[]) => void) => {
     setter(list.includes(value) ? list.filter((x) => x !== value) : [...list, value])
@@ -153,11 +158,19 @@ function GlobalFiltersBar({ config }: { config: FilterConfig }) {
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-[220px] p-2" align="start">
+              <Input
+                placeholder="Search queues…"
+                value={queueSearch}
+                onChange={(e) => setQueueSearch(e.target.value)}
+                className="h-7 text-xs mb-2"
+              />
               <div className="max-h-52 overflow-y-auto space-y-1">
                 {availableQueues.length === 0 ? (
                   <p className="text-xs text-muted-foreground px-2 py-1">Loading queues…</p>
                 ) : (
-                  availableQueues.map((q) => (
+                  availableQueues
+                    .filter((q) => q.display.toLowerCase().includes(queueSearch.toLowerCase()))
+                    .map((q) => (
                     <div key={q.value} className="flex items-center gap-2 px-2 py-1 rounded hover:bg-accent cursor-pointer" onClick={() => toggleValue(selectedQueues, q.value, setSelectedQueues)}>
                       <Checkbox checked={selectedQueues.includes(q.value)} onCheckedChange={() => toggleValue(selectedQueues, q.value, setSelectedQueues)} onClick={(e) => e.stopPropagation()} />
                       <span className="text-xs truncate" title={q.display}>{q.display}</span>
@@ -184,11 +197,19 @@ function GlobalFiltersBar({ config }: { config: FilterConfig }) {
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-[220px] p-2" align="start">
+              <Input
+                placeholder="Search agents…"
+                value={agentSearch}
+                onChange={(e) => setAgentSearch(e.target.value)}
+                className="h-7 text-xs mb-2"
+              />
               <div className="max-h-52 overflow-y-auto space-y-1">
                 {availableAgents.length === 0 ? (
                   <p className="text-xs text-muted-foreground px-2 py-1">Loading agents…</p>
                 ) : (
-                  availableAgents.map((a) => (
+                  availableAgents
+                    .filter((a) => a.display.toLowerCase().includes(agentSearch.toLowerCase()))
+                    .map((a) => (
                     <div key={a.value} className="flex items-center gap-2 px-2 py-1 rounded hover:bg-accent cursor-pointer" onClick={() => toggleValue(selectedAgents, a.value, setSelectedAgents)}>
                       <Checkbox checked={selectedAgents.includes(a.value)} onCheckedChange={() => toggleValue(selectedAgents, a.value, setSelectedAgents)} onClick={(e) => e.stopPropagation()} />
                       <span className="text-xs truncate" title={a.display}>{a.display}</span>
@@ -215,11 +236,19 @@ function GlobalFiltersBar({ config }: { config: FilterConfig }) {
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-[220px] p-2" align="start">
+              <Input
+                placeholder="Search DIDs…"
+                value={didSearch}
+                onChange={(e) => setDidSearch(e.target.value)}
+                className="h-7 text-xs mb-2"
+              />
               <div className="max-h-52 overflow-y-auto space-y-1">
                 {availableDids.length === 0 ? (
                   <p className="text-xs text-muted-foreground px-2 py-1">Loading DIDs…</p>
                 ) : (
-                  availableDids.map((d) => (
+                  availableDids
+                    .filter((d) => d.display.toLowerCase().includes(didSearch.toLowerCase()))
+                    .map((d) => (
                     <div key={d.value} className="flex items-center gap-2 px-2 py-1 rounded hover:bg-accent cursor-pointer" onClick={() => toggleValue(selectedDids, d.value, setSelectedDids)}>
                       <Checkbox checked={selectedDids.includes(d.value)} onCheckedChange={() => toggleValue(selectedDids, d.value, setSelectedDids)} onClick={(e) => e.stopPropagation()} />
                       <span className="text-xs truncate" title={d.display}>{d.display}</span>
