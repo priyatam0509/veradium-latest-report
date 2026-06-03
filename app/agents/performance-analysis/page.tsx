@@ -30,6 +30,7 @@ interface AgentCallDisposition {
   missed: string
   rejected: string
   failed: string
+  completion_rate?: number
 }
 
 export default function AgentPerformanceAnalysis() {
@@ -298,16 +299,21 @@ export default function AgentPerformanceAnalysis() {
 
   // Filtered by local search term only (global agent filter already applied at API level)
   const displayedAgents = useMemo(() => {
-    if (!searchTerm) return agentData
-    return agentData.filter((a) => a.agent_name?.toLowerCase().includes(searchTerm.toLowerCase()))
+    const filtered = !searchTerm
+      ? agentData
+      : agentData.filter((a) => a.agent_name?.toLowerCase().includes(searchTerm.toLowerCase()))
+    return filtered.map((a) => {
+      const completed = parseInt(a.completed_by_caller || '0') + parseInt(a.completed_by_agent || '0')
+      const denom = completed + parseInt(a.missed || '0') + parseInt(a.rejected || '0') + parseInt(a.failed || '0')
+      return { ...a, completion_rate: denom > 0 ? (completed / denom) * 100 : 0 }
+    })
   }, [agentData, searchTerm])
 
   const totalAgents = displayedAgents.length
-  const totalReceived = displayedAgents.reduce((sum, a) => sum + parseInt(a.answered || '0'), 0)
   const totalCompleted = displayedAgents.reduce((sum, a) => sum + parseInt(a.completed_by_caller || '0') + parseInt(a.completed_by_agent || '0'), 0)
-  const totalTransferred = displayedAgents.reduce((sum, a) => sum + parseInt(a.transferred_out || '0'), 0)
-  const totalFailed = displayedAgents.reduce((sum, a) => sum + parseInt(a.failed || '0'), 0)
-  const avgCompletionRate = totalReceived > 0 ? ((totalCompleted / totalReceived) * 100).toFixed(1) : '0'
+  const avgCompletionRate = displayedAgents.length > 0
+    ? (displayedAgents.reduce((sum, a) => sum + (a.completion_rate ?? 0), 0) / displayedAgents.length).toFixed(1)
+    : '0'
   const agentCompleted = (a: AgentCallDisposition) => parseInt(a.completed_by_caller || '0') + parseInt(a.completed_by_agent || '0')
   const topAgent = displayedAgents.length > 0
     ? displayedAgents.reduce((max, a) => agentCompleted(a) > agentCompleted(max) ? a : max)
@@ -432,6 +438,7 @@ export default function AgentPerformanceAnalysis() {
                         <SortHead col="missed" label="Missed" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
                         <SortHead col="rejected" label="Rejected" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
                         <SortHead col="failed" label="Failed" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="completion_rate" label="Completion Rate" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -454,6 +461,7 @@ export default function AgentPerformanceAnalysis() {
                             <TableCell className="text-right font-mono text-orange-600">{agent.missed}</TableCell>
                             <TableCell className="text-right font-mono text-red-800">{agent.rejected}</TableCell>
                             <TableCell className="text-right font-mono text-red-600">{agent.failed}</TableCell>
+                            <TableCell className="text-right font-mono text-purple-600">{(agent.completion_rate ?? 0).toFixed(1)}%</TableCell>
                           </TableRow>
                         )
                       })}
