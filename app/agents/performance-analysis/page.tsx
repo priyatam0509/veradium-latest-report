@@ -311,8 +311,9 @@ export default function AgentPerformanceAnalysis() {
 
   const totalAgents = displayedAgents.length
   const totalCompleted = displayedAgents.reduce((sum, a) => sum + parseInt(a.completed_by_caller || '0') + parseInt(a.completed_by_agent || '0'), 0)
-  const avgCompletionRate = displayedAgents.length > 0
-    ? (displayedAgents.reduce((sum, a) => sum + (a.completion_rate ?? 0), 0) / displayedAgents.length).toFixed(1)
+  const ratedAgents = displayedAgents.filter((a) => (a.completion_rate ?? 0) > 0)
+  const avgCompletionRate = ratedAgents.length > 0
+    ? (ratedAgents.reduce((sum, a) => sum + (a.completion_rate ?? 0), 0) / ratedAgents.length).toFixed(1)
     : '0'
   const agentCompleted = (a: AgentCallDisposition) => parseInt(a.completed_by_caller || '0') + parseInt(a.completed_by_agent || '0')
   const topAgent = displayedAgents.length > 0
@@ -344,7 +345,7 @@ export default function AgentPerformanceAnalysis() {
                   <div className="text-2xl font-bold text-blue-600">
                     {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : totalAgents}
                   </div>
-                  <p className="text-xs text-muted-foreground">Active agents</p>
+                  <p className="text-xs text-muted-foreground">{ratedAgents.length} active agents</p>
                 </CardContent>
               </Card>
 
