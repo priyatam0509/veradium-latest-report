@@ -304,12 +304,13 @@ export default function AgentPerformanceAnalysis() {
 
   const totalAgents = displayedAgents.length
   const totalReceived = displayedAgents.reduce((sum, a) => sum + parseInt(a.answered || '0'), 0)
-  const totalCompleted = displayedAgents.reduce((sum, a) => sum + parseInt(a.completed_by_agent || '0'), 0)
+  const totalCompleted = displayedAgents.reduce((sum, a) => sum + parseInt(a.completed_by_caller || '0') + parseInt(a.completed_by_agent || '0'), 0)
   const totalTransferred = displayedAgents.reduce((sum, a) => sum + parseInt(a.transferred_out || '0'), 0)
   const totalFailed = displayedAgents.reduce((sum, a) => sum + parseInt(a.failed || '0'), 0)
   const avgCompletionRate = totalReceived > 0 ? ((totalCompleted / totalReceived) * 100).toFixed(1) : '0'
+  const agentCompleted = (a: AgentCallDisposition) => parseInt(a.completed_by_caller || '0') + parseInt(a.completed_by_agent || '0')
   const topAgent = displayedAgents.length > 0
-    ? displayedAgents.reduce((max, a) => parseInt(a.completed_by_agent || '0') > parseInt(max.completed_by_agent || '0') ? a : max)
+    ? displayedAgents.reduce((max, a) => agentCompleted(a) > agentCompleted(max) ? a : max)
     : null
 
   const sort = useSortable(displayedAgents)
@@ -385,7 +386,7 @@ export default function AgentPerformanceAnalysis() {
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    {topAgent ? `${topAgent.completed_by_agent} completed` : 'No data'}
+                    {topAgent ? `${agentCompleted(topAgent)} completed` : 'No data'}
                   </p>
                 </CardContent>
               </Card>
