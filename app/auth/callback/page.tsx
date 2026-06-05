@@ -3,10 +3,11 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { microsoftAuthService } from '@/lib/microsoft-auth-service'
-import { completeAuthLogin } from '@/hooks/use-auth'
+import { useAuth } from '@/hooks/use-auth'
 
 export default function CallbackPage() {
   const router = useRouter()
+  const { completeLogin } = useAuth()
   const [status, setStatus] = useState<'processing' | 'success' | 'error'>('processing')
   const [errorMessage, setErrorMessage] = useState<string>('')
 
@@ -35,14 +36,15 @@ export default function CallbackPage() {
         // Get user info from Microsoft Graph
         const msUser = await microsoftAuthService.getUserInfo(accessToken)
         
-        // Complete login by verifying with AWS RBAC API
-        await completeAuthLogin(accessToken, {
+        // Complete login — updates the auth context (setUser) so the guard
+        // sees the authenticated user immediately on redirect.
+        await completeLogin(accessToken, {
           email: msUser.userPrincipalName,
           displayName: msUser.displayName,
         })
 
         setStatus('success')
-        
+
         // Clear hash and redirect to dashboard
         window.history.replaceState({}, document.title, window.location.pathname)
         setTimeout(() => {

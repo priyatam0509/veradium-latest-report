@@ -16,6 +16,7 @@ interface AuthContextType {
   accessibleRoutes: RoutePermission[]
   login: () => void
   logout: () => void
+  completeLogin: (token: string, msUser: { email: string; displayName: string }) => Promise<boolean>
   isLoading: boolean
   refreshRoutes: () => Promise<void>
 }
@@ -118,38 +119,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user, 
         accessToken, 
         accessibleRoutes, 
-        login, 
-        logout, 
-        isLoading, 
-        refreshRoutes 
+        login,
+        logout,
+        completeLogin,
+        isLoading,
+        refreshRoutes
       }}
     >
       {children}
     </AuthContext.Provider>
   )
-}
-
-// Export completeLogin for use in callback page
-export async function completeAuthLogin(token: string, msUser: { email: string; displayName: string }) {
-  try {
-    // Authorize purely on the basis of a successful Azure AD sign-in.
-    const userData = {
-      id: msUser.email,
-      email: msUser.email,
-      role: DEFAULT_ROLE,
-      isEnabled: true,
-    }
-
-    microsoftAuthService.storeAccessToken(token)
-    localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(userData))
-
-    return userData
-  } catch (error) {
-    console.error('[Auth] Login completion error:', error)
-    microsoftAuthService.clearStoredToken()
-    localStorage.removeItem(STORAGE_KEY_USER)
-    throw error
-  }
 }
 
 export function useAuth() {
