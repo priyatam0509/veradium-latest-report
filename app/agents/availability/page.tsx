@@ -6,8 +6,9 @@ import { AuthGuard } from "@/components/auth-guard"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components/ui/table"
 import { useSortable, SortHead } from "@/lib/sort-table"
+import { exportToCSV } from "@/lib/export-csv"
 import { useAuth } from "@/hooks/use-auth"
-import { Loader2, RefreshCw, Users, Phone, Clock, Search } from "lucide-react"
+import { Loader2, RefreshCw, Users, Phone, Clock, Search, Download } from "lucide-react"
 import { format } from "date-fns"
 import { athenaAPI } from "@/lib/athena-api"
 import { DateHelper } from "@/lib/date-helper"
@@ -384,6 +385,31 @@ export default function AgentAvailabilityPage() {
 
   const sort = useSortable(filteredAgentData)
 
+  const handleExport = () => {
+    const headers = ['Agent', 'Region', 'Answered', 'Outbound', 'Missed', 'Rejected', 'Failed', 'Pauses', 'Pause Time', '% Pauses', 'Online Time', 'Available Time', 'Offline Time', 'Idle Time', 'Talk Time', 'Wrap-up Time', 'Hold Time', 'AHT']
+    const rows = sort.sorted.map((agent) => [
+      agent.agent_name,
+      agent.region || '',
+      agent.answered || '0',
+      agent.outbound || '0',
+      agent.missed || '0',
+      agent.rejected || '0',
+      agent.failed || '0',
+      agent.pauses || '0',
+      agent.pause_time || '',
+      agent['%_pauses'] || '',
+      agent.online_time || '',
+      agent.available_time || '',
+      agent.offline_time || '',
+      agent.idle_time || '',
+      agent.talk_time || '',
+      agent.wrap_up_time || '',
+      agent.hold_time || '',
+      agent.aht || '',
+    ])
+    exportToCSV('agent-availability', headers, rows)
+  }
+
   return (
     <AuthGuard>
       <DashboardLayout>
@@ -489,7 +515,13 @@ export default function AgentAvailabilityPage() {
                   <CardTitle>Agent Availability Details</CardTitle>
                   <CardDescription>Online time, pause time, talk time, and wrap-up per agent</CardDescription>
                 </div>
-                {isRefreshing && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+                <div className="flex items-center gap-2">
+                  {isRefreshing && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+                  <Button variant="outline" size="sm" onClick={handleExport} disabled={isLoading || sort.sorted.length === 0}>
+                    <Download className="h-4 w-4 mr-2" />
+                    Export CSV
+                  </Button>
+                </div>
               </div>
               <div className="relative mt-4">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

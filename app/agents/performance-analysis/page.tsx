@@ -6,10 +6,11 @@ import { AuthGuard } from "@/components/auth-guard"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components/ui/table"
 import { useSortable, SortHead } from "@/lib/sort-table"
+import { exportToCSV } from "@/lib/export-csv"
 import { useAuth } from "@/hooks/use-auth"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Loader2, TrendingUp, Phone, User, CheckCircle, Search } from "lucide-react"
+import { Loader2, TrendingUp, Phone, User, CheckCircle, Search, Download } from "lucide-react"
 import { athenaAPI } from "@/lib/athena-api"
 import { DateHelper } from "@/lib/date-helper"
 import { format } from "date-fns"
@@ -322,6 +323,24 @@ export default function AgentPerformanceAnalysis() {
 
   const sort = useSortable(displayedAgents)
 
+  const handleExport = () => {
+    const headers = ['Agent Name', 'Region', 'Answered', 'Outbound', 'Completed by Caller', 'Completed by Agent', 'Transferred Out', 'Missed', 'Rejected', 'Failed', 'Completion Rate']
+    const rows = sort.sorted.map((agent) => [
+      agent.agent_name,
+      agent.region || '',
+      agent.answered,
+      agent.outbound,
+      agent.completed_by_caller,
+      agent.completed_by_agent,
+      agent.transferred_out,
+      agent.missed,
+      agent.rejected,
+      agent.failed,
+      `${(agent.completion_rate ?? 0).toFixed(1)}%`,
+    ])
+    exportToCSV('agent-performance', headers, rows)
+  }
+
   return (
     <AuthGuard>
       <DashboardLayout>
@@ -416,6 +435,10 @@ export default function AgentPerformanceAnalysis() {
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input placeholder="Search agents..." className="pl-8 w-[180px] text-sm" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                   </div>
+                  <Button variant="outline" size="sm" onClick={handleExport} disabled={isLoading || sort.sorted.length === 0}>
+                    <Download className="h-4 w-4 mr-2" />
+                    Export CSV
+                  </Button>
                 </div>
               </div>
             </CardHeader>

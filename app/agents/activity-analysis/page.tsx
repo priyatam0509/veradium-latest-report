@@ -7,13 +7,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components/ui/table"
 import { useAuth } from "@/hooks/use-auth"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, TrendingUp, Clock, RefreshCw, Activity, Pause, Coffee, User, Search } from "lucide-react"
+import { Loader2, TrendingUp, Clock, RefreshCw, Activity, Pause, Coffee, User, Search, Download } from "lucide-react"
 import { athenaAPI } from "@/lib/athena-api"
 import { DateHelper } from "@/lib/date-helper"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useGlobalFilters } from "@/lib/global-filters-context"
 import { useSortable, SortHead } from "@/lib/sort-table"
+import { exportToCSV } from "@/lib/export-csv"
 
 interface AgentPauseDetail {
   user_id: string
@@ -131,6 +132,19 @@ export default function AgentActivityAnalysis() {
 
   const sort = useSortable(filteredAgentData)
 
+  const handleExport = () => {
+    const headers = ['Agent Name', 'Region', 'Period Start', 'Period End', 'Number of Pauses', 'Number of Holds']
+    const rows = sort.sorted.map((agent) => [
+      agent.agent_name,
+      agent.agent_region || '',
+      formatTimestamp(agent.min_interval_start_time),
+      formatTimestamp(agent.max_interval_end_time),
+      agent.number_of_pauses || '0',
+      agent.number_of_holds || '0',
+    ])
+    exportToCSV('agent-activity', headers, rows)
+  }
+
   return (
     <AuthGuard>
       <DashboardLayout>
@@ -242,7 +256,13 @@ export default function AgentActivityAnalysis() {
                     Individual agent pause patterns and productivity
                   </CardDescription>
                 </div>
-                {isRefreshing && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+                <div className="flex items-center gap-2">
+                  {isRefreshing && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+                  <Button variant="outline" size="sm" onClick={handleExport} disabled={isLoading || sort.sorted.length === 0}>
+                    <Download className="h-4 w-4 mr-2" />
+                    Export CSV
+                  </Button>
+                </div>
               </div>
               <div className="relative mt-4">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
