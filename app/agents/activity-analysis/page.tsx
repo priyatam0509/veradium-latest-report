@@ -19,11 +19,12 @@ import { exportToCSV } from "@/lib/export-csv"
 interface AgentPauseDetail {
   user_id: string
   agent_name: string
-  agent_region: string
-  min_interval_start_time: string
-  max_interval_end_time: string
-  number_of_pauses: string
-  number_of_holds: string
+  region: string
+  pause_start: string
+  pause_end: string
+  pause_duration: string
+  pause_duration_sec: string
+  pause_status: string
 }
 
 export default function AgentActivityAnalysis() {
@@ -97,21 +98,36 @@ export default function AgentActivityAnalysis() {
     loadAgentActivityData().finally(() => setIsRefreshing(false))
   }
 
-  const totalAgents = agentData.length
-  const totalHolds = agentData.reduce((sum, a) => sum + parseInt(a.number_of_holds || '0'), 0)
-  const totalCustomStatus = agentData.reduce((sum, a) => sum + parseInt(a.number_of_pauses || '0'), 0)
-  const avgHoldsPerAgent = totalAgents > 0 ? (totalHolds / totalAgents).toFixed(1) : '0'
-  const mostActiveAgent = agentData.length > 0
-    ? agentData.reduce((max, a) => parseInt(a.number_of_holds || '0') > parseInt(max.number_of_holds || '0') ? a : max)
-    : null
+  const formatDuration = (totalSec: number) => {
+    const h = Math.floor(totalSec / 3600)
+    const m = Math.floor((totalSec % 3600) / 60)
+    const s = totalSec % 60
+    return [h, m, s].map((n) => String(n).padStart(2, '0')).join(':')
+  }
+
+  const uniqueAgents = new Set(agentData.map((a) => a.user_id || a.agent_name)).size
+  const totalAgents = uniqueAgents
+  const totalPauses = agentData.length
+  const totalPauseSec = agentData.reduce((sum, a) => sum + parseInt(a.pause_duration_sec || '0'), 0)
+  const avgPausesPerAgent = uniqueAgents > 0 ? (totalPauses / uniqueAgents).toFixed(1) : '0'
+
+  const pauseCountByAgent = agentData.reduce<Record<string, { name: string; count: number }>>((acc, a) => {
+    const key = a.user_id || a.agent_name
+    if (!acc[key]) acc[key] = { name: a.agent_name, count: 0 }
+    acc[key].count++
+    return acc
+  }, {})
+  const mostActiveAgent = Object.values(pauseCountByAgent).sort((x, y) => y.count - x.count)[0] || null
 
   const formatTimestamp = (ts: string) => {
     if (!ts) return '—'
-    // "2026-03-05 20:33:57.660000 UTC" → "Mar 5, 2026 20:33"
-    const clean = ts.replace(' UTC', '')
-    const d = new Date(clean)
-    if (isNaN(d.getTime())) return ts
-    return d.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })
+    // e.g. "2026-06-19 08:52:39.732 EST5EDT" or "2026-03-05 20:33:57.660000 UTC"
+    const m = ts.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?/)
+    if (!m) return ts
+    const [, y, mo, d, hh, mm, ss] = m
+    const date = new Date(Number(y), Number(mo) - 1, Number(d), Number(hh), Number(mm), Number(ss || '0'))
+    if (isNaN(date.getTime())) return ts
+    return date.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
   }
 
   const filteredAgentData = useMemo(() => {
@@ -120,11 +136,10 @@ export default function AgentActivityAnalysis() {
     return agentData.filter((agent) => {
       const values = [
         agent.agent_name,
-        agent.agent_region,
-        agent.min_interval_start_time,
-        agent.max_interval_end_time,
-        agent.number_of_pauses,
-        agent.number_of_holds,
+        agent.region,
+        agent.pause_status,
+        agent.pause_start,
+        agent.pause_end,
       ]
       return values.some((v) => (v || '').toString().toLowerCase().includes(search))
     })
@@ -133,14 +148,14 @@ export default function AgentActivityAnalysis() {
   const sort = useSortable(filteredAgentData)
 
   const handleExport = () => {
-    const headers = ['Agent Name', 'Region', 'Period Start', 'Period End', 'Number of Pauses', 'Number of Holds']
+    const headers = ['Agent Name', 'Region', 'Pause Start', 'Pause End', 'Duration', 'Status']
     const rows = sort.sorted.map((agent) => [
       agent.agent_name,
-      agent.agent_region || '',
-      formatTimestamp(agent.min_interval_start_time),
-      formatTimestamp(agent.max_interval_end_time),
-      agent.number_of_pauses || '0',
-      agent.number_of_holds || '0',
+      agent.region || '',
+      formatTimestamp(agent.pause_start),
+      formatTimestamp(agent.pause_end),
+      agent.pause_duration || '',
+      agent.pause_status || '',
     ])
     exportToCSV('agent-activity', headers, rows)
   }
@@ -201,44 +216,44 @@ export default function AgentActivityAnalysis() {
                   <div className="text-2xl font-bold text-blue-600">
                     {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : totalAgents}
                   </div>
-                  <p className="text-xs text-muted-foreground">Tracked agents</p>
+                  <p className="text-xs text-muted-foreground">Agents with pauses</p>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Holds</CardTitle>
-                  <Clock className="h-4 w-4 text-orange-600" />
+                  <CardTitle className="text-sm font-medium">Total Pauses</CardTitle>
+                  <Pause className="h-4 w-4 text-orange-600" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-orange-600">
-                    {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : totalHolds.toLocaleString()}
+                    {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : totalPauses.toLocaleString()}
                   </div>
-                  <p className="text-xs text-muted-foreground">Combined holds</p>
+                  <p className="text-xs text-muted-foreground">Pause events</p>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Custom Status</CardTitle>
-                  <Pause className="h-4 w-4 text-purple-600" />
+                  <CardTitle className="text-sm font-medium">Total Pause Time</CardTitle>
+                  <Clock className="h-4 w-4 text-purple-600" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-purple-600">
-                    {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : totalCustomStatus.toLocaleString()}
+                    {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : formatDuration(totalPauseSec)}
                   </div>
-                  <p className="text-xs text-muted-foreground">Total custom status events</p>
+                  <p className="text-xs text-muted-foreground">Combined duration</p>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Avg Holds/Agent</CardTitle>
+                  <CardTitle className="text-sm font-medium">Avg Pauses/Agent</CardTitle>
                   <TrendingUp className="h-4 w-4 text-green-600" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-green-600">
-                    {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : avgHoldsPerAgent}
+                    {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : avgPausesPerAgent}
                   </div>
                   <p className="text-xs text-muted-foreground">Team average</p>
                 </CardContent>
@@ -285,24 +300,24 @@ export default function AgentActivityAnalysis() {
                     <TableHeader className="sticky top-0 bg-background z-10">
                       <TableRow>
                         <SortHead col="agent_name" label="Agent Name" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
-                        <SortHead col="agent_region" label="Region" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
-                        <SortHead col="min_interval_start_time" label="Period Start" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
-                        <SortHead col="max_interval_end_time" label="Period End" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
-                        <SortHead col="number_of_pauses" label="Number of Pauses" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
-                        <SortHead col="number_of_holds" label="Number of Holds" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="region" label="Region" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
+                        <SortHead col="pause_start" label="Pause Start" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
+                        <SortHead col="pause_end" label="Pause End" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
+                        <SortHead col="pause_duration_sec" label="Duration" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="pause_status" label="Status" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {sort.sorted.map((agent, index) => (
                         <TableRow key={index}>
                           <TableCell className="font-medium">{agent.agent_name}</TableCell>
-                          <TableCell>{agent.agent_region || '—'}</TableCell>
-                          <TableCell className="text-sm">{formatTimestamp(agent.min_interval_start_time)}</TableCell>
-                          <TableCell className="text-sm">{formatTimestamp(agent.max_interval_end_time)}</TableCell>
-                          <TableCell className="text-right font-mono">
-                            {agent.number_of_pauses || '0'}
+                          <TableCell>{agent.region || '—'}</TableCell>
+                          <TableCell className="text-sm">{formatTimestamp(agent.pause_start)}</TableCell>
+                          <TableCell className="text-sm">{formatTimestamp(agent.pause_end)}</TableCell>
+                          <TableCell className="text-right font-mono">{agent.pause_duration || '—'}</TableCell>
+                          <TableCell>
+                            {agent.pause_status ? <Badge variant="outline">{agent.pause_status}</Badge> : '—'}
                           </TableCell>
-                          <TableCell className="text-right font-mono">{agent.number_of_holds || '0'}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -338,12 +353,12 @@ export default function AgentActivityAnalysis() {
                   <div className="flex items-center gap-3 p-4 border rounded-lg">
                     <Coffee className="h-8 w-8 text-orange-500" />
                     <div>
-                      <p className="font-medium">Hold Patterns</p>
+                      <p className="font-medium">Pause Patterns</p>
                       <p className="text-sm text-muted-foreground">
-                        Avg <span className="font-semibold text-foreground">{avgHoldsPerAgent}</span> holds/agent
+                        Avg <span className="font-semibold text-foreground">{avgPausesPerAgent}</span> pauses/agent
                       </p>
                       <p className="text-xs text-muted-foreground mt-0.5">
-                        {totalHolds.toLocaleString()} total holds across {totalAgents} agents
+                        {totalPauses.toLocaleString()} total pauses across {totalAgents} agents
                       </p>
                     </div>
                   </div>
@@ -353,10 +368,10 @@ export default function AgentActivityAnalysis() {
                     <div>
                       <p className="font-medium">Most Active Agent</p>
                       <p className="text-sm font-semibold text-foreground">
-                        {mostActiveAgent ? mostActiveAgent.agent_name : 'N/A'}
+                        {mostActiveAgent ? mostActiveAgent.name : 'N/A'}
                       </p>
                       <p className="text-xs text-muted-foreground mt-0.5">
-                        {mostActiveAgent ? `${parseInt(mostActiveAgent.number_of_holds).toLocaleString()} holds` : '—'}
+                        {mostActiveAgent ? `${mostActiveAgent.count.toLocaleString()} pauses` : '—'}
                       </p>
                     </div>
                   </div>
@@ -364,13 +379,13 @@ export default function AgentActivityAnalysis() {
                   <div className="flex items-center gap-3 p-4 border rounded-lg">
                     <Activity className="h-8 w-8 text-blue-500" />
                     <div>
-                      <p className="font-medium">Custom Status Events</p>
+                      <p className="font-medium">Total Pause Time</p>
                       <p className="text-sm text-muted-foreground">
-                        <span className="font-semibold text-foreground">{totalCustomStatus.toLocaleString()}</span> total events
+                        <span className="font-semibold text-foreground">{formatDuration(totalPauseSec)}</span> combined
                       </p>
                       <p className="text-xs text-muted-foreground mt-0.5">
                         {totalAgents > 0
-                          ? `Avg ${(totalCustomStatus / totalAgents).toFixed(1)} per agent`
+                          ? `Avg ${formatDuration(Math.round(totalPauseSec / totalAgents))} per agent`
                           : '—'}
                       </p>
                     </div>
