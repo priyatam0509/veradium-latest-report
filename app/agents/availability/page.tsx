@@ -343,25 +343,6 @@ export default function AgentAvailabilityPage() {
     return d > 0 ? `${d} days - ${h}:${m}:${s}` : `${h}:${m}:${s}`
   }
 
-  const sumTimeCol = (key: string): string => {
-    const toSecs = (t: string) => {
-      if (!t || t === '—') return null
-      const match = t.match(/(\d+):(\d+):(\d+)$/)
-      if (!match) return null
-      const days = t.match(/(\d+)\s*day/) ? parseInt(t.match(/(\d+)\s*day/)![1]) * 86400 : 0
-      return days + parseInt(match[1]) * 3600 + parseInt(match[2]) * 60 + parseInt(match[3])
-    }
-    const vals = filteredAgentData.map((a) => toSecs((a as any)[key])).filter((v): v is number => v !== null)
-    if (!vals.length) return '—'
-    const total = vals.reduce((a, b) => a + b, 0)
-    const d = Math.floor(total / 86400)
-    const rem = total % 86400
-    const h = Math.floor(rem / 3600).toString().padStart(2, '0')
-    const m = Math.floor((rem % 3600) / 60).toString().padStart(2, '0')
-    const s = (rem % 60).toString().padStart(2, '0')
-    return d > 0 ? `${d} days - ${h}:${m}:${s}` : `${h}:${m}:${s}`
-  }
-
   const avgNumericCol = (key: string): string => {
     const vals = filteredAgentData.map((a) => parseFloat((a as any)[key])).filter((v) => !isNaN(v))
     if (!vals.length) return '—'
@@ -598,15 +579,15 @@ export default function AgentAvailabilityPage() {
                         <TableCell className="text-right">{sumCol('rejected')}</TableCell>
                         <TableCell className="text-right">{sumCol('failed')}</TableCell>
                         <TableCell className="text-right">{sumCol('pauses')}</TableCell>
-                        <TableCell className="text-right">{sumTimeCol('pause_time')}</TableCell>
+                        <TableCell className="text-right">{avgTimeCol('pause_time')}</TableCell>
                         <TableCell className="text-right">{avgNumericCol('%_pauses')}</TableCell>
-                        <TableCell className="text-right">{sumTimeCol('online_time')}</TableCell>
-                        <TableCell className="text-right">{sumTimeCol('available_time')}</TableCell>
-                        <TableCell className="text-right">{sumTimeCol('offline_time')}</TableCell>
-                        <TableCell className="text-right">{sumTimeCol('idle_time')}</TableCell>
-                        <TableCell className="text-right">{sumTimeCol('talk_time')}</TableCell>
-                        <TableCell className="text-right">{sumTimeCol('wrap_up_time')}</TableCell>
-                        <TableCell className="text-right">{sumTimeCol('hold_time')}</TableCell>
+                        <TableCell className="text-right">{avgTimeCol('online_time')}</TableCell>
+                        <TableCell className="text-right">{avgTimeCol('available_time')}</TableCell>
+                        <TableCell className="text-right">{avgTimeCol('offline_time')}</TableCell>
+                        <TableCell className="text-right">{avgTimeCol('idle_time')}</TableCell>
+                        <TableCell className="text-right">{avgTimeCol('talk_time')}</TableCell>
+                        <TableCell className="text-right">{avgTimeCol('wrap_up_time')}</TableCell>
+                        <TableCell className="text-right">{avgTimeCol('hold_time')}</TableCell>
                         <TableCell className="text-right">{avgTimeCol('aht')}</TableCell>
                       </TableRow>
                     </TableBody>
