@@ -11,7 +11,7 @@ const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "veradium",
+  title: "The Ticket Clinic Dashboard",
   description: "veradium: secure and private identity management",
   generator: "veradium",
   icons: {

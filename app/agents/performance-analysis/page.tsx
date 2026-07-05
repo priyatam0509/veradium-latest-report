@@ -328,14 +328,14 @@ export default function AgentPerformanceAnalysis() {
     const rows = sort.sorted.map((agent) => [
       agent.agent_name,
       agent.region || '',
-      agent.answered,
-      agent.outbound,
-      agent.completed_by_caller,
-      agent.completed_by_agent,
-      agent.transferred_out,
-      agent.missed,
-      agent.rejected,
-      agent.failed,
+      agent.answered || '0',
+      agent.outbound || '0',
+      agent.completed_by_caller || '0',
+      agent.completed_by_agent || '0',
+      agent.transferred_out || '0',
+      agent.missed || '0',
+      agent.rejected || '0',
+      agent.failed || '0',
       `${(agent.completion_rate ?? 0).toFixed(1)}%`,
     ])
     exportToCSV('agent-performance', headers, rows)
@@ -477,14 +477,14 @@ export default function AgentPerformanceAnalysis() {
                               {agent.agent_name}
                             </TableCell>
                             <TableCell className="text-right">{agent.region || '—'}</TableCell>
-                            <TableCell className="text-right font-mono text-green-600">{agent.answered}</TableCell>
-                            <TableCell className="text-right font-mono text-blue-600">{agent.outbound}</TableCell>
-                            <TableCell className="text-right font-mono">{agent.completed_by_caller}</TableCell>
-                            <TableCell className="text-right font-mono">{agent.completed_by_agent}</TableCell>
-                            <TableCell className="text-right font-mono">{agent.transferred_out}</TableCell>
-                            <TableCell className="text-right font-mono text-orange-600">{agent.missed}</TableCell>
-                            <TableCell className="text-right font-mono text-red-800">{agent.rejected}</TableCell>
-                            <TableCell className="text-right font-mono text-red-600">{agent.failed}</TableCell>
+                            <TableCell className="text-right font-mono text-green-600">{agent.answered || '0'}</TableCell>
+                            <TableCell className="text-right font-mono text-blue-600">{agent.outbound || '0'}</TableCell>
+                            <TableCell className="text-right font-mono">{agent.completed_by_caller || '0'}</TableCell>
+                            <TableCell className="text-right font-mono">{agent.completed_by_agent || '0'}</TableCell>
+                            <TableCell className="text-right font-mono">{agent.transferred_out || '0'}</TableCell>
+                            <TableCell className="text-right font-mono text-orange-600">{agent.missed || '0'}</TableCell>
+                            <TableCell className="text-right font-mono text-red-800">{agent.rejected || '0'}</TableCell>
+                            <TableCell className="text-right font-mono text-red-600">{agent.failed || '0'}</TableCell>
                             <TableCell className="text-right font-mono text-purple-600">{(agent.completion_rate ?? 0).toFixed(1)}%</TableCell>
                           </TableRow>
                         )

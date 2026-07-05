@@ -1,7 +1,6 @@
 "use client"
 
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react"
-import { subDays } from "date-fns"
 import { athenaAPI } from "@/lib/athena-api"
 
 interface GlobalFiltersContextValue {
@@ -56,7 +55,7 @@ interface GlobalFiltersContextValue {
 const GlobalFiltersContext = createContext<GlobalFiltersContextValue | null>(null)
 
 export function GlobalFiltersProvider({ children }: { children: React.ReactNode }) {
-  const defaultStart = subDays(new Date(), 30)
+  const defaultStart = new Date()
   const defaultEnd = new Date()
 
   const [startDate, setStartDate] = useState<Date | undefined>(defaultStart)
@@ -138,7 +137,7 @@ export function GlobalFiltersProvider({ children }: { children: React.ReactNode 
   }, [startDate, endDate, searchTerm, selectedQueues, selectedAgents, selectedDids])
 
   const handleReset = useCallback(() => {
-    const s = subDays(new Date(), 30)
+    const s = new Date()
     const e = new Date()
     setStartDate(s)
     setEndDate(e)
@@ -182,7 +181,7 @@ export function useGlobalFilters() {
   const ctx = useContext(GlobalFiltersContext)
   if (!ctx) {
     const noop = () => {}
-    const defaultDate = subDays(new Date(), 30)
+    const defaultDate = new Date()
     return {
       startDate: defaultDate,
       endDate: new Date(),
