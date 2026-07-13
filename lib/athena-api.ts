@@ -422,6 +422,17 @@ export class AthenaReportingAPI {
 
   // ── V6 Dashboard Queries ────────────────────────────────────────────────
 
+  /**
+   * Data freshness — dashboard_qry_data_freshness.
+   * Returns a single row with the latest update timestamps for the data lake
+   * and the agent-events stream. Global (no date range / region filter), so we
+   * intentionally omit the username to avoid injecting a region param the query
+   * doesn't accept.
+   */
+  async getDataFreshness() {
+    return this.executeQuery('dashboard_data_freshness', {}, true, 60)
+  }
+
   /** Total answered calls summary — dashboard_total_answered_calls */
   async getDashboardTotalAnswered(startDate: string, endDate: string, username?: string, queueIds?: string[], dids?: string[], region?: string[] | null) {
     const params: any = { start_datetime: startDate, end_datetime: endDate }

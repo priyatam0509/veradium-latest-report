@@ -7,10 +7,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useAuth } from "@/hooks/use-auth"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, TrendingUp, Phone, PhoneOff, Target, User, RefreshCw } from "lucide-react"
+import { Loader2, TrendingUp, Phone, PhoneOff, Target, User } from "lucide-react"
 import { athenaAPI } from "@/lib/athena-api"
 import { DateHelper } from "@/lib/date-helper"
-import { Button } from "@/components/ui/button"
+import { DataFreshnessCard } from "@/components/data-freshness-card"
 
 interface QueueData {
   queue_id: string
@@ -111,15 +111,6 @@ export default function DashboardOverview() {
     loadDashboardData()
   }
 
-  const formatRefreshTime = (date: Date) => {
-    return date.toLocaleTimeString('en-US', { 
-      hour: '2-digit', 
-      minute: '2-digit',
-      second: '2-digit'
-    })
-  }
-
-
   return (
     <AuthGuard>
       <DashboardLayout>
@@ -158,27 +149,8 @@ export default function DashboardOverview() {
                 </CardContent>
               </Card>
 
-              {/* Last Refresh Info with Manual Refresh */}
-              <Card className="w-full sm:w-auto">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <Button 
-                      variant="ghost" 
-                      size="icon"
-                      onClick={handleManualRefresh}
-                      disabled={isRefreshing}
-                      className="h-10 w-10"
-                    >
-                      <RefreshCw className={`h-5 w-5 ${isRefreshing ? 'animate-spin' : ''}`} />
-                    </Button>
-                    <div className="space-y-0.5">
-                      <p className="text-sm font-medium leading-none">
-                        {isRefreshing ? 'Refreshing...' : formatRefreshTime(lastRefresh)}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              {/* Data freshness — data lake & agent-events update timestamps */}
+              <DataFreshnessCard onRefresh={handleManualRefresh} isRefreshing={isRefreshing} />
             </div>
           </div>
 
