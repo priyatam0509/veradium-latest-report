@@ -401,23 +401,6 @@ export default function AgentAvailabilityPage() {
               <h1 className="text-3xl font-bold tracking-tight">Agent Availability</h1>
               <p className="text-muted-foreground mt-1">Agent online time, pause time, talk time, and call metrics</p>
             </div>
-            <div className="flex items-center gap-3">
-              <Card className="w-auto">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <Button variant="ghost" size="icon" onClick={handleRefresh} disabled={isRefreshing} className="h-10 w-10">
-                      <RefreshCw className={`h-5 w-5 ${isRefreshing ? 'animate-spin' : ''}`} />
-                    </Button>
-                    <div className="space-y-0.5">
-                      <p className="text-sm font-medium leading-none">
-                        {isRefreshing ? 'Refreshing...' : lastRefresh.toLocaleTimeString()}
-                      </p>
-                      <p className="text-xs text-muted-foreground">Last updated</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
           </div>
 
           {/* KPI Cards */}
