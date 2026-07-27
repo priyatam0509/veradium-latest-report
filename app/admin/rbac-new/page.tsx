@@ -101,11 +101,7 @@ export default function RBACManagementPage() {
       setRoles(rolesData)
       setRoutes(routesData)
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Failed to load data",
-        description: error instanceof Error ? error.message : "Unknown error",
-      })
+      console.error("Failed to load data:", error)
     } finally {
       setIsLoading(false)
     }
@@ -115,7 +111,7 @@ export default function RBACManagementPage() {
     if (!currentUser?.email) return
     
     if (!newRole.roleId || !newRole.description) {
-      toast({ variant: "destructive", title: "Invalid input", description: "Please fill all fields." })
+      console.error("Invalid input: Please fill all fields.")
       return
     }
 
@@ -132,11 +128,7 @@ export default function RBACManagementPage() {
       setIsAddRoleOpen(false)
       toast({ title: "Role created", description: `${createdRole.roleId} has been added.` })
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Failed to create role",
-        description: error instanceof Error ? error.message : "Unknown error",
-      })
+      console.error("Failed to create role:", error)
     }
   }
 
@@ -149,11 +141,7 @@ export default function RBACManagementPage() {
       setDeleteRoleId(null)
       toast({ title: "Role deleted", description: `${deleteRoleId} has been removed.` })
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Failed to delete role",
-        description: error instanceof Error ? error.message : "Unknown error",
-      })
+      console.error("Failed to delete role:", error)
     }
   }
 
@@ -161,11 +149,7 @@ export default function RBACManagementPage() {
     if (!currentUser?.email) return
     
     if (!newRoute.route || !newRoute.label || newRoute.allowedRoles.length === 0) {
-      toast({
-        variant: "destructive",
-        title: "Invalid input",
-        description: "Please fill all fields and select at least one role.",
-      })
+      console.error("Invalid input: Please fill all fields and select at least one role.")
       return
     }
 
@@ -186,11 +170,7 @@ export default function RBACManagementPage() {
       // Refresh accessible routes if needed
       await refreshRoutes()
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Failed to create route",
-        description: error instanceof Error ? error.message : "Unknown error",
-      })
+      console.error("Failed to create route:", error)
     }
   }
 
@@ -212,11 +192,7 @@ export default function RBACManagementPage() {
       // Refresh accessible routes
       await refreshRoutes()
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Failed to update route",
-        description: error instanceof Error ? error.message : "Unknown error",
-      })
+      console.error("Failed to update route:", error)
     }
   }
 
@@ -238,11 +214,7 @@ export default function RBACManagementPage() {
       // Refresh accessible routes
       await refreshRoutes()
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Failed to update route",
-        description: error instanceof Error ? error.message : "Unknown error",
-      })
+      console.error("Failed to update route:", error)
     }
   }
 
@@ -267,11 +239,7 @@ export default function RBACManagementPage() {
       // Refresh accessible routes
       await refreshRoutes()
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Failed to update route",
-        description: error instanceof Error ? error.message : "Unknown error",
-      })
+      console.error("Failed to update route:", error)
     }
   }
 
@@ -287,11 +255,7 @@ export default function RBACManagementPage() {
       // Refresh accessible routes
       await refreshRoutes()
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Failed to delete route",
-        description: error instanceof Error ? error.message : "Unknown error",
-      })
+      console.error("Failed to delete route:", error)
     }
   }
 
@@ -433,9 +397,9 @@ export default function RBACManagementPage() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="rounded-md border">
+                  <div className="scrollable-table">
                     <Table>
-                      <TableHeader>
+                      <TableHeader className="sticky top-0 bg-background z-10">
                         <TableRow>
                           <TableHead>Route</TableHead>
                           <TableHead>Label</TableHead>

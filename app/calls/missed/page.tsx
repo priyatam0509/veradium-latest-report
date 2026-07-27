@@ -8,13 +8,13 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useToast } from "@/hooks/use-toast"
 import { Loader2, Search, Calendar, RefreshCw, Download } from "lucide-react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar as CalendarComponent } from "@/components/ui/calendar"
 import { format, subDays } from "date-fns"
 import { cn } from "@/lib/utils"
 import { athenaAPI } from "@/lib/athena-api"
+import { useAuth } from "@/hooks/use-auth"
 import { DateHelper } from "@/lib/date-helper"
 
 interface UnansweredQueueData {
@@ -22,6 +22,7 @@ interface UnansweredQueueData {
   queue_name: string
   channel: string
   initiation_method: string
+  region: string
   received: string
   unanswered: string
   abandoned: string
@@ -32,6 +33,7 @@ interface UnansweredDIDData {
   did: string
   channel: string
   initiation_method: string
+  region: string
   received: string
   unanswered: string
   abandoned: string
@@ -42,28 +44,27 @@ interface DrilldownData {
   row_no: string
   did: string
   contact_id: string
-  agent_name: string
   date: string
   queue_name: string
+  region: string
   customer_number: string
   channel: string
   initiation_method: string
-  interation_status: string
+  interaction_status: string
   agent_connection_attempts: string
   event: string
   ring_time: string
   wait_time: string
-  talk_time: string
 }
 
 export default function MissedCallsPage() {
   const [queueData, setQueueData] = useState<UnansweredQueueData[]>([])
   const [didData, setDidData] = useState<UnansweredDIDData[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const { user, isLoading: authLoading } = useAuth()
   const [activeTab, setActiveTab] = useState("queue")
   const [loadingItemId, setLoadingItemId] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
-  const { toast } = useToast()
 
   const [startDate, setStartDate] = useState<Date | undefined>(subDays(new Date(), 30))
   const [endDate, setEndDate] = useState<Date | undefined>(new Date())
@@ -71,15 +72,19 @@ export default function MissedCallsPage() {
   const [isEndDateOpen, setIsEndDateOpen] = useState(false)
 
   useEffect(() => {
-    fetchQueueData()
+    if (!authLoading) {
+      fetchQueueData()
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [authLoading, user?.email])
 
   useEffect(() => {
-    if (activeTab === 'queue' && queueData.length === 0) {
-      fetchQueueData()
-    } else if (activeTab === 'did' && didData.length === 0) {
-      fetchDIDData()
+    if (!authLoading) {
+      if (activeTab === 'queue' && queueData.length === 0) {
+        fetchQueueData()
+      } else if (activeTab === 'did' && didData.length === 0) {
+        fetchDIDData()
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab])
@@ -92,24 +97,15 @@ export default function MissedCallsPage() {
         end: DateHelper.formatDateFromDate(endDate, true)
       }
 
-      const result = await athenaAPI.getUnansweredByQueue(dateRange.start, dateRange.end)
+  const result = await athenaAPI.getUnansweredByQueue(dateRange.start, dateRange.end, null, user?.email)
       
       if (result.status === 'SUCCEEDED') {
         setQueueData(result.data)
-        toast({
-          title: "Data loaded successfully",
-          description: `Showing ${result.rowCount} queue${result.rowCount !== 1 ? 's' : ''}`,
-        })
       } else {
         throw new Error(result.error || 'Query failed')
       }
     } catch (error) {
       console.error("Queue data fetch error:", error)
-      toast({
-        variant: "destructive",
-        title: "Failed to load queue data",
-        description: error instanceof Error ? error.message : "Unknown error",
-      })
     } finally {
       setIsLoading(false)
     }
@@ -123,24 +119,15 @@ export default function MissedCallsPage() {
         end: DateHelper.formatDateFromDate(endDate, true)
       }
 
-      const result = await athenaAPI.getUnansweredByDID(dateRange.start, dateRange.end)
+  const result = await athenaAPI.getUnansweredByDID(dateRange.start, dateRange.end, null, user?.email)
       
       if (result.status === 'SUCCEEDED') {
         setDidData(result.data)
-        toast({
-          title: "DID data loaded successfully",
-          description: `Showing ${result.rowCount} phone number${result.rowCount !== 1 ? 's' : ''}`,
-        })
       } else {
         throw new Error(result.error || 'Query failed')
       }
     } catch (error) {
       console.error("DID data fetch error:", error)
-      toast({
-        variant: "destructive",
-        title: "Failed to load DID data",
-        description: error instanceof Error ? error.message : "Unknown error",
-      })
     } finally {
       setIsLoading(false)
     }
@@ -161,7 +148,9 @@ export default function MissedCallsPage() {
       const result = await athenaAPI.getUnansweredDrilldown(
         dateRange.start,
         dateRange.end,
-        filters
+        filters,
+        null,        // region
+        user?.email  // username
       )
       
       if (result.status === 'SUCCEEDED') {
@@ -172,20 +161,11 @@ export default function MissedCallsPage() {
           newWindow.document.close()
         }
         
-        toast({
-          title: "Unanswered calls loaded",
-          description: `Found ${result.rowCount} call${result.rowCount !== 1 ? 's' : ''}`,
-        })
       } else {
         throw new Error(result.error || 'Query failed')
       }
     } catch (error) {
       console.error("Drilldown fetch error:", error)
-      toast({
-        variant: "destructive",
-        title: "Failed to load contact details",
-        description: error instanceof Error ? error.message : "Unknown error",
-      })
     } finally {
       setLoadingItemId(null)
     }
@@ -266,7 +246,8 @@ export default function MissedCallsPage() {
       background-color: #2563eb;
     }
     .table-container {
-      overflow-x: auto;
+      overflow: auto;
+      height: calc(100vh - 200px);
     }
     table {
       width: 100%;
@@ -336,11 +317,12 @@ export default function MissedCallsPage() {
     
     <div class="table-container">
       <table id="dataTable">
-        <thead>
+        <thead style="position:sticky;top:0;z-index:1;">
           <tr>
             <th>Contact ID</th>
             <th>Date</th>
             <th>Queue</th>
+            <th>Region</th>
             <th>Customer</th>
             <th>DID</th>
             <th>Channel</th>
@@ -350,7 +332,6 @@ export default function MissedCallsPage() {
             <th>Agent Conn. Attempts</th>
             <th>Ring Time</th>
             <th>Wait Time</th>
-            <th>Talk Time</th>
           </tr>
         </thead>
         <tbody>
@@ -359,16 +340,16 @@ export default function MissedCallsPage() {
               <td class="font-mono" style="font-size: 12px;">${contact.contact_id || '-'}</td>
               <td>${contact.date || '-'}</td>
               <td>${contact.queue_name || '-'}</td>
+              <td>${contact.region || '-'}</td>
               <td class="font-mono">${contact.customer_number || '-'}</td>
               <td class="font-mono">${contact.did || '-'}</td>
               <td>${contact.channel || '-'}</td>
               <td>${contact.initiation_method || '-'}</td>
-              <td class="status-abandoned">${contact.interation_status || '-'}</td>
+              <td class="status-abandoned">${contact.interaction_status || '-'}</td>
               <td>${contact.event || '-'}</td>
               <td>${contact.agent_connection_attempts || '-'}</td>
               <td>${contact.ring_time || '-'}</td>
               <td>${contact.wait_time || '-'}</td>
-              <td>${contact.talk_time || '-'}</td>
             </tr>
           `).join('') : `
             <tr>
@@ -384,16 +365,18 @@ export default function MissedCallsPage() {
     function exportToCSV() {
       const table = document.getElementById('dataTable');
       const rows = Array.from(table.querySelectorAll('tr'));
-      
+
       const csv = rows.map(row => {
         const cells = Array.from(row.querySelectorAll('th, td'));
         return cells.map(cell => {
-          const text = cell.textContent.trim();
-          return '"' + text.replace(/"/g, '""') + '"';
+          const v = cell.textContent.trim();
+          if (v === '—' || v === '') return '""';
+          if (/^\\d{4}-\\d{2}-\\d{2}/.test(v) || v.startsWith('+')) return '="' + v.replace(/"/g, '""') + '"';
+          return '"' + v.replace(/"/g, '""') + '"';
         }).join(',');
       }).join('\\n');
-      
-      const blob = new Blob([csv], { type: 'text/csv' });
+
+      const blob = new Blob(['\\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -563,11 +546,12 @@ export default function MissedCallsPage() {
                       <Loader2 className="h-8 w-8 animate-spin" />
                     </div>
                   ) : (
-                    <div className="rounded-md border">
+                    <div className="scrollable-table">
                       <Table>
-                        <TableHeader>
+                        <TableHeader className="sticky top-0 bg-background z-10">
                           <TableRow>
                             <TableHead>Queue Name</TableHead>
+                            <TableHead className="text-right">Region</TableHead>
                             <TableHead className="text-right">Channel</TableHead>
                             <TableHead className="text-right">Initiation Method</TableHead>
                             <TableHead className="text-right">Received</TableHead>
@@ -580,7 +564,13 @@ export default function MissedCallsPage() {
                         <TableBody>
                           {filteredQueues.map((queue, index) => (
                             <TableRow key={index}>
-                              <TableCell className="font-medium">{queue.queue_name || queue.queue_id}</TableCell>
+                              <TableCell
+                                className="font-medium cursor-pointer text-primary hover:underline"
+                                onClick={() => handleViewQueueDetails(queue)}
+                              >
+                                {queue.queue_name || queue.queue_id}
+                              </TableCell>
+                              <TableCell className="text-right">{queue.region || '—'}</TableCell>
                               <TableCell className="text-right">{queue.channel || '-'}</TableCell>
                               <TableCell className="text-right">{queue.initiation_method || '-'}</TableCell>
                               <TableCell className="text-right">{queue.received}</TableCell>
@@ -608,7 +598,7 @@ export default function MissedCallsPage() {
                           ))}
                           {filteredQueues.length === 0 && (
                             <TableRow>
-                              <TableCell colSpan={8} className="text-center text-muted-foreground">
+                              <TableCell colSpan={9} className="text-center text-muted-foreground">
                                 No unanswered calls data available
                               </TableCell>
                             </TableRow>
@@ -635,11 +625,12 @@ export default function MissedCallsPage() {
                       <Loader2 className="h-8 w-8 animate-spin" />
                     </div>
                   ) : (
-                    <div className="rounded-md border">
+                    <div className="scrollable-table">
                       <Table>
-                        <TableHeader>
+                        <TableHeader className="sticky top-0 bg-background z-10">
                           <TableRow>
                             <TableHead>Phone Number (DID)</TableHead>
+                            <TableHead className="text-right">Region</TableHead>
                             <TableHead className="text-right">Channel</TableHead>
                             <TableHead className="text-right">Initiation Method</TableHead>
                             <TableHead className="text-right">Received</TableHead>
@@ -653,6 +644,7 @@ export default function MissedCallsPage() {
                           {filteredDIDs.map((did, index) => (
                             <TableRow key={index}>
                               <TableCell className="font-medium font-mono">{did.did}</TableCell>
+                              <TableCell className="text-right">{did.region || '—'}</TableCell>
                               <TableCell className="text-right">{did.channel || '-'}</TableCell>
                               <TableCell className="text-right">{did.initiation_method || '-'}</TableCell>
                               <TableCell className="text-right">{did.received}</TableCell>
@@ -680,7 +672,7 @@ export default function MissedCallsPage() {
                           ))}
                           {filteredDIDs.length === 0 && (
                             <TableRow>
-                              <TableCell colSpan={8} className="text-center text-muted-foreground">
+                              <TableCell colSpan={9} className="text-center text-muted-foreground">
                                 No DID data available
                               </TableCell>
                             </TableRow>

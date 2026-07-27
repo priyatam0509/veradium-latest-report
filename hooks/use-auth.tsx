@@ -4,7 +4,11 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import type { User, RoutePermission } from "@/lib/auth-types"
 import { useRouter } from "next/navigation"
 import { microsoftAuthService } from "@/lib/microsoft-auth-service"
-import { awsRBACService } from "@/lib/aws-rbac-service"
+import { getAccessibleRoutes as getLocalAccessibleRoutes } from "@/lib/rbac"
+
+// Every user authenticated through Azure AD is granted this role.
+// Authorization is no longer gated by the AWS RBAC service.
+const DEFAULT_ROLE = "ADMIN"
 
 interface AuthContextType {
   user: Omit<User, "password"> | null
@@ -12,6 +16,7 @@ interface AuthContextType {
   accessibleRoutes: RoutePermission[]
   login: () => void
   logout: () => void
+  completeLogin: (token: string, msUser: { email: string; displayName: string }) => Promise<boolean>
   isLoading: boolean
   refreshRoutes: () => Promise<void>
 }
@@ -27,19 +32,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
 
-  const fetchAccessibleRoutes = async (email: string) => {
+  const fetchAccessibleRoutes = (role: string) => {
     try {
-      const response = await awsRBACService.getAccessibleRoutes(email)
-      const routes: RoutePermission[] = response.routes.map(r => ({
-        id: r.routeId,
-        route: r.route,
-        label: r.label,
-        allowedRoles: r.allowedRoles,
-        isEnabled: r.isEnabled,
-      }))
-      setAccessibleRoutes(routes)
+      setAccessibleRoutes(getLocalAccessibleRoutes(role))
     } catch (error) {
-      console.error('[Auth] Failed to fetch accessible routes:', error)
+      console.error('[Auth] Failed to compute accessible routes:', error)
       setAccessibleRoutes([])
     }
   }
@@ -54,7 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const storedUser = JSON.parse(userStr)
           setUser(storedUser)
           setAccessToken(token)
-          await fetchAccessibleRoutes(storedUser.email)
+          fetchAccessibleRoutes(storedUser.role)
         } catch (e) {
           console.error("Failed to restore session", e)
           logout()
@@ -72,38 +69,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const refreshRoutes = async () => {
-    if (user?.email) {
-      await fetchAccessibleRoutes(user.email)
+    if (user?.role) {
+      fetchAccessibleRoutes(user.role)
     }
   }
 
   // This function will be called from the callback page after MS auth
   const completeLogin = async (token: string, msUser: { email: string; displayName: string }) => {
     try {
-      // Verify user with AWS RBAC API
-      const verifyResponse = await awsRBACService.verifyUser(msUser.email)
-      
+      // Authorize purely on the basis of a successful Azure AD sign-in.
       const userData: Omit<User, "password"> = {
-        id: verifyResponse.user.userId,
-        email: verifyResponse.user.email,
-        role: verifyResponse.user.role,
-        isEnabled: verifyResponse.user.isEnabled,
-      }
-
-      if (!userData.isEnabled) {
-        throw new Error('User account is disabled')
+        id: msUser.email,
+        email: msUser.email,
+        role: DEFAULT_ROLE,
+        isEnabled: true,
       }
 
       // Store token and user
       microsoftAuthService.storeAccessToken(token)
       localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(userData))
-      
+
       setUser(userData)
       setAccessToken(token)
-      
+
       // Fetch accessible routes
-      await fetchAccessibleRoutes(userData.email)
-      
+      fetchAccessibleRoutes(userData.role)
+
       return true
     } catch (error) {
       console.error('[Auth] Login completion error:', error)
@@ -128,43 +119,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user, 
         accessToken, 
         accessibleRoutes, 
-        login, 
-        logout, 
-        isLoading, 
-        refreshRoutes 
+        login,
+        logout,
+        completeLogin,
+        isLoading,
+        refreshRoutes
       }}
     >
       {children}
     </AuthContext.Provider>
   )
-}
-
-// Export completeLogin for use in callback page
-export async function completeAuthLogin(token: string, msUser: { email: string; displayName: string }) {
-  try {
-    const verifyResponse = await awsRBACService.verifyUser(msUser.email)
-    
-    const userData = {
-      id: verifyResponse.user.userId,
-      email: verifyResponse.user.email,
-      role: verifyResponse.user.role,
-      isEnabled: verifyResponse.user.isEnabled,
-    }
-
-    if (!userData.isEnabled) {
-      throw new Error('User account is disabled')
-    }
-
-    microsoftAuthService.storeAccessToken(token)
-    localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(userData))
-    
-    return userData
-  } catch (error) {
-    console.error('[Auth] Login completion error:', error)
-    microsoftAuthService.clearStoredToken()
-    localStorage.removeItem(STORAGE_KEY_USER)
-    throw error
-  }
 }
 
 export function useAuth() {

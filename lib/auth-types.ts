@@ -46,13 +46,15 @@ export const DEFAULT_ROLES: RoleDefinition[] = [
 ]
 
 export const DEFAULT_ROUTES: RoutePermission[] = [
+  // ── Core ────────────────────────────────────────────────────────────────────
   {
     id: "1",
-    route: "/dashboard",
-    label: "Dashboard",
+    route: "/dashboard/overview",
+    label: "Dashboard Overview",
     allowedRoles: ["ADMIN", "SUPERVISOR", "ANALYST"],
     isEnabled: true,
   },
+  // ── Queue Matrix ─────────────────────────────────────────────────────────────
   {
     id: "2",
     route: "/queues/matrix",
@@ -61,40 +63,64 @@ export const DEFAULT_ROUTES: RoutePermission[] = [
     isEnabled: true,
   },
   {
-    id: "3",
-    route: "/metrics/real-time",
-    label: "Real-Time Metrics",
-    allowedRoles: ["ADMIN", "SUPERVISOR"],
-    isEnabled: true,
-  },
-  {
-    id: "4",
-    route: "/metrics/historical",
-    label: "Historical Metrics",
+    id: "20",
+    route: "/queues/distribution",
+    label: "Queue Distribution",
     allowedRoles: ["ADMIN", "SUPERVISOR", "ANALYST"],
     isEnabled: true,
   },
   {
-    id: "5",
-    route: "/analytics",
-    label: "Contact Lens",
+    id: "21",
+    route: "/queues/answered",
+    label: "Answered Calls",
+    allowedRoles: ["ADMIN", "SUPERVISOR", "ANALYST"],
+    isEnabled: true,
+  },
+  {
+    id: "22",
+    route: "/queues/unanswered",
+    label: "Unanswered Calls",
+    allowedRoles: ["ADMIN", "SUPERVISOR", "ANALYST"],
+    isEnabled: true,
+  },
+  // ── Agent Matrix ─────────────────────────────────────────────────────────────
+  {
+    id: "23",
+    route: "/agents/matrix",
+    label: "Agent Matrix",
     allowedRoles: ["ADMIN", "SUPERVISOR"],
     isEnabled: true,
   },
   {
-    id: "6",
-    route: "/search",
-    label: "Contact Search",
+    id: "24",
+    route: "/agents/activity-analysis",
+    label: "Agent Activity",
     allowedRoles: ["ADMIN", "SUPERVISOR"],
     isEnabled: true,
   },
   {
-    id: "7",
-    route: "/evaluations",
-    label: "Evaluations",
-    allowedRoles: ["ADMIN"],
+    id: "25",
+    route: "/agents/performance-analysis",
+    label: "Agent Performance",
+    allowedRoles: ["ADMIN", "SUPERVISOR"],
     isEnabled: true,
   },
+  {
+    id: "26",
+    route: "/agents/availability",
+    label: "Agent Availability",
+    allowedRoles: ["ADMIN", "SUPERVISOR"],
+    isEnabled: true,
+  },
+  // ── Other reports ────────────────────────────────────────────────────────────
+  {
+    id: "27",
+    route: "/analytics/transfers",
+    label: "Transferred Calls",
+    allowedRoles: ["ADMIN", "SUPERVISOR", "ANALYST"],
+    isEnabled: true,
+  },
+  // ── Admin ────────────────────────────────────────────────────────────────────
   {
     id: "8",
     route: "/admin/users",
@@ -116,33 +142,27 @@ export const DEFAULT_ROUTES: RoutePermission[] = [
     allowedRoles: ["ADMIN", "SUPERVISOR", "ANALYST"],
     isEnabled: true,
   },
-  {
-    id: "11",
-    route: "/dashboard/overview",
-    label: "Dashboard Overview",
-    allowedRoles: ["ADMIN", "SUPERVISOR", "ANALYST"],
-    isEnabled: true,
-  },
+  // ── Legacy routes (kept for compatibility) ───────────────────────────────────
   {
     id: "12",
     route: "/agents/performance",
-    label: "Agent Performance",
+    label: "Agent Matrix (legacy)",
     allowedRoles: ["ADMIN", "SUPERVISOR"],
-    isEnabled: true,
+    isEnabled: false,
   },
   {
     id: "13",
     route: "/reports/time-analysis",
     label: "Time Analysis Reports",
     allowedRoles: ["ADMIN", "SUPERVISOR", "ANALYST"],
-    isEnabled: true,
+    isEnabled: false,
   },
   {
     id: "14",
     route: "/calls/missed",
-    label: "Missed Calls",
+    label: "Missed Calls (legacy)",
     allowedRoles: ["ADMIN", "SUPERVISOR"],
-    isEnabled: true,
+    isEnabled: false,
   },
 ]
 

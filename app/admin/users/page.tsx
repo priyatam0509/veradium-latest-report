@@ -75,11 +75,7 @@ export default function UserManagementPage() {
       setUsers(usersData)
       setRoles(rolesData)
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Failed to load data",
-        description: error instanceof Error ? error.message : "Unknown error",
-      })
+      console.error("Failed to load data:", error)
     } finally {
       setIsLoading(false)
     }
@@ -89,7 +85,7 @@ export default function UserManagementPage() {
     if (!currentUser?.email) return
     
     if (!newUser.email || !newUser.displayName || !newUser.role) {
-      toast({ variant: "destructive", title: "Invalid input", description: "Please fill all fields." })
+      console.error("Invalid input: Please fill all fields.")
       return
     }
 
@@ -106,11 +102,7 @@ export default function UserManagementPage() {
       setNewUser({ email: "", displayName: "", role: "" })
       toast({ title: "User added", description: `${createdUser.email} has been created.` })
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Failed to create user",
-        description: error instanceof Error ? error.message : "Unknown error",
-      })
+      console.error("Failed to create user:", error)
     }
   }
 
@@ -129,11 +121,7 @@ export default function UserManagementPage() {
       setSelectedUser(null)
       toast({ title: "User updated", description: `${updatedUser.email} has been updated.` })
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Failed to update user",
-        description: error instanceof Error ? error.message : "Unknown error",
-      })
+      console.error("Failed to update user:", error)
     }
   }
 
@@ -152,11 +140,7 @@ export default function UserManagementPage() {
       setUsers(users.map((u) => (u.email === email ? updatedUser : u)))
       toast({ title: "Status updated", description: `User ${updatedUser.isEnabled ? 'enabled' : 'disabled'}.` })
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Failed to update user",
-        description: error instanceof Error ? error.message : "Unknown error",
-      })
+      console.error("Failed to update user:", error)
     }
   }
 
@@ -169,11 +153,7 @@ export default function UserManagementPage() {
       setDeleteUserId(null)
       toast({ title: "User deleted", description: "User has been removed from the system." })
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Failed to delete user",
-        description: error instanceof Error ? error.message : "Unknown error",
-      })
+      console.error("Failed to delete user:", error)
     }
   }
 
@@ -193,11 +173,7 @@ export default function UserManagementPage() {
       setUserRoutesData(response.routes)
       setViewUserRoutes(email)
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Failed to load routes",
-        description: error instanceof Error ? error.message : "Unknown error",
-      })
+      console.error("Failed to load routes:", error)
     }
   }
 
@@ -324,9 +300,9 @@ export default function UserManagementPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="rounded-md border overflow-x-auto">
+              <div className="scrollable-table">
                 <Table>
-                  <TableHeader>
+                  <TableHeader className="sticky top-0 bg-background z-10">
                     <TableRow>
                       <TableHead>User</TableHead>
                       <TableHead>Role</TableHead>

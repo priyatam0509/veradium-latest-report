@@ -3,7 +3,6 @@
 import type React from "react"
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
-import Image from "next/image"
 
 import { useAuth } from "@/hooks/use-auth"
 import { Button } from "@/components/ui/button"
@@ -32,17 +31,18 @@ export default function LoginPage() {
         {/* ============================ Header ============================ */}
         <CardHeader className="space-y-2 flex flex-col items-center text-center">
           <div className="mb-2">
-            <Image
-              src="https://res.cloudinary.com/dnijbboek/image/upload/v1770896884/veradium_xqy6gh.png"
-              alt="Veradium Logo"
-              width={64}
-              height={40}
-              priority
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="https://res.cloudinary.com/dnijbboek/image/upload/v1777654360/the_ticket_clinic_rzbfy6.png"
+              alt="The Ticket Clinic Logo"
+              width={120}
+              height={120}
+              style={{ objectFit: "contain" }}
             />
           </div>
 
           <CardTitle className="text-2xl font-semibold tracking-tight">
-            Veradium Dashboard
+            The Ticket Clinic Dashboard
           </CardTitle>
 
           <CardDescription className="text-sm">
@@ -70,29 +70,10 @@ export default function LoginPage() {
             </svg>
             Sign in with Microsoft
           </Button>
-
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">
-                Microsoft Entra ID Authentication
-              </span>
-            </div>
-          </div>
-
-          <div className="text-xs text-center text-muted-foreground space-y-1">
-            <p>Your access is validated using Veradium RBAC services</p>
-            <p>to ensure correct roles and permissions</p>
-          </div>
         </CardContent>
 
         {/* ============================ Footer ============================ */}
         <CardFooter className="flex flex-col space-y-2">
-          <p className="text-xs text-center text-muted-foreground">
-            © {new Date().getFullYear()} Veradium. All rights reserved.
-          </p>
         </CardFooter>
       </Card>
     </div>

@@ -6,45 +6,45 @@ import { AuthGuard } from "@/components/auth-guard"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useToast } from "@/hooks/use-toast"
 import { Loader2, Search, Calendar, RefreshCw, Download } from "lucide-react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar as CalendarComponent } from "@/components/ui/calendar"
 import { format, subDays } from "date-fns"
 import { cn } from "@/lib/utils"
 import { athenaAPI } from "@/lib/athena-api"
+import { useAuth } from "@/hooks/use-auth"
 import { DateHelper } from "@/lib/date-helper"
+import { exportToCSV } from "@/lib/csv-export"
+import { useSortable, SortHead } from "@/lib/sort-table"
 
 interface AgentData {
   agent_id: string
   agent_name: string
-  channel: string
-  initiation_method: string
-  received: string
-  completed: string
-  transferred: string
-  '%_calls': string
-  talk_time: string
-  '%_talk_time': string
-  avg_talk: string
-  ring_time: string
-  wait_time: string
-  avg_wait: string
-  max_wait_time: string
+  region: string
+  answered: string
+  outbound: string
+  completed_by_caller: string
+  completed_by_agent: string
+  transferred_out: string
+  missed: string
+  rejected: string
+  failed: string
 }
 
 interface DrilldownData {
+  row_no: string;
   did: string;
   contact_id: string;
   agent_name: string;
   date: string;
   queue_name: string;
+  region: string;
   customer_number: string;
   channel: string;
   initiation_method: string;
-  interation_status: string;
+  interaction_status: string;
   agent_connection_attempts: string;
   event: string;
   ring_time: string;
@@ -55,10 +55,10 @@ interface DrilldownData {
 export default function AgentPerformancePage() {
   const [agentData, setAgentData] = useState<AgentData[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const { user, isLoading: authLoading } = useAuth()
   const [loadingAgentId, setLoadingAgentId] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedQueue, setSelectedQueue] = useState<string>("ALL")
-  const { toast } = useToast()
 
   const [startDate, setStartDate] = useState<Date | undefined>(subDays(new Date(), 30))
   const [endDate, setEndDate] = useState<Date | undefined>(new Date())
@@ -66,9 +66,11 @@ export default function AgentPerformancePage() {
   const [isEndDateOpen, setIsEndDateOpen] = useState(false)
 
   useEffect(() => {
-    fetchAgentData()
+    if (!authLoading) {
+      fetchAgentData()
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [authLoading, user?.email])
 
   const fetchAgentData = async (queueFilter: string = "ALL") => {
     setIsLoading(true)
@@ -78,28 +80,22 @@ export default function AgentPerformancePage() {
         end: DateHelper.formatDateFromDate(endDate, true)
       }
 
-      const result = await athenaAPI.getAnsweredByAgent(
+      const result = await athenaAPI.getAgentCallDisposition(
         dateRange.start,
         dateRange.end,
-        queueFilter === "ALL" ? ["ALL"] : [queueFilter]
+        user?.email,
+        undefined,   // agentIds
+        queueFilter === "ALL" ? undefined : [queueFilter],
+        null         // region
       )
       
       if (result.status === 'SUCCEEDED') {
         setAgentData(result.data)
-        toast({
-          title: "Data loaded successfully",
-          description: `Showing ${result.rowCount} agent${result.rowCount !== 1 ? 's' : ''}`,
-        })
       } else {
         throw new Error(result.error || 'Query failed')
       }
     } catch (error) {
       console.error("Agent data fetch error:", error)
-      toast({
-        variant: "destructive",
-        title: "Failed to load agent data",
-        description: error instanceof Error ? error.message : "Unknown error",
-      })
     } finally {
       setIsLoading(false)
     }
@@ -116,7 +112,9 @@ export default function AgentPerformancePage() {
       const result = await athenaAPI.getAnsweredDrilldown(
         dateRange.start,
         dateRange.end,
-        { agentId: [agentId] }
+        { agentId: [agentId] },
+        null,        // region
+        user?.email  // username
       )
       
       if (result.status === 'SUCCEEDED') {
@@ -128,20 +126,11 @@ export default function AgentPerformancePage() {
           newWindow.document.close()
         }
         
-        toast({
-          title: "Agent calls loaded",
-          description: `Found ${result.rowCount} call${result.rowCount !== 1 ? 's' : ''}`,
-        })
       } else {
         throw new Error(result.error || 'Query failed')
       }
     } catch (error) {
       console.error("Drilldown fetch error:", error)
-      toast({
-        variant: "destructive",
-        title: "Failed to load agent details",
-        description: error instanceof Error ? error.message : "Unknown error",
-      })
     } finally {
       setLoadingAgentId(null)
     }
@@ -206,6 +195,8 @@ export default function AgentPerformancePage() {
       font-size: 14px;
       color: #6b7280;
     }
+    .search-box { padding:8px 12px; border:1px solid #d1d5db; border-radius:6px; font-size:14px; width:280px; outline:none; }
+    .search-box:focus { border-color:#3b82f6; box-shadow:0 0 0 2px rgba(59,130,246,.15); }
     .btn {
       padding: 8px 16px;
       background-color: #3b82f6;
@@ -222,7 +213,8 @@ export default function AgentPerformancePage() {
       background-color: #2563eb;
     }
     .table-container {
-      overflow-x: auto;
+      overflow: auto;
+      height: calc(100vh - 200px);
     }
     table {
       width: 100%;
@@ -275,26 +267,30 @@ export default function AgentPerformancePage() {
     </div>
     
     <div class="actions">
-      <div class="count">Showing ${data.length} call${data.length !== 1 ? 's' : ''}</div>
-      <button class="btn" onclick="exportToCSV()">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-          <polyline points="7 10 12 15 17 10"></polyline>
-          <line x1="12" y1="15" x2="12" y2="3"></line>
-        </svg>
-        Export CSV
-      </button>
+      <div class="count" id="rowCount">Showing ${data.length} call${data.length !== 1 ? 's' : ''}</div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input type="text" class="search-box" id="searchInput" placeholder="Search contacts..." oninput="filterTable()" />
+        <button class="btn" onclick="exportToCSV()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          Export CSV
+        </button>
+      </div>
     </div>
     
     <div class="table-container">
       <table id="dataTable">
-        <thead>
+        <thead style="position:sticky;top:0;z-index:1;">
           <tr>
             <th>DID</th>
             <th>Contact ID</th>
             <th>Agent Name</th>
             <th>Date</th>
             <th>Queue</th>
+            <th>Region</th>
             <th>Customer</th>
             <th>Channel</th>
             <th>Initiation Method</th>
@@ -314,10 +310,11 @@ export default function AgentPerformancePage() {
               <td>${contact.agent_name || '-'}</td>
               <td>${contact.date || '-'}</td>
               <td>${contact.queue_name || '-'}</td>
+              <td>${contact.region || '-'}</td>
               <td class="font-mono">${contact.customer_number || '-'}</td>
               <td>${contact.channel || '-'}</td>
               <td>${contact.initiation_method || '-'}</td>
-              <td>${contact.interation_status || '-'}</td>
+              <td>${contact.interaction_status || '-'}</td>
               <td>${contact.agent_connection_attempts || '-'}</td>
               <td>${contact.event || '-'}</td>
               <td>${contact.ring_time || '-'}</td>
@@ -326,7 +323,7 @@ export default function AgentPerformancePage() {
             </tr>
           `).join('') : `
             <tr>
-              <td colspan="14" class="empty">No calls found.</td>
+              <td colspan="15" class="empty">No calls found.</td>
             </tr>
           `}
         </tbody>
@@ -338,22 +335,36 @@ export default function AgentPerformancePage() {
     function exportToCSV() {
       const table = document.getElementById('dataTable');
       const rows = Array.from(table.querySelectorAll('tr'));
-      
+
       const csv = rows.map(row => {
         const cells = Array.from(row.querySelectorAll('th, td'));
         return cells.map(cell => {
-          const text = cell.textContent.trim();
-          return '"' + text.replace(/"/g, '""') + '"';
+          const v = cell.textContent.trim();
+          if (v === '—' || v === '') return '""';
+          if (/^\\d{4}-\\d{2}-\\d{2}/.test(v) || v.startsWith('+')) return '="' + v.replace(/"/g, '""') + '"';
+          return '"' + v.replace(/"/g, '""') + '"';
         }).join(',');
       }).join('\\n');
-      
-      const blob = new Blob([csv], { type: 'text/csv' });
+
+      const blob = new Blob(['\\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
       a.download = 'agent-calls-${new Date().toISOString().slice(0, 10)}.csv';
       a.click();
       window.URL.revokeObjectURL(url);
+    }
+    function filterTable() {
+      var term = document.getElementById('searchInput').value.toLowerCase()
+      var rows = document.querySelectorAll('#dataTable tbody tr')
+      var visible = 0
+      rows.forEach(function(row) {
+        var text = row.textContent.toLowerCase()
+        var show = !term || text.indexOf(term) > -1
+        row.style.display = show ? '' : 'none'
+        if (show) visible++
+      })
+      document.getElementById('rowCount').textContent = 'Showing ' + visible + ' call' + (visible !== 1 ? 's' : '')
     }
   </script>
 </body>
@@ -381,25 +392,13 @@ export default function AgentPerformancePage() {
     fetchAgentData(value)
   }
 
-  const exportToCSV = (data: any[], filename: string) => {
-    if (data.length === 0) return
-    
-    const headers = Object.keys(data[0]).join(',')
-    const rows = data.map(row => Object.values(row).join(','))
-    const csv = [headers, ...rows].join('\n')
-    
-    const blob = new Blob([csv], { type: 'text/csv' })
-    const url = window.URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = filename
-    a.click()
-  }
 
-  const filteredAgents = agentData.filter((agent) => 
+  const filteredAgents = agentData.filter((agent) =>
     agent.agent_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     agent.agent_id?.toLowerCase().includes(searchTerm.toLowerCase())
   )
+
+  const sort = useSortable(filteredAgents)
 
   return (
     <AuthGuard>
@@ -471,13 +470,16 @@ export default function AgentPerformancePage() {
                   </Select>
                 </div> */}
 
-                <div className="space-y-2 flex items-end gap-2">
-                  <Button onClick={handleApplyFilter} className="flex-1" disabled={isLoading}>
-                    Apply Filter
-                  </Button>
-                  <Button onClick={handleResetFilter} variant="outline" disabled={isLoading}>
-                    Reset
-                  </Button>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">&nbsp;</label>
+                  <div className="flex gap-2">
+                    <Button onClick={handleApplyFilter} className="flex-1" disabled={isLoading}>
+                      Apply Filter
+                    </Button>
+                    <Button onClick={handleResetFilter} variant="outline" disabled={isLoading}>
+                      Reset
+                    </Button>
+                  </div>
                 </div>
               </div>
             </CardContent>
@@ -508,66 +510,46 @@ export default function AgentPerformancePage() {
                   <Loader2 className="h-8 w-8 animate-spin" />
                 </div>
               ) : (
-                <div className="rounded-md border">
+                <div className="scrollable-table">
                   <Table>
-                    <TableHeader>
+                    <TableHeader className="sticky top-0 bg-background z-10">
                       <TableRow>
-                        <TableHead>Agent Name</TableHead>
-                        <TableHead className="text-right">Channel</TableHead>
-                        <TableHead className="text-right">Initiation Method</TableHead>
-                        <TableHead className="text-right">Received</TableHead>
-                        <TableHead className="text-right">Completed</TableHead>
-                        <TableHead className="text-right">Transferred</TableHead>
-                        <TableHead className="text-right">% Calls</TableHead>
-                        <TableHead className="text-right">Talk Time</TableHead>
-                        <TableHead className="text-right">% Talk Time</TableHead>
-                        <TableHead className="text-right">Avg Talk</TableHead>
-                        <TableHead className="text-right">Ring Time</TableHead>
-                        <TableHead className="text-right">Wait Time</TableHead>
-                        <TableHead className="text-right">Avg Wait</TableHead>
-                        <TableHead className="text-right">Max Wait Time</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
+                        <SortHead col="agent_name" label="Agent Name" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} />
+                        <SortHead col="region" label="Region" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="answered" label="Answered" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="outbound" label="Outbound" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="completed_by_caller" label="Completed by Caller" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="completed_by_agent" label="Completed by Agent" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="transferred_out" label="Transferred Out" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="missed" label="Missed" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="rejected" label="Rejected" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
+                        <SortHead col="failed" label="Failed" sortKey={sort.sortKey} sortDir={sort.sortDir} onSort={sort.handleSort} className="text-right" />
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredAgents.map((agent, index) => (
+                      {sort.sorted.map((agent, index) => (
                         <TableRow key={index}>
-                          <TableCell className="font-medium">{agent.agent_name}</TableCell>
-                          <TableCell className="text-right">{agent.channel}</TableCell>
-                          <TableCell className="text-right">{agent.initiation_method}</TableCell>
-                          <TableCell className="text-right">{agent.received}</TableCell>
-                          <TableCell className="text-right">{agent.completed}</TableCell>
-                          <TableCell className="text-right">{agent.transferred}</TableCell>
-                          <TableCell className="text-right">{agent['%_calls']}</TableCell>
-                          <TableCell className="text-right">{agent.talk_time}</TableCell>
-                          <TableCell className="text-right">{agent['%_talk_time']}</TableCell>
-                          <TableCell className="text-right">{agent.avg_talk}</TableCell>
-                          <TableCell className="text-right">{agent.ring_time}</TableCell>
-                          <TableCell className="text-right">{agent.wait_time}</TableCell>
-                          <TableCell className="text-right">{agent.avg_wait}</TableCell>
-                          <TableCell className="text-right">{agent.max_wait_time}</TableCell>
-                          <TableCell className="text-right">
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              onClick={() => handleViewAgentDetails(agent)}
-                              disabled={loadingAgentId === agent.agent_id}
-                            >
-                              {loadingAgentId === agent.agent_id ? (
-                                <>
-                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                  Loading...
-                                </>
-                              ) : (
-                                'View Calls'
-                              )}
-                            </Button>
+                          <TableCell
+                            className="font-medium cursor-pointer text-primary hover:underline"
+                            onClick={() => handleViewAgentDetails(agent)}
+                          >
+                            {loadingAgentId === agent.agent_id ? <Loader2 className="h-4 w-4 animate-spin inline mr-1" /> : null}
+                            {agent.agent_name}
                           </TableCell>
+                          <TableCell className="text-right">{agent.region || '—'}</TableCell>
+                          <TableCell className="text-right text-green-600">{agent.answered}</TableCell>
+                          <TableCell className="text-right text-blue-600">{agent.outbound}</TableCell>
+                          <TableCell className="text-right">{agent.completed_by_caller}</TableCell>
+                          <TableCell className="text-right">{agent.completed_by_agent}</TableCell>
+                          <TableCell className="text-right">{agent.transferred_out}</TableCell>
+                          <TableCell className="text-right text-orange-600">{agent.missed}</TableCell>
+                          <TableCell className="text-right text-red-800">{agent.rejected}</TableCell>
+                          <TableCell className="text-right text-red-600">{agent.failed}</TableCell>
                         </TableRow>
                       ))}
                       {filteredAgents.length === 0 && (
                         <TableRow>
-                          <TableCell colSpan={15} className="text-center text-muted-foreground">
+                          <TableCell colSpan={10} className="text-center text-muted-foreground">
                             No agent data available
                           </TableCell>
                         </TableRow>

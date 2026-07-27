@@ -5,21 +5,21 @@ import { DashboardLayout } from "@/components/dashboard-layout"
 import { AuthGuard } from "@/components/auth-guard"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/hooks/use-auth"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, TrendingUp, Phone, PhoneOff, Target, User, Calendar, RefreshCw, Activity } from "lucide-react"
+import { Loader2, TrendingUp, Phone, PhoneOff, Target, User } from "lucide-react"
 import { athenaAPI } from "@/lib/athena-api"
 import { DateHelper } from "@/lib/date-helper"
-import { Button } from "@/components/ui/button"
+import { DataFreshnessCard } from "@/components/data-freshness-card"
 
 interface QueueData {
   queue_id: string
   queue_name: string
   channel: string
   initiation_method: string
-  received: string
+  contacts: string
   answered: string
+  outbound: string
   unanswered: string
   abandoned: string
   transferred: string
@@ -31,144 +31,76 @@ interface QueueData {
   sla: string
 }
 
-interface HourData {
-  hour: string
-  received: string
-  answered: string
-}
-
-interface RealtimeMetrics {
-  activeCalls: number
-  waitingCalls: number
-  agentsOnline: number
-  agentsBusy: number
-  longestWaitTime: number
-}
 
 export default function DashboardOverview() {
   const [queueStats, setQueueStats] = useState<QueueData[]>([])
-  const [hourlyData, setHourlyData] = useState<HourData[]>([])
-  const [realtimeMetrics, setRealtimeMetrics] = useState<RealtimeMetrics>({
-    activeCalls: 0,
-    waitingCalls: 0,
-    agentsOnline: 0,
-    agentsBusy: 0,
-    longestWaitTime: 0
-  })
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date())
-  const [nextRefreshIn, setNextRefreshIn] = useState(300) // 5 minutes in seconds
   const [kpis, setKpis] = useState({
     totalCalls: 0,
     answeredCalls: 0,
-    missedCalls: 0,
+    outboundCalls: 0,
+    abandonedCalls: 0,
+    unansweredCalls: 0,
     avgSLA: 0
   })
-  const { toast } = useToast()
   const { user } = useAuth()
+  const [appliedRegion, setAppliedRegion] = useState<string[] | null>(null)
 
   useEffect(() => {
+    if (!user?.email) return
+
     loadDashboardData()
-    
-    // Auto-refresh every 30 seconds for real-time data
-    const refreshInterval = setInterval(() => {
-      loadDashboardData(true)
-    }, 30 * 1000)
+  }, [user?.email])
 
-    // Countdown timer
-    const countdownInterval = setInterval(() => {
-      setNextRefreshIn((prev) => {
-        if (prev <= 1) return 30
-        return prev - 1
-      })
-    }, 1000)
-
-    return () => {
-      clearInterval(refreshInterval)
-      clearInterval(countdownInterval)
-    }
-  }, [])
-
-  const loadDashboardData = async (isAutoRefresh = false) => {
-    if (!isAutoRefresh) {
-      setIsLoading(true)
-    } else {
-      setIsRefreshing(true)
-    }
+  const loadDashboardData = async () => {
+    setIsLoading(true)
 
     try {
-      // Get today's data for real-time metrics
-      const today = DateHelper.getToday()
-      
-      // Parallel data fetching
-      const [queueResult, hourlyResult, todayQueueResult] = await Promise.all([
-        athenaAPI.getDistributionByQueue(DateHelper.getLastNDays(30).start, DateHelper.getLastNDays(30).end),
-        athenaAPI.getDistributionByHour(today.start, today.end),
-        athenaAPI.getDistributionByQueue(today.start, today.end) // Today's queue data for real-time metrics
+      const yesterday = DateHelper.getYesterday()
+
+      const [queueResult, answeredResult, unansweredResult] = await Promise.all([
+        athenaAPI.getDistributionByQueue(yesterday.start, yesterday.end, null, user?.email),
+        athenaAPI.getDashboardTotalAnswered(yesterday.start, yesterday.end, user?.email),
+        athenaAPI.getDashboardTotalUnanswered(yesterday.start, yesterday.end, user?.email),
       ])
-      
+
       if (queueResult.status === 'SUCCEEDED') {
         setQueueStats(queueResult.data)
-        
-        // Calculate 30-day KPIs
-        const totalReceived = queueResult.data.reduce((sum, q) => sum + parseInt(q.received || '0'), 0)
-        const totalAnswered = queueResult.data.reduce((sum, q) => sum + parseInt(q.answered || '0'), 0)
-        const totalUnanswered = queueResult.data.reduce((sum, q) => sum + parseInt(q.unanswered || '0'), 0)
-        const avgSLA = queueResult.data.length > 0
-          ? queueResult.data.reduce((sum, q) => sum + parseFloat(q.sla || '0'), 0) / queueResult.data.length
-          : 0
-
-        setKpis({
-          totalCalls: totalReceived,
-          answeredCalls: totalAnswered,
-          missedCalls: totalUnanswered,
-          avgSLA: Math.round(avgSLA)
-        })
+        setAppliedRegion(queueResult.appliedRegion || null)
       }
 
-      if (hourlyResult.status === 'SUCCEEDED') {
-        setHourlyData(hourlyResult.data)
-      }
+      // Build KPIs from dedicated dashboard queries
+      const answeredRow = answeredResult?.status === 'SUCCEEDED' && answeredResult.data?.length > 0
+        ? answeredResult.data[0] : null
+      const unansweredRow = unansweredResult?.status === 'SUCCEEDED' && unansweredResult.data?.length > 0
+        ? unansweredResult.data[0] : null
 
-      // Calculate real-time metrics from today's data
-      if (todayQueueResult.status === 'SUCCEEDED') {
-        const todayData = todayQueueResult.data
-        
-        // Simulated real-time metrics (in production, get from Amazon Connect real-time API)
-        const currentHour = new Date().getHours()
-        const recentHourlyData = hourlyResult.data?.filter(h => 
-          parseInt(h.hour.split(':')[0]) >= currentHour - 1
-        ) || []
+      const totalContacts = parseInt(answeredRow?.contacts || '0') + parseInt(unansweredRow?.contacts || '0')
+      const answeredCalls = parseInt(answeredRow?.answered || '0')
+      const outboundCalls = parseInt(answeredRow?.outbound || '0')
+      const abandonedCalls = parseInt(unansweredRow?.abandoned || '0')
+      const unansweredCalls = parseInt(unansweredRow?.unanswered || '0')
 
-        const recentCalls = recentHourlyData.reduce((sum, h) => sum + parseInt(h.received || '0'), 0)
-        
-        setRealtimeMetrics({
-          activeCalls: Math.floor(recentCalls * 0.15), // ~15% of recent calls are active
-          waitingCalls: Math.floor(recentCalls * 0.05), // ~5% waiting
-          agentsOnline: todayData.length * 3, // Estimate based on queues
-          agentsBusy: Math.floor(todayData.length * 2.1), // ~70% of agents busy
-          longestWaitTime: Math.floor(Math.random() * 180) + 30 // Random between 30-210 seconds
-        })
-      }
+      // Fallback SLA from queue distribution if answered query doesn't return it
+      const avgSLA = queueResult.status === 'SUCCEEDED' && queueResult.data.length > 0
+        ? Math.round(queueResult.data.reduce((sum: number, q: QueueData) => sum + parseFloat(q.sla || '0'), 0) / queueResult.data.length)
+        : 0
+
+      setKpis({
+        totalCalls: totalContacts,
+        answeredCalls,
+        outboundCalls,
+        abandonedCalls,
+        unansweredCalls,
+        avgSLA,
+      })
 
       setLastRefresh(new Date())
-      setNextRefreshIn(30)
-
-      if (isAutoRefresh) {
-        toast({
-          title: "Dashboard updated",
-          description: "Latest data loaded successfully",
-        })
-      }
 
     } catch (error) {
       console.error("Dashboard data error:", error)
-      toast({
-        variant: "destructive",
-        title: "Failed to load dashboard data",
-        description: error instanceof Error ? error.message : "Unknown error",
-      })
     } finally {
       setIsLoading(false)
       setIsRefreshing(false)
@@ -176,21 +108,7 @@ export default function DashboardOverview() {
   }
 
   const handleManualRefresh = () => {
-    loadDashboardData(false)
-  }
-
-  const formatRefreshTime = (date: Date) => {
-    return date.toLocaleTimeString('en-US', { 
-      hour: '2-digit', 
-      minute: '2-digit',
-      second: '2-digit'
-    })
-  }
-
-  const formatWaitTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60)
-    const secs = seconds % 60
-    return `${mins}:${secs.toString().padStart(2, '0')}`
+    loadDashboardData()
   }
 
   return (
@@ -204,13 +122,15 @@ export default function DashboardOverview() {
                 <h1 className="text-3xl font-bold tracking-tight">
                   Welcome, {user?.email?.split('@')[0] || 'User'}
                 </h1>
-                <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20 animate-pulse">
-                  <Activity className="h-3 w-3 mr-1" />
-                  Live
-                </Badge>
+                {appliedRegion && (
+                  <Badge variant="outline" className="bg-blue-500/10 text-blue-500 border-blue-500/20">
+                    <Target className="h-3 w-3 mr-1" />
+                    Region: {appliedRegion.join(', ')}
+                  </Badge>
+                )}
               </div>
               <p className="text-muted-foreground mt-1">
-                Real-time contact center performance
+                Contact center performance {appliedRegion ? `(${appliedRegion.join(', ')} region)` : '(all regions)'}
               </p>
             </div>
             
@@ -224,43 +144,18 @@ export default function DashboardOverview() {
                     </div>
                     <div className="space-y-0.5">
                       <p className="text-sm font-medium leading-none">{user?.email}</p>
-                      <p className="text-xs text-muted-foreground">
-                        Role: {user?.role || 'Analyst'}
-                      </p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Last Refresh Info with Manual Refresh */}
-              <Card className="w-full sm:w-auto">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <Button 
-                      variant="ghost" 
-                      size="icon"
-                      onClick={handleManualRefresh}
-                      disabled={isRefreshing}
-                      className="h-10 w-10"
-                    >
-                      <RefreshCw className={`h-5 w-5 ${isRefreshing ? 'animate-spin' : ''}`} />
-                    </Button>
-                    <div className="space-y-0.5">
-                      <p className="text-sm font-medium leading-none">
-                        {isRefreshing ? 'Refreshing...' : formatRefreshTime(lastRefresh)}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Next update in {nextRefreshIn}s
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              {/* Data freshness — data lake & agent-events update timestamps */}
+              <DataFreshnessCard onRefresh={handleManualRefresh} isRefreshing={isRefreshing} />
             </div>
           </div>
 
           {/* Real-time Metrics */}
-          <div>
+          {/* <div>
             <h2 className="text-xl font-semibold mb-4">Real-time Status</h2>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
               <Card>
@@ -334,12 +229,12 @@ export default function DashboardOverview() {
                 </CardContent>
               </Card>
             </div>
-          </div>
+          </div> */}
 
           {/* Historical KPI Cards (Last 30 Days) */}
           <div>
-            <h2 className="text-xl font-semibold mb-4">30-Day Performance</h2>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <h2 className="text-xl font-semibold mb-4">Yesterday's Performance</h2>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Total Calls</CardTitle>
@@ -349,7 +244,7 @@ export default function DashboardOverview() {
                   <div className="text-2xl font-bold">
                     {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : kpis.totalCalls.toLocaleString()}
                   </div>
-                  <p className="text-xs text-muted-foreground">Last 30 days</p>
+                  <p className="text-xs text-muted-foreground">Yesterday</p>
                 </CardContent>
               </Card>
 
@@ -370,15 +265,28 @@ export default function DashboardOverview() {
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Missed Calls</CardTitle>
+                  <CardTitle className="text-sm font-medium">Outbound Calls</CardTitle>
+                  <Phone className="h-4 w-4 text-blue-600" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-blue-600">
+                    {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : kpis.outboundCalls.toLocaleString()}
+                  </div>
+                  <p className="text-xs text-muted-foreground">Outbound + callback</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Abandoned Calls</CardTitle>
                   <PhoneOff className="h-4 w-4 text-red-600" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-red-600">
-                    {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : kpis.missedCalls.toLocaleString()}
+                    {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : kpis.abandonedCalls.toLocaleString()}
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    {kpis.totalCalls > 0 ? `${Math.round((kpis.missedCalls / kpis.totalCalls) * 100)}% of total` : '0%'}
+                    {kpis.unansweredCalls > 0 ? `+ ${kpis.unansweredCalls.toLocaleString()} unanswered` : '0%'}
                   </p>
                 </CardContent>
               </Card>
@@ -404,7 +312,7 @@ export default function DashboardOverview() {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle>Queue Performance (Top 10)</CardTitle>
-                  <CardDescription>Summary metrics for all queues - Last 30 days</CardDescription>
+                  <CardDescription>Summary metrics for all queues - Yesterday</CardDescription>
                 </div>
                 {isRefreshing && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
               </div>
@@ -415,15 +323,16 @@ export default function DashboardOverview() {
                   <Loader2 className="h-8 w-8 animate-spin" />
                 </div>
               ) : (
-                <div className="rounded-md border">
+                <div className="scrollable-table">
                   <Table>
-                    <TableHeader>
+                    <TableHeader className="sticky top-0 bg-background z-10">
                       <TableRow>
                         <TableHead>Queue Name</TableHead>
                         <TableHead className="text-right">Channel</TableHead>
                         <TableHead className="text-right">Method</TableHead>
-                        <TableHead className="text-right">Received</TableHead>
+                        <TableHead className="text-right">Contacts</TableHead>
                         <TableHead className="text-right">Answered</TableHead>
+                        <TableHead className="text-right">Outbound</TableHead>
                         <TableHead className="text-right">Unanswered</TableHead>
                         <TableHead className="text-right">Abandoned</TableHead>
                         <TableHead className="text-right">Transferred</TableHead>
@@ -439,8 +348,9 @@ export default function DashboardOverview() {
                           <TableCell className="font-medium">{queue.queue_name || queue.queue_id}</TableCell>
                           <TableCell className="text-right">{queue.channel || '-'}</TableCell>
                           <TableCell className="text-right">{queue.initiation_method || '-'}</TableCell>
-                          <TableCell className="text-right">{queue.received}</TableCell>
+                          <TableCell className="text-right">{queue.contacts}</TableCell>
                           <TableCell className="text-right text-green-600">{queue.answered}</TableCell>
+                          <TableCell className="text-right text-blue-600">{queue.outbound || '0'}</TableCell>
                           <TableCell className="text-right text-red-600">{queue.unanswered}</TableCell>
                           <TableCell className="text-right text-orange-600">{queue.abandoned || '0'}</TableCell>
                           <TableCell className="text-right text-blue-600">{queue.transferred || '0'}</TableCell>
@@ -459,7 +369,7 @@ export default function DashboardOverview() {
                       ))}
                       {queueStats.length === 0 && (
                         <TableRow>
-                          <TableCell colSpan={12} className="text-center text-muted-foreground">
+                          <TableCell colSpan={13} className="text-center text-muted-foreground">
                             No queue data available
                           </TableCell>
                         </TableRow>
@@ -472,7 +382,7 @@ export default function DashboardOverview() {
           </Card>
 
           {/* Hourly Traffic Chart */}
-          <Card>
+          {/* <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
@@ -490,9 +400,9 @@ export default function DashboardOverview() {
                   <Loader2 className="h-8 w-8 animate-spin" />
                 </div>
               ) : hourlyData.length > 0 ? (
-                <div className="rounded-md border">
+                <div className="scrollable-table">
                   <Table>
-                    <TableHeader>
+                    <TableHeader className="sticky top-0 bg-background z-10">
                       <TableRow>
                         <TableHead>Hour</TableHead>
                         <TableHead className="text-right">Received</TableHead>
@@ -528,7 +438,7 @@ export default function DashboardOverview() {
                 <p className="text-center text-muted-foreground py-8">No hourly data available for today</p>
               )}
             </CardContent>
-          </Card>
+          </Card> */}
         </div>
       </DashboardLayout>
     </AuthGuard>

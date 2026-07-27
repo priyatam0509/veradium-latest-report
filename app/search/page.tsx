@@ -95,8 +95,9 @@ function ContactSearchContent() {
 
       <Card>
         <CardContent className="p-0">
+          <div className="scrollable-table">
           <Table>
-            <TableHeader>
+            <TableHeader className="sticky top-0 bg-background z-10">
               <TableRow>
                 <TableHead>Contact ID</TableHead>
                 <TableHead>Date/Time</TableHead>
@@ -147,6 +148,7 @@ function ContactSearchContent() {
               ))}
             </TableBody>
           </Table>
+          </div>
         </CardContent>
       </Card>
     </div>
