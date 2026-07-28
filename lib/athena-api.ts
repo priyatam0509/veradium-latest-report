@@ -12,8 +12,8 @@
  */
 
 const API_CONFIG = {
-  baseURL: 'https://bgpha7vb46.execute-api.us-east-1.amazonaws.com/prod',
-  instanceId: '117626d6-5827-4e7c-951b-ebb53cc7797a',
+  baseURL: 'https://16rzda4gyd.execute-api.us-east-1.amazonaws.com/prod',
+  instanceId: 'fc8f1921-2aa3-4cf6-8fc4-ad4b42897030',
   userRegionAPI: 'https://4aeeztzo8c.execute-api.us-east-1.amazonaws.com/prod/user-region'
 }
 
