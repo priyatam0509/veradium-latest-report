@@ -2,7 +2,7 @@
 
 import type React from "react"
 import Link from "next/link"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { usePathname } from "next/navigation"
 
 import { useAuth } from "@/hooks/use-auth"
@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input"
 import { format } from "date-fns"
 import Image from "next/image"
 import { useGlobalFilters } from "@/lib/global-filters-context"
+import { agentGroupsService, AGENT_GROUPS_EVENT, type AgentGroup } from "@/lib/agent-groups-service"
 
 import {
   Home,
@@ -92,6 +93,32 @@ function GlobalFiltersBar({ config }: { config: FilterConfig }) {
   const [queueSearch, setQueueSearch] = useState("")
   const [agentSearch, setAgentSearch] = useState("")
   const [didSearch, setDidSearch] = useState("")
+
+  // Agent Groups — a shortcut that fills the Agent selection with a saved group's agents
+  const [agentGroups, setAgentGroups] = useState<AgentGroup[]>([])
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null)
+  const [groupFilterOpen, setGroupFilterOpen] = useState(false)
+
+  useEffect(() => {
+    const load = () => agentGroupsService.list().then(setAgentGroups)
+    load()
+    window.addEventListener(AGENT_GROUPS_EVENT, load)
+    return () => window.removeEventListener(AGENT_GROUPS_EVENT, load)
+  }, [])
+
+  // Selecting a group replaces the agent selection with that group's agents
+  const applyGroup = (group: AgentGroup) => {
+    setSelectedGroupId(group.id)
+    setSelectedAgents(group.agents)
+    setGroupFilterOpen(false)
+  }
+  const clearGroup = () => {
+    setSelectedGroupId(null)
+    setSelectedAgents([])
+  }
+  const selectedGroupLabel = selectedGroupId
+    ? agentGroups.find((g) => g.id === selectedGroupId)?.name ?? "All Groups"
+    : "All Groups"
 
   // Toggle item_value in/out of selection list
   const toggleValue = (list: string[], value: string, setter: (v: string[]) => void) => {
@@ -225,6 +252,48 @@ function GlobalFiltersBar({ config }: { config: FilterConfig }) {
         </div>
       )}
 
+      {/* Agent Group Filter — selecting a group fills the Agent selection with its agents */}
+      {!config.hideAgent && (
+        <div className="flex flex-col gap-0.5">
+          <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Agent Group</label>
+          <Popover open={groupFilterOpen} onOpenChange={setGroupFilterOpen}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="h-8 w-[180px] justify-start text-left font-normal text-xs">
+                {selectedGroupLabel}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[220px] p-2" align="start">
+              <div className="max-h-52 overflow-y-auto space-y-0.5">
+                <div
+                  className="px-2 py-1 rounded hover:bg-accent cursor-pointer text-xs"
+                  onClick={() => { clearGroup(); setGroupFilterOpen(false) }}
+                >
+                  All Groups
+                </div>
+                {agentGroups.length === 0 ? (
+                  <p className="text-xs text-muted-foreground px-2 py-1">No groups yet</p>
+                ) : (
+                  agentGroups.map((g) => (
+                    <div
+                      key={g.id}
+                      className={cn(
+                        "px-2 py-1 rounded hover:bg-accent cursor-pointer text-xs truncate",
+                        selectedGroupId === g.id && "bg-accent font-medium"
+                      )}
+                      title={`${g.name} — ${g.agentNames.length} agent${g.agentNames.length === 1 ? "" : "s"}`}
+                      onClick={() => applyGroup(g)}
+                    >
+                      {g.name}
+                      <span className="text-muted-foreground"> ({g.agents.length})</span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
+      )}
+
       {/* DID / Phone Filter — shows item_display, selects item_value (phone number) */}
       {!config.hideDid && (
         <div className="flex flex-col gap-0.5">
@@ -343,6 +412,14 @@ const NAV_STRUCTURE: NavEntry[] = [
     label: "Call Journey",
     icon: FileText,
   },
+  {
+    label: "Setup",
+    icon: Settings,
+    route: "/setup/agent-groups",
+    children: [
+      { route: "/setup/agent-groups", label: "Agent Groups", icon: Users },
+    ],
+  },
 ]
 
 /* -------------------------------------------------------------------------- */
@@ -390,6 +467,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       "/agents/performance-analysis",
       "/agents/availability",
       "/contact-trace",
+      "/setup/agent-groups",
     ]
     if (alwaysAccessible.includes(route)) return true
     return accessibleRouteSet.has(route)

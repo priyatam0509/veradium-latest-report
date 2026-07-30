@@ -120,6 +120,14 @@ export const DEFAULT_ROUTES: RoutePermission[] = [
     allowedRoles: ["ADMIN", "SUPERVISOR", "ANALYST"],
     isEnabled: true,
   },
+  // ── Setup ────────────────────────────────────────────────────────────────────
+  {
+    id: "30",
+    route: "/setup/agent-groups",
+    label: "Agent Groups",
+    allowedRoles: ["ADMIN", "SUPERVISOR"],
+    isEnabled: true,
+  },
   // ── Admin ────────────────────────────────────────────────────────────────────
   {
     id: "8",
