@@ -1,0 +1,242 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Agent Groups backend for The Ticket Clinic Dashboard.
+  Provisions a DynamoDB table, a Lambda CRUD handler, and an HTTP API Gateway
+  so that agent groups are stored centrally and shared across all users
+  (any user can create a group and every user sees it).
+
+Parameters:
+  StageName:
+    Type: String
+    Default: prod
+    Description: API Gateway stage name (used in the invoke URL path).
+  CorsAllowOrigin:
+    Type: String
+    Default: '*'
+    Description: >
+      Allowed CORS origin for the dashboard. Use '*' for any origin, or set to
+      your dashboard URL (e.g. https://main.dxxxx.amplifyapp.com) to lock it down.
+
+Resources:
+  # ---------------------------------------------------------------------------
+  # DynamoDB — one row per agent group. Partition key: id (uuid).
+  # ---------------------------------------------------------------------------
+  AgentGroupsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub '${AWS::StackName}-agent-groups'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+
+  # ---------------------------------------------------------------------------
+  # IAM role for the Lambda — CloudWatch logs + CRUD on the table only.
+  # ---------------------------------------------------------------------------
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: AgentGroupsTableAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:Scan
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:DeleteItem
+                Resource: !GetAtt AgentGroupsTable.Arn
+
+  # ---------------------------------------------------------------------------
+  # Lambda — single handler routes GET/POST/PUT/DELETE for agent groups.
+  # ---------------------------------------------------------------------------
+  AgentGroupsFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-agent-groups'
+      Runtime: nodejs20.x
+      Handler: index.handler
+      Timeout: 10
+      MemorySize: 128
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref AgentGroupsTable
+      Code:
+        ZipFile: |
+          const { DynamoDBClient, ScanCommand, PutItemCommand, GetItemCommand, DeleteItemCommand } = require("@aws-sdk/client-dynamodb");
+          const { marshall, unmarshall } = require("@aws-sdk/util-dynamodb");
+          const crypto = require("crypto");
+
+          const db = new DynamoDBClient({});
+          const TABLE = process.env.TABLE_NAME;
+
+          const json = (statusCode, data) => ({
+            statusCode,
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data),
+          });
+
+          exports.handler = async (event) => {
+            const method = event.requestContext && event.requestContext.http ? event.requestContext.http.method : "GET";
+            const id = event.pathParameters && event.pathParameters.id;
+            let body = {};
+            if (event.body) {
+              try {
+                const raw = event.isBase64Encoded ? Buffer.from(event.body, "base64").toString("utf8") : event.body;
+                body = JSON.parse(raw);
+              } catch (e) { return json(400, { error: "Invalid JSON body" }); }
+            }
+
+            try {
+              if (method === "OPTIONS") return json(200, {});
+
+              if (method === "GET") {
+                const res = await db.send(new ScanCommand({ TableName: TABLE }));
+                const items = (res.Items || []).map(unmarshall)
+                  .sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
+                return json(200, items);
+              }
+
+              if (method === "POST") {
+                if (!body.name || !Array.isArray(body.agents)) return json(400, { error: "name and agents[] are required" });
+                const now = new Date().toISOString();
+                const item = {
+                  id: crypto.randomUUID(),
+                  name: String(body.name).trim(),
+                  agents: body.agents.map(String),
+                  agentNames: Array.isArray(body.agentNames) ? body.agentNames.map(String) : [],
+                  createdAt: now,
+                  updatedAt: now,
+                };
+                await db.send(new PutItemCommand({ TableName: TABLE, Item: marshall(item) }));
+                return json(201, item);
+              }
+
+              if (method === "PUT" || method === "PATCH") {
+                if (!id) return json(400, { error: "id required in path" });
+                const existing = await db.send(new GetItemCommand({ TableName: TABLE, Key: marshall({ id }) }));
+                if (!existing.Item) return json(404, { error: "Group not found" });
+                const current = unmarshall(existing.Item);
+                const updated = Object.assign({}, current, {
+                  updatedAt: new Date().toISOString(),
+                });
+                if (body.name !== undefined) updated.name = String(body.name).trim();
+                if (body.agents !== undefined) updated.agents = body.agents.map(String);
+                if (body.agentNames !== undefined) updated.agentNames = body.agentNames.map(String);
+                await db.send(new PutItemCommand({ TableName: TABLE, Item: marshall(updated) }));
+                return json(200, updated);
+              }
+
+              if (method === "DELETE") {
+                if (!id) return json(400, { error: "id required in path" });
+                await db.send(new DeleteItemCommand({ TableName: TABLE, Key: marshall({ id }) }));
+                return json(200, { success: true, id });
+              }
+
+              return json(405, { error: "Method " + method + " not allowed" });
+            } catch (err) {
+              console.error("AgentGroups error:", err);
+              return json(500, { error: err.message || "Internal error" });
+            }
+          };
+
+  # ---------------------------------------------------------------------------
+  # HTTP API Gateway (v2) — built-in CORS, cheaper/simpler than REST API.
+  # ---------------------------------------------------------------------------
+  HttpApi:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: !Sub '${AWS::StackName}-agent-groups-api'
+      ProtocolType: HTTP
+      CorsConfiguration:
+        AllowOrigins:
+          - !Ref CorsAllowOrigin
+        AllowMethods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+          - OPTIONS
+        AllowHeaders:
+          - content-type
+        MaxAge: 300
+
+  ApiIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref HttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt AgentGroupsFunction.Arn
+      IntegrationMethod: POST
+      PayloadFormatVersion: '2.0'
+
+  RouteList:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: 'GET /agent-groups'
+      Target: !Sub 'integrations/${ApiIntegration}'
+
+  RouteCreate:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: 'POST /agent-groups'
+      Target: !Sub 'integrations/${ApiIntegration}'
+
+  RouteUpdate:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: 'PUT /agent-groups/{id}'
+      Target: !Sub 'integrations/${ApiIntegration}'
+
+  RouteDelete:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: 'DELETE /agent-groups/{id}'
+      Target: !Sub 'integrations/${ApiIntegration}'
+
+  ApiStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref HttpApi
+      StageName: !Ref StageName
+      AutoDeploy: true
+
+  LambdaInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref AgentGroupsFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*'
+
+Outputs:
+  AgentGroupsEndpoint:
+    Description: >
+      Full endpoint for the frontend. Set this as NEXT_PUBLIC_AGENT_GROUPS_API
+      (or paste into lib/agent-groups-service.ts).
+    Value: !Sub 'https://${HttpApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}/${StageName}/agent-groups'
+  ApiBaseUrl:
+    Description: Base invoke URL of the HTTP API.
+    Value: !Sub 'https://${HttpApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}/${StageName}'
+  TableName:
+    Description: DynamoDB table storing the agent groups.
+    Value: !Ref AgentGroupsTable
