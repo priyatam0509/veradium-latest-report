@@ -338,7 +338,7 @@ function GlobalFiltersBar({ config }: { config: FilterConfig }) {
         <Button size="sm" className="h-8 text-xs px-4" onClick={handleApply}>
           Apply
         </Button>
-        <Button size="sm" variant="outline" className="h-8 text-xs px-3" onClick={handleReset}>
+        <Button size="sm" variant="outline" className="h-8 text-xs px-3" onClick={() => { setSelectedGroupId(null); handleReset() }}>
           <RefreshCw className="h-3.5 w-3.5 mr-1" />
           Reset
         </Button>
