@@ -245,7 +245,7 @@ function GlobalFiltersBar({ config }: { config: FilterConfig }) {
                 )}
               </div>
               {selectedAgents.length > 0 && (
-                <Button variant="ghost" size="sm" className="w-full mt-1 text-xs h-7" onClick={() => setSelectedAgents([])}>Clear</Button>
+                <Button variant="ghost" size="sm" className="w-full mt-1 text-xs h-7" onClick={clearGroup}>Clear</Button>
               )}
             </PopoverContent>
           </Popover>
