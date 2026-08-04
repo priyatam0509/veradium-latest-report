@@ -117,8 +117,8 @@ function GlobalFiltersBar({ config }: { config: FilterConfig }) {
     setSelectedAgents([])
   }
   const selectedGroupLabel = selectedGroupId
-    ? agentGroups.find((g) => g.id === selectedGroupId)?.name ?? "All Groups"
-    : "All Groups"
+    ? agentGroups.find((g) => g.id === selectedGroupId)?.name ?? "No Group Selected"
+    : "No Group Selected"
 
   // Toggle item_value in/out of selection list
   const toggleValue = (list: string[], value: string, setter: (v: string[]) => void) => {
@@ -268,7 +268,7 @@ function GlobalFiltersBar({ config }: { config: FilterConfig }) {
                   className="px-2 py-1 rounded hover:bg-accent cursor-pointer text-xs"
                   onClick={() => { clearGroup(); setGroupFilterOpen(false) }}
                 >
-                  All Groups
+                  No Group Selected
                 </div>
                 {agentGroups.length === 0 ? (
                   <p className="text-xs text-muted-foreground px-2 py-1">No groups yet</p>
