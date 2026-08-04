@@ -116,6 +116,12 @@ function GlobalFiltersBar({ config }: { config: FilterConfig }) {
     setSelectedGroupId(null)
     setSelectedAgents([])
   }
+  // Manually toggling an agent means the selection no longer matches a group,
+  // so drop the group label back to "No Group Selected".
+  const toggleAgentManual = (value: string) => {
+    setSelectedGroupId(null)
+    setSelectedAgents(selectedAgents.includes(value) ? selectedAgents.filter((x) => x !== value) : [...selectedAgents, value])
+  }
   const selectedGroupLabel = selectedGroupId
     ? agentGroups.find((g) => g.id === selectedGroupId)?.name ?? "No Group Selected"
     : "No Group Selected"
@@ -237,8 +243,8 @@ function GlobalFiltersBar({ config }: { config: FilterConfig }) {
                   availableAgents
                     .filter((a) => a.display.toLowerCase().includes(agentSearch.toLowerCase()))
                     .map((a) => (
-                    <div key={a.value} className="flex items-center gap-2 px-2 py-1 rounded hover:bg-accent cursor-pointer" onClick={() => toggleValue(selectedAgents, a.value, setSelectedAgents)}>
-                      <Checkbox checked={selectedAgents.includes(a.value)} onCheckedChange={() => toggleValue(selectedAgents, a.value, setSelectedAgents)} onClick={(e) => e.stopPropagation()} />
+                    <div key={a.value} className="flex items-center gap-2 px-2 py-1 rounded hover:bg-accent cursor-pointer" onClick={() => toggleAgentManual(a.value)}>
+                      <Checkbox checked={selectedAgents.includes(a.value)} onCheckedChange={() => toggleAgentManual(a.value)} onClick={(e) => e.stopPropagation()} />
                       <span className="text-xs truncate" title={a.display}>{a.display}</span>
                     </div>
                   ))
