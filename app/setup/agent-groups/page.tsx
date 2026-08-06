@@ -19,10 +19,22 @@ import {
 } from "@/components/ui/dialog"
 import { Plus, Trash2, Pencil, Search, Users, X, Loader2 } from "lucide-react"
 import { useGlobalFilters } from "@/lib/global-filters-context"
+import { useAuth } from "@/hooks/use-auth"
 import { agentGroupsService, AGENT_GROUPS_EVENT, type AgentGroup } from "@/lib/agent-groups-service"
 
 export default function AgentGroupsPage() {
   const { availableAgents } = useGlobalFilters()
+  const { user } = useAuth()
+
+  // Edit/Delete permission (mirrors the backend rule):
+  //  - SUPERUSER: any group
+  //  - MANAGER-REGION: groups in their region
+  //  - everyone else: only groups they created
+  const canManage = (group: AgentGroup): boolean => {
+    if (user?.tier === "SUPERUSER") return true
+    if (user?.tier === "MANAGER-REGION" && group.region && user?.region && group.region === user.region) return true
+    return !!group.createdBy && !!user?.email && group.createdBy === user.email
+  }
 
   const [groups, setGroups] = useState<AgentGroup[]>([])
   const [loading, setLoading] = useState(true)
@@ -191,35 +203,42 @@ export default function AgentGroupsPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredGroups.map((group) => (
+                      {filteredGroups.map((group) => {
+                        const manageable = canManage(group)
+                        return (
                         <TableRow key={group.id}>
                           <TableCell>
                             <Checkbox
                               checked={marked.has(group.id)}
                               onCheckedChange={() => toggleMark(group.id)}
+                              disabled={!manageable}
                             />
                           </TableCell>
                           <TableCell>
-                            <div className="flex items-center gap-1">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={() => openEdit(group)}
-                                title="Edit"
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-destructive"
-                                onClick={() => handleDelete(group.id)}
-                                title="Delete"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
+                            {manageable ? (
+                              <div className="flex items-center gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                  onClick={() => openEdit(group)}
+                                  title="Edit"
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-destructive"
+                                  onClick={() => handleDelete(group.id)}
+                                  title="Delete"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            ) : (
+                              <span className="text-xs text-muted-foreground" title="You can only edit groups you created or that are in your region">View only</span>
+                            )}
                           </TableCell>
                           <TableCell className="font-medium">{group.name}</TableCell>
                           <TableCell>
@@ -236,7 +255,8 @@ export default function AgentGroupsPage() {
                             </div>
                           </TableCell>
                         </TableRow>
-                      ))}
+                        )
+                      })}
                     </TableBody>
                   </Table>
                 </div>

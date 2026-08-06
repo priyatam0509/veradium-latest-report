@@ -5,6 +5,7 @@ import type { User, RoutePermission } from "@/lib/auth-types"
 import { useRouter } from "next/navigation"
 import { microsoftAuthService } from "@/lib/microsoft-auth-service"
 import { getAccessibleRoutes as getLocalAccessibleRoutes } from "@/lib/rbac"
+import { athenaAPI } from "@/lib/athena-api"
 
 // Every user authenticated through Azure AD is granted this role.
 // Authorization is no longer gated by the AWS RBAC service.
@@ -78,11 +79,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const completeLogin = async (token: string, msUser: { email: string; displayName: string }) => {
     try {
       // Authorize purely on the basis of a successful Azure AD sign-in.
+      // Fetch the user's permission tier + region (used for Agent Group edit rules).
+      const [tier, regionResult] = await Promise.all([
+        athenaAPI.getUserTier(msUser.email).catch(() => null),
+        athenaAPI.getUserRegion(msUser.email).catch(() => null),
+      ])
+      const region = regionResult?.region ?? null
+
       const userData: Omit<User, "password"> = {
         id: msUser.email,
         email: msUser.email,
         role: DEFAULT_ROLE,
         isEnabled: true,
+        tier,
+        region,
       }
 
       // Store token and user

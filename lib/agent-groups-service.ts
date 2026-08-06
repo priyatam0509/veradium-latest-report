@@ -22,6 +22,10 @@ export interface AgentGroup {
   agents: string[]
   /** Display names, cached so the table/label don't need a lookup. */
   agentNames: string[]
+  /** Email of the user who created the group (backend-stamped). */
+  createdBy?: string
+  /** Region the group belongs to (creator's region; backend-stamped). */
+  region?: string
   createdAt?: string
   updatedAt?: string
 }
@@ -74,11 +78,27 @@ function genId(): string {
 
 /* --------------------------------- api ----------------------------------- */
 
+/** Current signed-in user's email, read from the same store the auth hook uses. */
+function currentUserEmail(): string {
+  if (typeof window === "undefined") return ""
+  try {
+    const raw = localStorage.getItem("aws_reports_user")
+    return raw ? JSON.parse(raw).email || "" : ""
+  } catch {
+    return ""
+  }
+}
+
 async function apiRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers: { "Content-Type": "application/json", ...(options.headers || {}) },
-  })
+  const method = (options.method || "GET").toUpperCase()
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...((options.headers as Record<string, string>) || {}),
+  }
+  // Identity is only needed for mutations (the backend authorizes edits/deletes).
+  if (method !== "GET") headers["x-user-email"] = currentUserEmail()
+
+  const res = await fetch(`${API_BASE}${path}`, { ...options, headers })
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))
     throw new Error(err.error || `Agent Groups API error (${res.status})`)

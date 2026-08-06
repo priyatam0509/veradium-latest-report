@@ -20,6 +20,10 @@ export interface User {
   password?: string
   role: UserRole
   isEnabled: boolean
+  /** Permission tier for Agent Groups (e.g. SUPERUSER, MANAGER-REGION). */
+  tier?: string | null
+  /** User's assigned region (from the user-region service). */
+  region?: string | null
 }
 
 export interface AuthSession {

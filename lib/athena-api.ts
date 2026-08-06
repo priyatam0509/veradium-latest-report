@@ -555,6 +555,23 @@ export class AthenaReportingAPI {
     return await response.json()
   }
 
+  /**
+   * Looks up a user's permission TIER (e.g. SUPERUSER, MANAGER-REGION) via
+   * rbac_users_get_tier_tag. Returns the tier string, or null if none.
+   */
+  async getUserTier(username: string): Promise<string | null> {
+    const normalizedUsername = username.replace(/@.*$/, '@TheTicketClinic.com')
+    try {
+      const res = await this.executeQuery('rbac_users_get_tier_tag', { username: normalizedUsername }, true, 60)
+      if (res?.status === 'SUCCEEDED' && Array.isArray(res.data) && res.data.length > 0) {
+        return (res.data[0] as any).tier ?? null
+      }
+    } catch (err) {
+      console.warn('[AthenaAPI] Failed to fetch user tier:', err)
+    }
+    return null
+  }
+
   async getAvailableQueries() {
     const response = await fetch(`${this.baseURL}/query`, {
       method: 'POST',
