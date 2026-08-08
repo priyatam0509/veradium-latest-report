@@ -199,6 +199,7 @@ export default function AgentGroupsPage() {
                         </TableHead>
                         <TableHead className="w-24">Actions</TableHead>
                         <TableHead>Group</TableHead>
+                        <TableHead>Created By</TableHead>
                         <TableHead>Agents</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -241,6 +242,10 @@ export default function AgentGroupsPage() {
                             )}
                           </TableCell>
                           <TableCell className="font-medium">{group.name}</TableCell>
+                          <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
+                            {group.createdBy || "—"}
+                            {group.region ? <span className="ml-1 text-xs">({group.region})</span> : null}
+                          </TableCell>
                           <TableCell>
                             <div className="flex flex-wrap gap-1">
                               {group.agentNames.length > 0 ? (

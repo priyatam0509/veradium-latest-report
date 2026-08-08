@@ -53,6 +53,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(storedUser)
           setAccessToken(token)
           fetchAccessibleRoutes(storedUser.role)
+          // Backfill tier/region for sessions created before these existed,
+          // so the user doesn't have to log out/in to get Agent Group permissions.
+          if (storedUser.email && (storedUser.tier === undefined || storedUser.region === undefined)) {
+            Promise.all([
+              athenaAPI.getUserTier(storedUser.email).catch(() => null),
+              athenaAPI.getUserRegion(storedUser.email).catch(() => null),
+            ]).then(([tier, regionResult]) => {
+              const updated = { ...storedUser, tier: tier ?? null, region: regionResult?.region ?? null }
+              localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(updated))
+              setUser(updated)
+            })
+          }
         } catch (e) {
           console.error("Failed to restore session", e)
           logout()
