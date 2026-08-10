@@ -74,6 +74,9 @@ export class AthenaReportingAPI {
             // If region is 'ALL', omit region from params
             if (regionResult.region === 'ALL') {
               delete params.region;
+            } else if (regionResult.region === 'NFL') {
+              // NFL users also see Out-of-State (OOS) data
+              params.region = ['NFL', 'OOS'];
             } else {
               params.region = [regionResult.region];
             }
