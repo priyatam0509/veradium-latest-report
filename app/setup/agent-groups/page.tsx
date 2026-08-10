@@ -24,7 +24,15 @@ import { agentGroupsService, AGENT_GROUPS_EVENT, type AgentGroup } from "@/lib/a
 
 export default function AgentGroupsPage() {
   const { availableAgents } = useGlobalFilters()
-  const { user } = useAuth()
+  const { user, refreshUser } = useAuth()
+
+  // Keep the user's tier/region fresh while on this page (tier changes propagate
+  // with a delay), so edit/delete permissions self-correct without a re-login.
+  useEffect(() => {
+    refreshUser()
+    const id = setInterval(refreshUser, 5 * 60 * 1000)
+    return () => clearInterval(id)
+  }, [refreshUser])
 
   // Edit/Delete permission (mirrors the backend rule):
   //  - SUPERUSER: any group

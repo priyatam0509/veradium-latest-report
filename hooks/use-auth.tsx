@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
+import { createContext, useContext, useEffect, useCallback, useState, type ReactNode } from "react"
 import type { User, RoutePermission } from "@/lib/auth-types"
 import { useRouter } from "next/navigation"
 import { microsoftAuthService } from "@/lib/microsoft-auth-service"
@@ -20,6 +20,7 @@ interface AuthContextType {
   completeLogin: (token: string, msUser: { email: string; displayName: string }) => Promise<boolean>
   isLoading: boolean
   refreshRoutes: () => Promise<void>
+  refreshUser: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -53,10 +54,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(storedUser)
           setAccessToken(token)
           fetchAccessibleRoutes(storedUser.role)
-          // Always refresh tier/region in the background on session restore, so a
-          // tier change (e.g. promoted to SUPERUSER) is picked up on the next page
-          // load without requiring a manual log out / log in.
-          if (storedUser.email) {
+          // One-time backfill of tier/region for sessions created before these
+          // fields existed. Ongoing freshness is handled where it matters (the
+          // Agent Groups page refreshes via refreshUser on a timer).
+          if (storedUser.email && (storedUser.tier === undefined || storedUser.region === undefined)) {
             Promise.all([
               athenaAPI.getUserTier(storedUser.email).catch(() => null),
               athenaAPI.getUserRegion(storedUser.email).catch(() => null),
@@ -81,6 +82,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const authUrl = microsoftAuthService.getAuthUrl()
     window.location.href = authUrl
   }
+
+  // Re-fetch the current user's tier + region and update the session. Used by the
+  // Agent Groups page on a timer so a tier change is picked up without re-login.
+  const refreshUser = useCallback(async () => {
+    let email: string | null = null
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY_USER)
+      email = raw ? JSON.parse(raw).email ?? null : null
+    } catch { email = null }
+    if (!email) return
+    const [tier, regionResult] = await Promise.all([
+      athenaAPI.getUserTier(email).catch(() => null),
+      athenaAPI.getUserRegion(email).catch(() => null),
+    ])
+    setUser((prev) => {
+      if (!prev || prev.email !== email) return prev
+      const updated = { ...prev, tier: tier ?? null, region: regionResult?.region ?? null }
+      localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(updated))
+      return updated
+    })
+  }, [])
 
   const refreshRoutes = async () => {
     if (user?.role) {
@@ -146,7 +168,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         logout,
         completeLogin,
         isLoading,
-        refreshRoutes
+        refreshRoutes,
+        refreshUser
       }}
     >
       {children}
