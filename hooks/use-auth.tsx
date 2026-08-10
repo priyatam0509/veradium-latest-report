@@ -53,9 +53,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(storedUser)
           setAccessToken(token)
           fetchAccessibleRoutes(storedUser.role)
-          // Backfill tier/region for sessions created before these existed,
-          // so the user doesn't have to log out/in to get Agent Group permissions.
-          if (storedUser.email && (storedUser.tier === undefined || storedUser.region === undefined)) {
+          // Always refresh tier/region in the background on session restore, so a
+          // tier change (e.g. promoted to SUPERUSER) is picked up on the next page
+          // load without requiring a manual log out / log in.
+          if (storedUser.email) {
             Promise.all([
               athenaAPI.getUserTier(storedUser.email).catch(() => null),
               athenaAPI.getUserRegion(storedUser.email).catch(() => null),
