@@ -46,6 +46,13 @@ class MicrosoftAuthService {
     }
 
     const data = await response.json()
+    // Debug: what Entra ID / Microsoft Graph returns for this user (exact casing)
+    console.log('[Auth] Entra ID / Graph /me response:', {
+      displayName: data.displayName,
+      userPrincipalName: data.userPrincipalName,
+      mail: data.mail,
+      id: data.id,
+    })
     return {
       displayName: data.displayName,
       mail: data.mail || data.userPrincipalName,

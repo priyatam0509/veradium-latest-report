@@ -35,6 +35,7 @@ export default function CallbackPage() {
 
         // Get user info from Microsoft Graph
         const msUser = await microsoftAuthService.getUserInfo(accessToken)
+        console.log('[Auth] Using email for profile/region lookup:', msUser.userPrincipalName)
         
         // Complete login — updates the auth context (setUser) so the guard
         // sees the authenticated user immediately on redirect.

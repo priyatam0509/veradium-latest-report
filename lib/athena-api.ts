@@ -578,11 +578,17 @@ export class AthenaReportingAPI {
         const response = await fetch(`${this.userRegionAPI}?username=${encodeURIComponent(candidate)}`)
         const data = await response.json()
         last = data
-        if (data && (data.found === 1 || data.found === true)) return data
-      } catch {
-        // try the next variant
+        const isFound = data && (data.found === 1 || data.found === true)
+        console.log(`[Auth] region lookup "${candidate}" -> found=${data?.found} region=${data?.region}`)
+        if (isFound) {
+          console.log(`[Auth] region MATCHED on "${candidate}": region=${data.region}`)
+          return data
+        }
+      } catch (e) {
+        console.warn(`[Auth] region lookup "${candidate}" errored:`, e)
       }
     }
+    console.warn('[Auth] region NOT found for any variant of:', username)
     return last
   }
 
