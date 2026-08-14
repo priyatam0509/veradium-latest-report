@@ -57,7 +57,7 @@ export default function CallbackPage() {
         setErrorMessage(
           error instanceof Error ? error.message : 'Authentication failed. Please try again.'
         )
-        setTimeout(() => router.push('/login'), 3000)
+        // Keep the error (and any error code) on screen — user returns via the button.
       }
     }
 
@@ -123,7 +123,12 @@ export default function CallbackPage() {
                 Authentication Failed
               </h2>
               <p className="text-sm text-muted-foreground">{errorMessage}</p>
-              <p className="mt-2 text-xs text-muted-foreground">Redirecting to login...</p>
+              <button
+                onClick={() => router.push('/login')}
+                className="mt-4 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
+              >
+                Back to login
+              </button>
             </div>
           )}
         </div>

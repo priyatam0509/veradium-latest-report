@@ -119,6 +119,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         athenaAPI.getUserTier(msUser.email).catch(() => null),
         athenaAPI.getUserRegion(msUser.email).catch(() => null),
       ])
+
+      // Fail closed: if the user has no profile/region record, block login rather
+      // than defaulting to ALL-region access. (found is 1 when a record exists.)
+      const found = regionResult && (regionResult.found === 1 || regionResult.found === true)
+      if (!found) {
+        const errorCode = `PROFILE-404-${Date.now().toString(36).toUpperCase()}`
+        throw new Error(`We are unable to find your profile. Please contact your administrator. Error code: ${errorCode}`)
+      }
       const region = regionResult?.region ?? null
 
       const userData: Omit<User, "password"> = {
