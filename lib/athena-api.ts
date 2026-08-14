@@ -551,11 +551,39 @@ export class AthenaReportingAPI {
   }
 
   // Utility Methods
+  /**
+   * Looks up a user's region. The user-region service is case-sensitive and its
+   * records are inconsistently cased (some @TheTicketClinic.com, some
+   * @theticketclinic.com; local parts preserve original case). So we try several
+   * reasonable username variants and return the FIRST one that is found. Only if
+   * none match do we return the last (found: 0) response — callers then treat the
+   * profile as not found. Backend should ultimately match case-insensitively.
+   */
   async getUserRegion(username: string) {
-  // Normalize all usernames to use '@TheTicketClinic.com' domain
-  const normalizedUsername = username.replace(/@.*$/, '@TheTicketClinic.com');
-  const response = await fetch(`${this.userRegionAPI}?username=${normalizedUsername}`)
-    return await response.json()
+    const local = username.replace(/@.*$/, '')
+    const localLower = local.toLowerCase()
+    const candidates = [
+      username,
+      `${local}@TheTicketClinic.com`,
+      `${local}@theticketclinic.com`,
+      `${localLower}@TheTicketClinic.com`,
+      `${localLower}@theticketclinic.com`,
+    ]
+    const seen = new Set<string>()
+    let last: any = null
+    for (const candidate of candidates) {
+      if (seen.has(candidate)) continue
+      seen.add(candidate)
+      try {
+        const response = await fetch(`${this.userRegionAPI}?username=${encodeURIComponent(candidate)}`)
+        const data = await response.json()
+        last = data
+        if (data && (data.found === 1 || data.found === true)) return data
+      } catch {
+        // try the next variant
+      }
+    }
+    return last
   }
 
   /**
