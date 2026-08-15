@@ -95,37 +95,41 @@ Resources:
           const T = process.env.TABLE_NAME, QURL = process.env.QUERY_API_URL, RURL = process.env.USER_REGION_API_URL;
           const json = (s, d) => ({ statusCode: s, headers: { "Content-Type": "application/json" }, body: JSON.stringify(d) });
           const norm = (u) => (u ? String(u).replace(/@.*$/, "@TheTicketClinic.com") : "");
+          const lc = (x) => (x ? String(x).toLowerCase() : "");
           async function getTier(u) {
             try {
               const r = await fetch(QURL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ queryName: "rbac_users_get_tier_tag", parameters: { username: u }, waitForResults: true, maxWaitTime: 25 }) });
               const d = await r.json();
               if (d && d.status === "SUCCEEDED" && d.data && d.data.length) return d.data[0].tier || null;
-            } catch (e) { console.error(e); }
+            } catch (e) {}
             return null;
           }
           async function getRegion(u) {
-            try { const r = await fetch(RURL + "?username=" + encodeURIComponent(u)); const d = await r.json(); return d && d.region ? d.region : null; }
-            catch (e) { console.error(e); return null; }
+            const l = String(u).replace(/@.*$/, "");
+            for (const c of [l + "@TheTicketClinic.com", l + "@theticketclinic.com"]) {
+              try { const r = await fetch(RURL + "?username=" + encodeURIComponent(c)); const d = await r.json(); if (d && (d.found === 1 || d.found === true)) return d.region || null; } catch (e) {}
+            }
+            return null;
           }
           const canEdit = (g, tier, region, u) =>
             tier === "SUPERUSER" ||
-            (tier === "MANAGER-REGION" && !!g.region && !!region && g.region === region) ||
-            (!!g.createdBy && !!u && g.createdBy === u);
+            (tier === "MANAGER-REGION" && !!g.region && !!region && lc(g.region) === lc(region)) ||
+            (!!g.createdBy && !!u && lc(g.createdBy) === lc(u));
           exports.handler = async (event) => {
             const m = (event.requestContext && event.requestContext.http && event.requestContext.http.method) || "GET";
             const id = event.pathParameters && event.pathParameters.id;
             const h = event.headers || {};
             const who = norm(h["x-user-email"] || h["X-User-Email"] || "");
             let b = {};
-            if (event.body) { try { b = JSON.parse(event.isBase64Encoded ? Buffer.from(event.body, "base64").toString("utf8") : event.body); } catch (e) { return json(400, { error: "Bad JSON" }); } }
+            if (event.body) { try { b = JSON.parse(event.body); } catch (e) { return json(400, { error: "Bad JSON" }); } }
             try {
               if (m === "GET") {
                 const res = await db.send(new ScanCommand({ TableName: T }));
-                return json(200, (res.Items || []).map(unmarshall).sort((a, b) => String(a.name || "").localeCompare(String(b.name || ""))));
+                return json(200, (res.Items || []).map(unmarshall));
               }
-              if (!who) return json(401, { error: "No identity" });
+              if (!who) return json(401, { error: "no id" });
               if (m === "POST") {
-                if (!b.name || !Array.isArray(b.agents)) return json(400, { error: "name+agents required" });
+                if (!b.name || !Array.isArray(b.agents)) return json(400, { error: "bad input" });
                 const region = await getRegion(who), now = new Date().toISOString();
                 const item = { id: crypto.randomUUID(), name: String(b.name).trim(), agents: b.agents.map(String), agentNames: Array.isArray(b.agentNames) ? b.agentNames.map(String) : [], createdBy: who, region: region || "", createdAt: now, updatedAt: now };
                 await db.send(new PutItemCommand({ TableName: T, Item: marshall(item, { removeUndefinedValues: true }) }));
@@ -146,8 +150,8 @@ Resources:
                 await db.send(new PutItemCommand({ TableName: T, Item: marshall(up, { removeUndefinedValues: true }) }));
                 return json(200, up);
               }
-              return json(405, { error: "Method not allowed" });
-            } catch (err) { console.error(err); return json(500, { error: err.message || "Internal error" }); }
+              return json(405, { error: "bad method" });
+            } catch (err) { return json(500, { error: err.message || "Error" }); }
           };
   # ---------------------------------------------------------------------------
   # HTTP API Gateway (v2) — built-in CORS, cheaper/simpler than REST API.

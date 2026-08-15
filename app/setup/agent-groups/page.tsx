@@ -39,9 +39,14 @@ export default function AgentGroupsPage() {
   //  - MANAGER-REGION: groups in their region
   //  - everyone else: only groups they created
   const canManage = (group: AgentGroup): boolean => {
+    const email = user?.email?.toLowerCase()
+    const region = user?.region?.toLowerCase()
+    const groupRegion = group.region?.toLowerCase()
     if (user?.tier === "SUPERUSER") return true
-    if (user?.tier === "MANAGER-REGION" && group.region && user?.region && group.region === user.region) return true
-    return !!group.createdBy && !!user?.email && group.createdBy === user.email
+    if (user?.tier === "MANAGER-REGION" && groupRegion && region && groupRegion === region) return true
+    // Creator can always manage their own group (compare case-insensitively —
+    // createdBy is stamped normalized while user.email is the raw login email).
+    return !!group.createdBy && !!email && group.createdBy.toLowerCase() === email
   }
 
   const [groups, setGroups] = useState<AgentGroup[]>([])
