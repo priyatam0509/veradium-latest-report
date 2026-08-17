@@ -14,7 +14,10 @@
 const API_CONFIG = {
   baseURL: 'https://16rzda4gyd.execute-api.us-east-1.amazonaws.com/prod',
   instanceId: 'fc8f1921-2aa3-4cf6-8fc4-ad4b42897030',
-  userRegionAPI: 'https://4aeeztzo8c.execute-api.us-east-1.amazonaws.com/prod/user-region'
+  userRegionAPI: 'https://4aeeztzo8c.execute-api.us-east-1.amazonaws.com/prod/user-region',
+  // API key for the query API (x-api-key header). Sourced only from the Amplify
+  // env var NEXT_PUBLIC_DEV_KEY — no key is hard-coded in the repo.
+  apiKey: process.env.NEXT_PUBLIC_DEV_KEY || ''
 }
 
 interface QueryParameters {
@@ -42,11 +45,13 @@ export class AthenaReportingAPI {
   private baseURL: string
   private instanceId: string
   private userRegionAPI: string
+  private apiKey: string
 
-  constructor(config?: { baseURL?: string; instanceId?: string; userRegionAPI?: string }) {
+  constructor(config?: { baseURL?: string; instanceId?: string; userRegionAPI?: string; apiKey?: string }) {
     this.baseURL = config?.baseURL || API_CONFIG.baseURL
     this.instanceId = config?.instanceId || API_CONFIG.instanceId
     this.userRegionAPI = config?.userRegionAPI || API_CONFIG.userRegionAPI
+    this.apiKey = config?.apiKey || API_CONFIG.apiKey
   }
 
   async executeQuery<T = any>(
@@ -104,7 +109,7 @@ export class AthenaReportingAPI {
     }
     const response = await fetch(`${this.baseURL}/query`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-api-key': this.apiKey },
       body: JSON.stringify(payload)
     });
     if (!response.ok) {
@@ -115,7 +120,8 @@ export class AthenaReportingAPI {
 
   async checkStatus<T = any>(queryExecutionId: string): Promise<APIResponse<T>> {
     const response = await fetch(
-      `${this.baseURL}/query/status/${queryExecutionId}`
+      `${this.baseURL}/query/status/${queryExecutionId}`,
+      { headers: { 'x-api-key': this.apiKey } }
     )
     return await response.json()
   }
@@ -612,7 +618,7 @@ export class AthenaReportingAPI {
   async getAvailableQueries() {
     const response = await fetch(`${this.baseURL}/query`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-api-key': this.apiKey },
       body: JSON.stringify({})
     })
     const data = await response.json()
