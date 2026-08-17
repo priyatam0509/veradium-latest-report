@@ -24,6 +24,14 @@ Parameters:
     Type: String
     Default: 'https://4aeeztzo8c.execute-api.us-east-1.amazonaws.com/prod/user-region'
     Description: User-region service used to look up a user's assigned region.
+  QueryApiKey:
+    Type: String
+    Default: ''
+    NoEcho: true
+    Description: >
+      x-api-key for the query API, used ONLY by the tier lookup (rbac_users_get_tier_tag).
+      DynamoDB access uses the Lambda IAM role, not this key. Pass at deploy time via
+      --parameter-overrides QueryApiKey=... ; never commit it.
 
 Resources:
   # ---------------------------------------------------------------------------
@@ -86,19 +94,20 @@ Resources:
           TABLE_NAME: !Ref AgentGroupsTable
           QUERY_API_URL: !Ref QueryApiUrl
           USER_REGION_API_URL: !Ref UserRegionApiUrl
+          QUERY_API_KEY: !Ref QueryApiKey
       Code:
         ZipFile: |
           const { DynamoDBClient, ScanCommand, PutItemCommand, GetItemCommand, DeleteItemCommand } = require("@aws-sdk/client-dynamodb");
           const { marshall, unmarshall } = require("@aws-sdk/util-dynamodb");
           const crypto = require("crypto");
           const db = new DynamoDBClient({});
-          const T = process.env.TABLE_NAME, QURL = process.env.QUERY_API_URL, RURL = process.env.USER_REGION_API_URL;
+          const T = process.env.TABLE_NAME, QURL = process.env.QUERY_API_URL, RURL = process.env.USER_REGION_API_URL, KEY = process.env.QUERY_API_KEY || "";
           const json = (s, d) => ({ statusCode: s, headers: { "Content-Type": "application/json" }, body: JSON.stringify(d) });
           const norm = (u) => (u ? String(u).replace(/@.*$/, "@TheTicketClinic.com") : "");
           const lc = (x) => (x ? String(x).toLowerCase() : "");
           async function getTier(u) {
             try {
-              const r = await fetch(QURL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ queryName: "rbac_users_get_tier_tag", parameters: { username: u }, waitForResults: true, maxWaitTime: 25 }) });
+              const r = await fetch(QURL, { method: "POST", headers: { "Content-Type": "application/json", "x-api-key": KEY }, body: JSON.stringify({ queryName: "rbac_users_get_tier_tag", parameters: { username: u }, waitForResults: true, maxWaitTime: 25 }) });
               const d = await r.json();
               if (d && d.status === "SUCCEEDED" && d.data && d.data.length) return d.data[0].tier || null;
             } catch (e) {}
@@ -136,9 +145,9 @@ Resources:
                 return json(201, item);
               }
               if (m === "PUT" || m === "PATCH" || m === "DELETE") {
-                if (!id) return json(400, { error: "id required" });
+                if (!id) return json(400, { error: "no id" });
                 const ex = await db.send(new GetItemCommand({ TableName: T, Key: marshall({ id }) }));
-                if (!ex.Item) return json(404, { error: "Not found" });
+                if (!ex.Item) return json(404, { error: "404" });
                 const g = unmarshall(ex.Item);
                 const [tier, region] = await Promise.all([getTier(who), getRegion(who)]);
                 if (!canEdit(g, tier, region, who)) return json(403, { error: "Forbidden" });
@@ -150,7 +159,7 @@ Resources:
                 await db.send(new PutItemCommand({ TableName: T, Item: marshall(up, { removeUndefinedValues: true }) }));
                 return json(200, up);
               }
-              return json(405, { error: "bad method" });
+              return json(405, { error: "405" });
             } catch (err) { return json(500, { error: err.message || "Error" }); }
           };
   # ---------------------------------------------------------------------------
