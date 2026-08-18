@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { isAuthenticated } from "@/lib/api-auth"
 
 /**
  * Server-side proxy for the query status endpoint. Same purpose as /api/query:
@@ -9,8 +10,11 @@ const QUERY_API =
   process.env.QUERY_API_URL || "https://16rzda4gyd.execute-api.us-east-1.amazonaws.com/prod"
 const API_KEY = process.env.DEV_KEY || process.env.QUERY_API_KEY || process.env.NEXT_PUBLIC_DEV_KEY || ""
 
-export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    if (!(await isAuthenticated(req))) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
     const { id } = await params
     const upstream = await fetch(`${QUERY_API}/query/status/${encodeURIComponent(id)}`, {
       headers: { "x-api-key": API_KEY },

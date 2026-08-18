@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { isAuthenticated } from "@/lib/api-auth"
 
 /**
  * Server-side proxy for the reporting query API.
@@ -16,6 +17,9 @@ const API_KEY = process.env.DEV_KEY || process.env.QUERY_API_KEY || process.env.
 
 export async function POST(req: Request) {
   try {
+    if (!(await isAuthenticated(req))) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
     const body = await req.text()
     const upstream = await fetch(`${QUERY_API}/query`, {
       method: "POST",

@@ -11,6 +11,12 @@
  * - CRITICAL FIX: Drilldown queries now omit ["ALL"] parameters instead of sending them
  */
 
+/** Bearer auth header carrying the Microsoft (Entra) token for the /api/query proxy. */
+function authHeader(): Record<string, string> {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('ms_access_token') : null
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
+
 const API_CONFIG = {
   baseURL: 'https://16rzda4gyd.execute-api.us-east-1.amazonaws.com/prod',
   instanceId: 'fc8f1921-2aa3-4cf6-8fc4-ad4b42897030',
@@ -109,7 +115,7 @@ export class AthenaReportingAPI {
     }
     const response = await fetch(this.queryProxy, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...authHeader() },
       body: JSON.stringify(payload)
     });
     if (!response.ok) {
@@ -119,7 +125,9 @@ export class AthenaReportingAPI {
   }
 
   async checkStatus<T = any>(queryExecutionId: string): Promise<APIResponse<T>> {
-    const response = await fetch(`${this.queryProxy}/status/${queryExecutionId}`)
+    const response = await fetch(`${this.queryProxy}/status/${queryExecutionId}`, {
+      headers: { ...authHeader() }
+    })
     return await response.json()
   }
 
@@ -615,7 +623,7 @@ export class AthenaReportingAPI {
   async getAvailableQueries() {
     const response = await fetch(this.queryProxy, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...authHeader() },
       body: JSON.stringify({})
     })
     const data = await response.json()
