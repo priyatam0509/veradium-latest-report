@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react"
 import { athenaAPI } from "@/lib/athena-api"
+import { useAuth } from "@/hooks/use-auth"
 
 interface GlobalFiltersContextValue {
   // Input state (shown in controls)
@@ -55,6 +56,7 @@ interface GlobalFiltersContextValue {
 const GlobalFiltersContext = createContext<GlobalFiltersContextValue | null>(null)
 
 export function GlobalFiltersProvider({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth()
   const defaultStart = new Date()
   const defaultEnd = new Date()
 
@@ -73,8 +75,10 @@ export function GlobalFiltersProvider({ children }: { children: React.ReactNode 
   const [availableAgents, setAvailableAgents] = useState<{ display: string; value: string }[]>([])
   const [availableDids, setAvailableDids] = useState<{ display: string; value: string }[]>([])
 
-  // Load lookup lists from API on mount — store both display (label) and value (UID sent to queries)
+  // Load lookup lists once the user is authenticated — the query proxy requires a
+  // valid token, so fetching before login would 401. Re-runs if the user changes.
   useEffect(() => {
+    if (!user?.email) return
     // Load queue list
     athenaAPI.getLookupQueueList().then((result) => {
       if (result?.status === "SUCCEEDED" && Array.isArray(result.data) && result.data.length > 0) {
@@ -116,7 +120,7 @@ export function GlobalFiltersProvider({ children }: { children: React.ReactNode 
         if (items.length > 0) setAvailableDids(items)
       }
     }).catch(() => {})
-  }, [])
+  }, [user?.email])
 
   const [appliedStartDate, setAppliedStartDate] = useState<Date | undefined>(defaultStart)
   const [appliedEndDate, setAppliedEndDate] = useState<Date | undefined>(defaultEnd)
