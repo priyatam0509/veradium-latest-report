@@ -113,6 +113,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // This function will be called from the callback page after MS auth
   const completeLogin = async (token: string, msUser: { email: string; displayName: string }) => {
     try {
+      // Store the token first so proxy calls (getUserTier -> /api/query) are
+      // authenticated during login, not just after.
+      microsoftAuthService.storeAccessToken(token)
+
       // Authorize purely on the basis of a successful Azure AD sign-in.
       // Fetch the user's permission tier + region (used for Agent Group edit rules).
       const [tier, regionResult] = await Promise.all([
@@ -138,8 +142,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         region,
       }
 
-      // Store token and user
-      microsoftAuthService.storeAccessToken(token)
+      // Persist the user (token already stored above)
       localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(userData))
 
       setUser(userData)
