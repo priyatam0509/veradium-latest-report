@@ -79,47 +79,61 @@ export function GlobalFiltersProvider({ children }: { children: React.ReactNode 
   // valid token, so fetching before login would 401. Re-runs if the user changes.
   useEffect(() => {
     if (!user?.email) return
-    // Load queue list
-    athenaAPI.getLookupQueueList().then((result) => {
-      if (result?.status === "SUCCEEDED" && Array.isArray(result.data) && result.data.length > 0) {
-        const items = result.data
-          .map((row: any) => ({
-            display: String(row.item_display || row.queue_name || row.queue || row.name || Object.values(row)[0] || ""),
-            value: String(row.item_value || row.queue_id || row.item_display || row.queue_name || Object.values(row)[0] || ""),
-          }))
-          .filter((i: { display: string; value: string }) => i.display && i.value)
-          .sort((a: { display: string; value: string }, b: { display: string; value: string }) => a.display.localeCompare(b.display))
-        if (items.length > 0) setAvailableQueues(items)
-      }
-    }).catch(() => {})
+    let cancelled = false
 
-    // Load agent list
-    athenaAPI.getLookupAgentList().then((result) => {
-      if (result?.status === "SUCCEEDED" && Array.isArray(result.data) && result.data.length > 0) {
-        const items = result.data
-          .map((row: any) => ({
-            display: String(row.item_display || row.agent_name || row.agent || row.name || Object.values(row)[0] || ""),
-            value: String(row.item_value || row.agent_id || row.user_id || row.item_display || row.agent_name || Object.values(row)[0] || ""),
-          }))
-          .filter((i: { display: string; value: string }) => i.display && i.value)
-          .sort((a: { display: string; value: string }, b: { display: string; value: string }) => a.display.localeCompare(b.display))
-        if (items.length > 0) setAvailableAgents(items)
+    // Retry a lookup until it returns rows — guards against a slow Athena cold-start
+    // or a transient failure leaving a filter stuck on "Loading…".
+    const loadWithRetry = async (
+      fetchFn: () => Promise<any>,
+      mapFn: (rows: any[]) => { display: string; value: string }[],
+      setFn: (items: { display: string; value: string }[]) => void,
+      attempts = 5,
+      delayMs = 2500
+    ) => {
+      for (let i = 0; i < attempts && !cancelled; i++) {
+        try {
+          const result = await fetchFn()
+          if (result?.status === "SUCCEEDED" && Array.isArray(result.data) && result.data.length > 0) {
+            const items = mapFn(result.data)
+              .filter((it) => it.display && it.value)
+              .sort((a, b) => a.display.localeCompare(b.display))
+            if (items.length > 0 && !cancelled) { setFn(items); return }
+          }
+        } catch {
+          /* fall through to retry */
+        }
+        if (i < attempts - 1 && !cancelled) await new Promise((r) => setTimeout(r, delayMs))
       }
-    }).catch(() => {})
+    }
 
-    // Load DID/phone list
-    athenaAPI.getLookupPhoneList().then((result) => {
-      if (result?.status === "SUCCEEDED" && Array.isArray(result.data) && result.data.length > 0) {
-        const items = result.data
-          .map((row: any) => ({
-            display: String(row.item_display || row.did || row.phone || Object.values(row)[0] || ""),
-            value: String(row.item_value || row.did || row.phone || Object.values(row)[0] || ""),
-          }))
-          .filter((i: { display: string; value: string }) => i.display && i.value)
-          .sort((a: { display: string; value: string }, b: { display: string; value: string }) => a.display.localeCompare(b.display))
-        if (items.length > 0) setAvailableDids(items)
-      }
-    }).catch(() => {})
+    loadWithRetry(
+      () => athenaAPI.getLookupQueueList(),
+      (rows) => rows.map((row: any) => ({
+        display: String(row.item_display || row.queue_name || row.queue || row.name || Object.values(row)[0] || ""),
+        value: String(row.item_value || row.queue_id || row.item_display || row.queue_name || Object.values(row)[0] || ""),
+      })),
+      setAvailableQueues
+    )
+
+    loadWithRetry(
+      () => athenaAPI.getLookupAgentList(),
+      (rows) => rows.map((row: any) => ({
+        display: String(row.item_display || row.agent_name || row.agent || row.name || Object.values(row)[0] || ""),
+        value: String(row.item_value || row.agent_id || row.user_id || row.item_display || row.agent_name || Object.values(row)[0] || ""),
+      })),
+      setAvailableAgents
+    )
+
+    loadWithRetry(
+      () => athenaAPI.getLookupPhoneList(),
+      (rows) => rows.map((row: any) => ({
+        display: String(row.item_display || row.did || row.phone || Object.values(row)[0] || ""),
+        value: String(row.item_value || row.did || row.phone || Object.values(row)[0] || ""),
+      })),
+      setAvailableDids
+    )
+
+    return () => { cancelled = true }
   }, [user?.email])
 
   const [appliedStartDate, setAppliedStartDate] = useState<Date | undefined>(defaultStart)
