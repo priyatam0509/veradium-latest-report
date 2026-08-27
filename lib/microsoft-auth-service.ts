@@ -18,13 +18,16 @@ class MicrosoftAuthService {
     return MicrosoftAuthService.instance
   }
 
-  getAuthUrl(): string {
+  getAuthUrl(prompt?: string): string {
     const params = new URLSearchParams({
       client_id: msalConfig.auth.clientId,
       response_type: 'token',
       redirect_uri: msalConfig.auth.redirectUri,
       scope: loginRequest.scopes.join(' '),
     })
+    // prompt=none → silent renewal: if the Microsoft session is still active,
+    // Entra returns a fresh token with no UI; otherwise it returns an error.
+    if (prompt) params.set('prompt', prompt)
 
     return `${msalConfig.auth.authority}/oauth2/v2.0/authorize?${params.toString()}`
   }

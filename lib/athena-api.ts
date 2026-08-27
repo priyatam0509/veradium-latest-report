@@ -11,10 +11,29 @@
  * - CRITICAL FIX: Drilldown queries now omit ["ALL"] parameters instead of sending them
  */
 
+import { microsoftAuthService } from "@/lib/microsoft-auth-service"
+
 /** Bearer auth header carrying the Microsoft (Entra) token for the /api/query proxy. */
 function authHeader(): Record<string, string> {
   const token = typeof window !== 'undefined' ? localStorage.getItem('ms_access_token') : null
   return token ? { Authorization: `Bearer ${token}` } : {}
+}
+
+/**
+ * The proxy returned 401 → the Microsoft token is missing/expired. Silently
+ * re-authenticate (prompt=none) to get a fresh token without a login prompt.
+ * Time-guarded so a persistent 401 can't cause a redirect loop (at most once/60s).
+ */
+function handleUnauthorized(): void {
+  if (typeof window === 'undefined') return
+  try {
+    const last = Number(sessionStorage.getItem('reauth_ts') || '0')
+    if (Date.now() - last < 60000) return
+    sessionStorage.setItem('reauth_ts', String(Date.now()))
+    window.location.href = microsoftAuthService.getAuthUrl('none')
+  } catch {
+    /* ignore */
+  }
 }
 
 const API_CONFIG = {
@@ -118,6 +137,10 @@ export class AthenaReportingAPI {
       headers: { 'Content-Type': 'application/json', ...authHeader() },
       body: JSON.stringify(payload)
     });
+    if (response.status === 401) {
+      handleUnauthorized();
+      throw new Error('Session expired — re-authenticating');
+    }
     if (!response.ok) {
       throw new Error(`API Error: ${response.statusText}`);
     }

@@ -15,7 +15,14 @@ export default function CallbackPage() {
     const processCallback = async () => {
       try {
         const hash = window.location.hash
-        
+
+        // Silent re-auth (prompt=none) failed because the Microsoft session is no
+        // longer active → send the user to an interactive login instead of erroring.
+        if (hash.includes('error=')) {
+          router.push('/login')
+          return
+        }
+
         if (!hash.includes('access_token')) {
           setStatus('error')
           setErrorMessage('No access token found in callback')
